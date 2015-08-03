@@ -253,10 +253,10 @@ site.init = function() {
     function(cb) {
       var greet = $('#greeting');
       var kerning = {
-        night: { 3: '0 0 0 1px', 4: '0 2px 0 0' },
-        morning: { 3: '0 0 0 2px', 5: '0 0 0 -1px' },
-        day: { 2: '0 -5px 0 0' },
-        afternoon: { 2: '0 -1px 0 3px', 5: '0 0 0 1px', 8: '0 0 0 -1px' }
+        night: { 3: '0 0 0 .015em', 4: '0 .035em 0 0' },
+        morning: { 3: '0 0 0 .03em', 5: '0 0 0 -.015em' },
+        day: { 2: '0 -.07em 0 0' },
+        afternoon: { 2: '0 -.015em 0 .055em', 5: '0 0 0 .015em', 8: '0 0 0 -.015em' }
       };
       var dt = dayTime();
       var wrapped = greet.textContent.replace('day', dt);
@@ -335,24 +335,31 @@ site.init = function() {
     function(cb) {
       var bg = $('#background');
       var ext = { video: '.mp4', img: '.jpg' };
-      var darken = { night: 0.1, morning: 0.1, day: 0.1, afternoon: 0.1, evening: 0.1 };
+      var settings = { 
+        night: { loop: false, darken: 0.1 }, 
+        morning: { loop: true, darken: 0.1 }, 
+        day: { loop: true, darken: 0.1 }, 
+        afternoon: { loop: true, darken: 0.1 }, 
+        evening: { loop: false, darken: 0.1 }
+      };
+      var dt = dayTime();
       var addOverlay = function() {
         var overlay = document.createElement('div');
         overlay.style.cssText = 
-          'width: 100%; height: 100%; background-color: rgba(0, 0, 0, ' + darken[dayTime()] + ')';
+          'width: 100%; height: 100%; background-color: rgba(0, 0, 0, ' + settings[dt]['darken'] + ')';
         bg.appendChild(overlay);
         cb();
       };
       var gcb = groupCallback(1, addOverlay);
-//       var file = 'bg/' + dayTime();
-      var file = 'bg/day';
+      var file = 'bg/';
+      if (['morning', 'day', 'afternoon'].indexOf(dt) !== -1) { file += 'day'; }
+      else { file += 'evening'; }
       
       // if the device can handle it, prepare the video to substitute the image
       if (screen.width >= 1000 && !('ontouchstart' in window)) {
         var videoFile = file + ext.video;
         var video = document.createElement('video');
-        video.setAttribute('loop', '');
-        video.setAttribute('autoplay', '');
+        if (settings[dt]['loop']) { video.setAttribute('loop', ''); }
         bg.appendChild(video);
         
         gcb = groupCallback(2, addOverlay);
@@ -405,7 +412,8 @@ site.init = function() {
       if (video) {
         var d = display();
         d.show(video);
-        d.animate(img, '2s .5s', keyframes.hide);
+        video.play();
+        d.animate(img, '1s .5s', keyframes.hide);
         d.run(function() {
           // against flash of white when returning to tab and video is out-of-memory
           img.style.cssText += '; z-index: -1; opacity: 1';
