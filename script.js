@@ -451,6 +451,7 @@ site.init = function() {
         s = s.replace(/ in.*/, '');
         s = '<a href="' + site.resume + '">' + s + '</a>';
         d.animate(resume, '1s', keyframes.show);
+        document.addEventListener("touchstart", function(){});  // make a:active styles work
       }
       resume.innerHTML = s;
       d.run(cb);
