@@ -496,6 +496,8 @@ site.init = function() {
     // coming back to the page after little time, skip animations
     document.body.innerHTML = localStorage['last-visit-snapshot'];
     localStorage['last-visit-time'] = +new Date();
+    var video = $('#background video');
+    if (video) { video.play(); }
   } else {
     // construct the page with animations and everything
     runner.start(function() {
