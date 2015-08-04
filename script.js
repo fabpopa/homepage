@@ -69,7 +69,7 @@ site.init = function() {
           p.removeChild(v);
           if (onError !== undefined) { onError(); }
         }
-      }, 300);
+      }, 5000);
     };
     
     return {
@@ -379,7 +379,32 @@ site.init = function() {
       var imgFile = file + ext.img;
       var img = document.createElement('img');
       bg.appendChild(img);
-      preload.img(imgFile, function() { img.src = imgFile; gcb(); });
+      preload.img(imgFile, function() { 
+        img.src = imgFile;
+        
+        // resize background to always fit the available window space
+        // img is a frame of video, they have the same dimensions
+        var imgRatio = img.naturalWidth / img.naturalHeight;
+        var adjustBackgroundSize = function() {
+          [].concat($('#background video, #background img')).forEach(function(el) {
+            if (window.innerWidth / window.innerHeight < imgRatio) {
+              if (el.style.width !== '' || el.style.height === '') {  
+                el.style.height = '100%';
+                el.style.removeProperty('width');
+              }
+            } else {
+              if (el.style.height !== '' || el.style.width === '') {
+                el.style.width = '100%';
+                el.style.removeProperty('height');
+              }
+            }
+          });
+        };
+        window.addEventListener('resize', adjustBackgroundSize);
+        adjustBackgroundSize();
+        
+        gcb();
+      });
     }
   );
   
@@ -459,7 +484,7 @@ site.init = function() {
         s = s.replace(/ in.*/, '');
         s = '<a href="' + site.resume + '">' + s + '</a>';
         d.animate(resume, '1s', keyframes.show);
-        document.addEventListener("touchstart", function(){});  // make a:active styles work
+        document.addEventListener("touchstart", function(){});  // make :active styles work on mobile
       }
       resume.innerHTML = s;
       d.run(cb);
