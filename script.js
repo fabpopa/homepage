@@ -13,7 +13,6 @@ site.init = function() {
   // construct to sync callbacks
   // 'done' called when group callback has been called 'count' times
   var groupCallback = function(count, done) {
-    if (count === 0) { done(); }
     return function() {
       count -= 1;
       if (count === 0) { done(); }
@@ -238,10 +237,10 @@ site.init = function() {
       var sheetCb = groupCallback(extStyleSheets.length, cb);
       extStyleSheets.forEach(function(sheet) {
         preload.data(sheet, function(data) {
-          var re = /@font-face[^}]*url\(('|")([^'"]*)/gi;
+          var re = /@font-face[^}]*url\(['"]*([^'"\)]+)/gi;
           var fontLinks = [];
           var match;
-          while ((match = re.exec(data)) !== null) { fontLinks.push(match[2]); }
+          while ((match = re.exec(data)) !== null) { fontLinks.push(match[1]); }
           var fontsCb = groupCallback(fontLinks.length, sheetCb);
           fontLinks.forEach(function(font) { preload.data(font, fontsCb); });
         });
@@ -380,16 +379,14 @@ site.init = function() {
       var imgFile = file + ext.img;
       var img = document.createElement('img');
       bg.appendChild(img);
-      preload.img(imgFile, function() { 
-        img.src = imgFile;
-        
+      preload.img(imgFile, function() {
         // resize background to always fit the available window space
         // img is a frame of video, they have the same dimensions
-        var imgRatio = img.naturalWidth / img.naturalHeight;
+        var imgRatio;
         var adjustBackgroundSize = function() {
           [].concat($('#background video, #background img')).forEach(function(el) {
             if (window.innerWidth / window.innerHeight < imgRatio) {
-              if (el.style.width !== '' || el.style.height === '') {  
+              if (el.style.width !== '' || el.style.height === '') {
                 el.style.height = '100%';
                 el.style.removeProperty('width');
               }
@@ -401,10 +398,16 @@ site.init = function() {
             }
           });
         };
-        window.addEventListener('resize', adjustBackgroundSize);
-        adjustBackgroundSize();
         
-        gcb();
+        img.addEventListener('load', function() {
+          img.removeEventListener('load', arguments.callee);
+          imgRatio = img.naturalWidth / img.naturalHeight;
+          window.addEventListener('resize', adjustBackgroundSize);
+          adjustBackgroundSize();
+          gcb();
+        });
+        
+        img.src = imgFile;
       });
     }
   );
