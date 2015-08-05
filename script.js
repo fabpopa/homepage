@@ -356,7 +356,7 @@ site.init = function() {
       var bg = $('#background');
       var ext = { video: '.mp4', img: '.jpg' };
       var settings = { 
-        night: { loop: false, darken: 0.1 }, 
+        night: { loop: false, darken: 0.25 }, 
         morning: { loop: true, darken: 0.1 }, 
         day: { loop: true, darken: 0.1 }, 
         afternoon: { loop: true, darken: 0.1 }, 
