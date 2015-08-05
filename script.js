@@ -412,7 +412,7 @@ site.init = function() {
     }
   );
   
-  // keep the greeting up a bit
+  // keep the greeting up for a sec
   runner.addStep(function(cb) { setTimeout(cb, 1000); });
   
   // big transition to show background image and white greeting
@@ -458,9 +458,9 @@ site.init = function() {
       var social = $('#social');
       var d = display();
       d.hide(avatar);
-      d.animate(avatar, '1s', keyframes.show);
-      d.animate(intro, '1s .5s', { 0: { opacity: 0 }, 100: { opacity: 0.7 } });
-      d.animate(social, '2s 2s', keyframes.show);
+      d.animate(avatar, '2s', keyframes.show);
+      d.animate(intro, '2s .5s', { 0: { opacity: 0 }, 100: { opacity: 0.7 } });
+      d.animate(social, '2s 1s', keyframes.show);
       d.run(cb);
     }
   );
@@ -511,17 +511,27 @@ site.init = function() {
   }
 };
 
-// check browser is IE10+ and modern
-if ((new XMLHttpRequest()).onload !== undefined) {
-  // start page when all assets have loaded
-  window.addEventListener('load', function() {
-    window.removeEventListener('load', arguments.callee);
-    site.init();
-  });
-} else {
-  // show notice for old browsers
-  document.getElementById('oldbrowser').className = 'show';
-}
+// start web page or show notice for old browsers
+(function() {
+  var run;
+  
+  // check browser is IE10+ or modern
+  if ((new XMLHttpRequest()).onload !== undefined) {
+    run = function() { site.init(); };
+  } else {
+    // show notice for old browsers
+    run = function() { document.getElementById('oldbrowser').className = 'show'; };
+  }
+  
+  if (document.readyState === 'complete') { 
+    run();
+  } else {
+    document.addEventListener('DOMContentLoaded', function() {
+      document.removeEventListener('DOMContentLoaded', arguments.callee);
+      run();
+    });
+  }
+})();
 
 // résumé-downloading function
 site.resume = "résumé.pdf";
@@ -532,7 +542,7 @@ var getResume = function() {
   document.body.appendChild(a);
   a.click();
   return 'loading ...';
-}
+};
 
 // view source introduction
 site.msg = "";
