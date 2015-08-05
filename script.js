@@ -224,18 +224,38 @@ site.init = function() {
     hide: { 0: { opacity: 1 }, 100: { opacity: 0 } }
   };
   
-  // make sure fonts are in cache
+  // darken background and make sure fonts are in cache
   runner.addStep(
     function(cb) {
-      // get external stylesheets linked to the document
-      var extStyleSheets = [];
-      Array.prototype.slice.call(document.styleSheets).forEach(function(sheet) {
-        if (sheet.href !== null) { extStyleSheets.push(sheet.href); }
+      // darken the background towards the end of the day
+      if (['evening', 'night'].indexOf(dayTime()) !== -1) {
+        var dark = document.createElement('div');
+        var d = display();
+        document.body.insertBefore(dark, $('#background'));
+        d.hide(dark);
+        d.style(dark, {
+          'width': '100%',
+          'height': '100%',
+          'z-index': -2,
+          'position': 'absolute',
+          'background-color': '#001d07'
+        });
+        d.animate(dark, '2s', keyframes.show);
+        d.run(cb);
+      } else {
+        cb();
+      }
+    },
+    function(cb) {
+      // get linked style sheets
+      var styleSheets = [];
+      [].concat($('link[rel=stylesheet]')).forEach(function(sheet) {
+        if (sheet.href !== null) { styleSheets.push(sheet.href); }
       });
      
-      // extract font URLs from each stylesheet and make sure they're cached
-      var sheetCb = groupCallback(extStyleSheets.length, cb);
-      extStyleSheets.forEach(function(sheet) {
+      // extract font URLs from each style sheet and make sure they're cached
+      var sheetCb = groupCallback(styleSheets.length, cb);
+      styleSheets.forEach(function(sheet) {
         preload.data(sheet, function(data) {
           var re = /@font-face[^}]*url\(['"]*([^'"\)]+)/gi;
           var fontLinks = [];
@@ -295,7 +315,7 @@ site.init = function() {
     }
   );
   
-  // animate intro and preload avatar and background
+  // animate intro and preload avatar and background media
   runner.addStep(
     function(cb) {
       // animate intro
