@@ -13,6 +13,7 @@ site.init = function() {
   // construct to sync callbacks
   // 'done' called when group callback has been called 'count' times
   var groupCallback = function(count, done) {
+    if (count === 0) { done(); }
     return function() {
       count -= 1;
       if (count === 0) { done(); }
