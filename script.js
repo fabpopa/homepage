@@ -275,7 +275,7 @@ site.init = function() {
       var kerning = {
         night: { 3: '0 0 0 .015em', 4: '0 .035em 0 0' },
         morning: { 3: '0 0 0 .03em', 5: '0 0 0 -.015em' },
-        day: { 2: '0 -.07em 0 0' },
+        day: { 2: '0 -.07em 0 -.007em' },
         afternoon: { 2: '0 -.015em 0 .055em', 5: '0 0 0 .015em', 8: '0 0 0 -.015em' }
       };
       var dt = dayTime();
@@ -324,8 +324,8 @@ site.init = function() {
       var d = display();
       var prefix = (document.body.style.transform === undefined) ? '-webkit-' : '';
       var frames = { 0: { opacity: 0 }, 100: { opacity: 1 } };
-      frames[0][prefix + 'transform'] = 'translate(0,1rem)';
-      frames[100][prefix + 'transform'] = 'translate(0,0)';
+      frames[0][prefix + 'transform'] = 'translate(0, 20%)';
+      frames[100][prefix + 'transform'] = 'translate(0, 0)';
       var punctDelay;
       
       // letter animation, except punctuation
