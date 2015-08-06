@@ -331,7 +331,7 @@ site.init = function() {
       // letter animation, except punctuation
       d.show(greet);
       letters.slice(0, -1).forEach(function(el, i) {
-        var delay = Math.floor(i * 100 + 200 + Math.random() * 300);
+        var delay = Math.floor(i * 100 + Math.random() * 300);
         punctDelay = delay;
         d.animate(el, '1s ' + delay + 'ms', frames);
       });
