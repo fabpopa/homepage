@@ -356,11 +356,11 @@ site.init = function() {
       var bg = $('#background');
       var ext = { video: '.mp4', img: '.jpg' };
       var settings = { 
-        night: { loop: false, darken: 0.25 }, 
-        morning: { loop: true, darken: 0.1 }, 
-        day: { loop: true, darken: 0.1 }, 
-        afternoon: { loop: true, darken: 0.1 }, 
-        evening: { loop: false, darken: 0.1 }
+        night: { loop: false, darken: 0.25, alt: 'Boston in the evening' },
+        morning: { loop: true, darken: 0.1, alt: 'Munich in the summertime' },
+        day: { loop: true, darken: 0.1, alt: 'Munich in the summertime' },
+        afternoon: { loop: true, darken: 0.1, alt: 'Munich in the summertime' },
+        evening: { loop: false, darken: 0.1, alt: 'Boston in the evening' }
       };
       var dt = dayTime();
       var addOverlay = function() {
@@ -379,6 +379,7 @@ site.init = function() {
       if (screen.width >= 1000 && !('ontouchstart' in window)) {
         var videoFile = file + ext.video;
         var video = document.createElement('video');
+        video.setAttribute('aria-label', settings[dt]['alt']);
         if (settings[dt]['loop']) { video.setAttribute('loop', ''); }
         bg.appendChild(video);
         
@@ -398,6 +399,7 @@ site.init = function() {
       
       var imgFile = file + ext.img;
       var img = document.createElement('img');
+      img.setAttribute('alt', settings[dt]['alt']);
       bg.appendChild(img);
       preload.img(imgFile, function() {
         // resize background to always fit the available window space

@@ -115,6 +115,7 @@ a:active {
 }
 
 #greeting {
+  margin: 0;
   width: 100%;
   top: 38%;
   text-align: center;
