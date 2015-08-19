@@ -108,8 +108,8 @@ site.init = function() {
     };
     
     var start = function(cb) {
-      if (steps.length <= 0) { return; }
       if (cb !== undefined) { done = cb; }
+      if (steps.length <= 0) { done(); return; }
       advance();
     };
     
@@ -132,6 +132,7 @@ site.init = function() {
     
     // e.g. animate(el, '2s infinite', { 0: { opacity: 0 }, 100: { opacity: 1 } })
     // e.g. animate(el, '2s 3', { from: { top: 0 }, 50: { top: 100 }, to: { top: 50 } })
+    // e.g. animate(el, '2s', { '0%, 100%': { 'border-width': '1px' }, '50%': { 'border-width': '3px' } })
     var animate = function(el, animation, keyframes) {
       if (animation === undefined || keyframes === undefined ) {
         throw "display.animate() requires 'animation' and 'keyframes' arguments";
@@ -152,7 +153,7 @@ site.init = function() {
       var gcb = groupCallback(tasks.length, cb);
       tasks.forEach(function(task) {
         if (task.animation !== undefined) {
-          // name aniamtion keyframes
+          // name animation keyframes
           var name = 'keyframes'
             .concat('-', Math.floor(Math.random() * Math.pow(10, 17)))
             .concat('-', Date.now() % Math.pow(10, 4));  
