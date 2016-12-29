@@ -9,7 +9,7 @@ site.init = function() {
     if (elements.length === 1) { return elements[0]; }
     return Array.prototype.slice.call(elements);
   };
-  
+
   // construct to sync callbacks
   // 'done' called when group callback has been called 'count' times
   var groupCallback = function(count, done) {
@@ -18,30 +18,30 @@ site.init = function() {
       if (count === 0) { done(); }
     };
   };
-  
+
   var dayTime = function() {
     // 5h segments
     var dayTimes = ['night', 'morning', 'day', 'afternoon', 'evening'];
     return dayTimes[Math.floor((new Date()).getHours() / 5)];
   };
-  
+
   // asset preloader, reliably put things in browser cache
   // or at least make sure they're already there by loading a second time invisibly
   var preload = (function() {
     var p = document.createElement('div');  // container for preloaded elements
-    p.style.cssText = 
+    p.style.cssText =
       'position: fixed; width: 0; height: 0; top: -1px; left: -1px; overflow: hidden';
     document.body.appendChild(p);
-    
+
     var data = function(url, onComplete) {
       var xhr = new XMLHttpRequest();
-      if (onComplete !== undefined) { 
+      if (onComplete !== undefined) {
         xhr.onload = function() { onComplete(this.responseText); };
       }
       xhr.open('GET', url);
       xhr.send();
     };
-    
+
     var img = function(url, onComplete, onError) {
       var i = document.createElement('img');
       i.onload = function() {
@@ -55,10 +55,10 @@ site.init = function() {
       p.appendChild(i);
       i.src = url;
     };
-    
+
     var video = function(url, onComplete, onError) {
       var v = document.createElement('video');
-      v.oncanplaythrough = function() { 
+      v.oncanplaythrough = function() {
         if (p.contains(v)) { p.removeChild(v); }
         if (onComplete !== undefined) { onComplete(); }
       };
@@ -71,24 +71,24 @@ site.init = function() {
         }
       }, 5000);
     };
-    
+
     return {
       data: data,
       img: img,
       video: video
     };
   })();
-  
+
   // several fn(cb)'s are grouped into a step as tasks
   // tasks in a step run in parallel, steps run in sequence
   var taskRunner = function() {
     var steps = [];
     var currentStep = -1;
     var done = function() {};
-    
+
     // add a bunch of fn(cb) to a step to be run together
     var addStep = function() {
-      if (arguments.length === 0) { 
+      if (arguments.length === 0) {
         throw 'taskRunner.addStep() expects fn(cb)... or [fn(cb)...] arguments';
       }
       var tasks;
@@ -96,40 +96,40 @@ site.init = function() {
       else { tasks = Array.prototype.slice.call(arguments); }
       steps.push(tasks);
     };
-    
+
     // run next step
     var advance = function() {
       currentStep += 1;
       if (currentStep == steps.length) { done(); return; }
-      
+
       var step = steps[currentStep];
       var gcb = groupCallback(step.length, advance);
       step.forEach(function(task) { task(gcb); });
     };
-    
+
     var start = function(cb) {
       if (cb !== undefined) { done = cb; }
       if (steps.length <= 0) { done(); return; }
       advance();
     };
-    
+
     return {
       addStep: addStep,
       start: start
     };
   };
-  
+
   // small library for visual changes
   // all animations here are staged for succession
   // if you need an animation outside this schedule, place it in CSS
   var display = function() {
     var tasks = [];
-    
+
     // e.g. style(el, { opacity: .5, color: 'cyan' })
     var style = function(el, styles) {
       tasks.push({ el: el, styles: styles });
     };
-    
+
     // e.g. animate(el, '2s infinite', { 0: { opacity: 0 }, 100: { opacity: 1 } })
     // e.g. animate(el, '2s 3', { from: { top: 0 }, 50: { top: 100 }, to: { top: 50 } })
     // e.g. animate(el, '2s', { '0%, 100%': { 'border-width': '1px' }, '50%': { 'border-width': '3px' } })
@@ -139,13 +139,13 @@ site.init = function() {
       }
       tasks.push({ el: el, animation: animation, keyframes: keyframes });
     };
-    
+
     var hide = function(el) { style(el, { opacity: 0 }); };
     var show = function(el) { style(el, { opacity: 1 }); };
-    
+
     var run = function(cb) {
       if (typeof cb !== 'function') { throw 'display.run(cb) expects a callback argument'; }
-      
+
       var apply = function(el, styles) {
         Object.keys(styles).forEach(function(s) { el.style[s] = styles[s]; });
       };
@@ -156,8 +156,8 @@ site.init = function() {
           // name animation keyframes
           var name = 'keyframes'
             .concat('-', Math.floor(Math.random() * Math.pow(10, 17)))
-            .concat('-', Date.now() % Math.pow(10, 4));  
-                        
+            .concat('-', Date.now() % Math.pow(10, 4));
+
           // construct keyframe css
           var keyframes = [];
           Object.keys(task.keyframes).forEach(function(time) {
@@ -168,7 +168,7 @@ site.init = function() {
             if (/^\d+$/.test(time)) { time += '%'; }
             keyframes.push(time + ' { ' + styles.join('; ') + ' }');
           });
-          
+
           // browser prefixes
           var animPrefix = '';
           var animEnd = 'animationend';
@@ -177,18 +177,18 @@ site.init = function() {
             animPrefix = '-webkit-';
             animEnd = 'webkitAnimationEnd';
           }
-          animObj[animPrefix + 'animation'] = name + ' ' + task.animation + ' forwards';               
-          
+          animObj[animPrefix + 'animation'] = name + ' ' + task.animation + ' forwards';
+
           // attach keyframes css
           var css = '@' + animPrefix + 'keyframes ' + name + ' { ' + keyframes.join(' ') + ' }';
           var s = document.createElement('style');
           s.innerHTML = css;
           document.head.appendChild(s);
-          
+
           // add animationend event listener
           task.el.addEventListener(animEnd, function() {
             task.el.removeEventListener(animEnd, arguments.callee);
-            
+
             // apply styles from end keyframe and remove animation assets
             Object.keys(task.keyframes).forEach(function(frame) {
               if (/(to|100)/i.test(frame)) { apply(task.el, task.keyframes[frame]); }
@@ -197,8 +197,8 @@ site.init = function() {
             task.el.style.removeProperty(animPrefix + 'animation');
             gcb();
           });
-            
-          // apply animation          
+
+          // apply animation
           apply(task.el, animObj);
         } else {
           apply(task.el, task.styles);
@@ -206,7 +206,7 @@ site.init = function() {
         }
       });
     };
-    
+
     return {
       style: style,
       animate: animate,
@@ -215,16 +215,16 @@ site.init = function() {
       run: run
     };
   };
-  
+
   // task runner for the whole page
   var runner = taskRunner();
-  
+
   // some animation presets
   var keyframes = {
     show: { 0: { opacity: 0 }, 100: { opacity: 1 } },
     hide: { 0: { opacity: 1 }, 100: { opacity: 0 } }
   };
-  
+
   // darken background and make sure fonts are in cache
   runner.addStep(
     function(cb) {
@@ -253,7 +253,7 @@ site.init = function() {
       [].concat($('link[rel=stylesheet]')).forEach(function(sheet) {
         if (sheet.href !== null) { styleSheets.push(sheet.href); }
       });
-     
+
       // extract font URLs from each style sheet and make sure they're cached
       var sheetCb = groupCallback(styleSheets.length, cb);
       styleSheets.forEach(function(sheet) {
@@ -268,7 +268,7 @@ site.init = function() {
       });
     }
   );
-  
+
   // modify greeting for current time of day
   runner.addStep(
     function(cb) {
@@ -287,7 +287,7 @@ site.init = function() {
         var kernDayTime = kerning[dt];
         if (kernDayTime) {
           var kernMargin = kernDayTime[i - dtOffset];
-          if (kernMargin) { 
+          if (kernMargin) {
             s += ' style="position: relative; margin: ' + kernMargin + '"';
           }
         }
@@ -296,7 +296,7 @@ site.init = function() {
         return s;
       }).join('').concat('</span>');
       greet.innerHTML = wrapped;
-      
+
       // find the day-time-appropriate hue on the color wheel
       var moment = new Date();
       var midHue = Math.round((moment.getHours() * 60 + moment.getMinutes()) / (24 * 60) * 360);
@@ -305,7 +305,7 @@ site.init = function() {
       var letters = $('#greeting .letter');
       var hueStep = 4; // degrees of hue between letters
       var startHue = midHue - Math.floor(letters.length / 2 - 1) * hueStep;
-      
+
       var d = display();
       letters.forEach(function(el, i) {
         d.hide(el);
@@ -315,7 +315,7 @@ site.init = function() {
       d.run(cb);
     }
   );
-  
+
   // animate intro and preload avatar and background media
   runner.addStep(
     function(cb) {
@@ -328,7 +328,7 @@ site.init = function() {
       frames[0][prefix + 'transform'] = 'translate(0, 20%)';
       frames[100][prefix + 'transform'] = 'translate(0, 0)';
       var punctDelay;
-      
+
       // letter animation, except punctuation
       d.show(greet);
       letters.slice(0, -1).forEach(function(el, i) {
@@ -336,12 +336,12 @@ site.init = function() {
         punctDelay = delay;
         d.animate(el, '1s ' + delay + 'ms', frames);
       });
-      
+
       // punctuation
       letters.slice(-1).forEach(function(el) {
         d.animate(el, '.5s ' + (punctDelay + 300) + 'ms', frames);
       });
-      
+
       d.run(cb);
     },
     function(cb) {
@@ -356,7 +356,7 @@ site.init = function() {
     function(cb) {
       var bg = $('#background');
       var ext = { video: '.mp4', img: '.jpg' };
-      var settings = { 
+      var settings = {
         night: { loop: false, darken: 0.25, alt: 'Boston in the evening' },
         morning: { loop: true, darken: 0.1, alt: 'Munich in the summertime' },
         day: { loop: true, darken: 0.1, alt: 'Munich in the summertime' },
@@ -366,7 +366,7 @@ site.init = function() {
       var dt = dayTime();
       var addOverlay = function() {
         var overlay = document.createElement('div');
-        overlay.style.cssText = 
+        overlay.style.cssText =
           'width: 100%; height: 100%; background-color: rgba(0, 0, 0, ' + settings[dt]['darken'] + ')';
         bg.appendChild(overlay);
         cb();
@@ -375,7 +375,7 @@ site.init = function() {
       var file = 'bg/';
       if (['morning', 'day', 'afternoon'].indexOf(dt) !== -1) { file += 'day'; }
       else { file += 'evening'; }
-      
+
       // if the device can handle it, prepare the video to substitute the image
       if (screen.width >= 1000 && !('ontouchstart' in window)) {
         var videoFile = file + ext.video;
@@ -383,7 +383,7 @@ site.init = function() {
         video.setAttribute('aria-label', settings[dt]['alt']);
         if (settings[dt]['loop']) { video.setAttribute('loop', ''); }
         bg.appendChild(video);
-        
+
         gcb = groupCallback(2, addOverlay);
         preload.video(videoFile, function() {
           video.src = videoFile;
@@ -397,7 +397,7 @@ site.init = function() {
           gcb();
         });
       }
-      
+
       var imgFile = file + ext.img;
       var img = document.createElement('img');
       img.setAttribute('alt', settings[dt]['alt']);
@@ -421,7 +421,7 @@ site.init = function() {
             }
           });
         };
-        
+
         img.addEventListener('load', function() {
           img.removeEventListener('load', arguments.callee);
           imgRatio = img.naturalWidth / img.naturalHeight;
@@ -429,15 +429,15 @@ site.init = function() {
           adjustBackgroundSize();
           gcb();
         });
-        
+
         img.src = imgFile;
       });
     }
   );
-  
+
   // keep the greeting up for a sec
   runner.addStep(function(cb) { setTimeout(cb, 1000); });
-  
+
   // big transition to show background image and white greeting
   runner.addStep(
     function(cb) {
@@ -446,8 +446,8 @@ site.init = function() {
       var d = display();
       if (video) { d.hide(video); }
       $('#greeting .letter').forEach(function(el) {
-        d.animate(el, '2s', { 
-          0: { 'color': el.style.color, 'text-shadow': '0 1px 2px rgba(0, 0, 0, 0)' }, 
+        d.animate(el, '2s', {
+          0: { 'color': el.style.color, 'text-shadow': '0 1px 2px rgba(0, 0, 0, 0)' },
           100: { 'color': 'white', 'text-shadow': '0 1px 2px rgba(0, 0, 0, .4)' }
         });
       });
@@ -455,12 +455,12 @@ site.init = function() {
       d.run(cb);
     }
   );
-  
+
   // reveal video background if available, plus avatar, small intro text, and social buttons
   runner.addStep(
-    function(cb) { 
+    function(cb) {
       var video = $('#background video');
-      var img = $('#background img');      
+      var img = $('#background img');
       if (video) {
         var d = display();
         d.show(video);
@@ -487,7 +487,7 @@ site.init = function() {
       d.run(cb);
     }
   );
-  
+
   // reveal résumé hint
   runner.addStep(
     function(cb) {
@@ -517,7 +517,7 @@ site.init = function() {
       d.run(cb);
     }
   );
-  
+
   var lastVisit = localStorage['last-visit-time'];
   if (lastVisit && (new Date() - lastVisit) < 30 * 1000) {
     // coming back to the page after little time, skip animations
@@ -537,7 +537,7 @@ site.init = function() {
 // start web page or show notice for old browsers
 (function() {
   var run;
-  
+
   // check browser is IE10+ or modern
   if ((new XMLHttpRequest()).onload !== undefined) {
     run = function() { site.init(); };
@@ -545,8 +545,8 @@ site.init = function() {
     // show notice for old browsers
     run = function() { document.getElementById('oldbrowser').className = 'show'; };
   }
-  
-  if (document.readyState === 'complete') { 
+
+  if (document.readyState === 'complete') {
     run();
   } else {
     document.addEventListener('DOMContentLoaded', function() {
