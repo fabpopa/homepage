@@ -7,22 +7,22 @@
   font-family: Lato;
   font-style: normal;
   font-weight: 400;
-  src: url('fonts/lato/lato-regular.woff');
-  /* Version 2.010. Copyright (c) tyPoland Lukasz Dziedzic */
+  src: url('fonts/lato-regular.woff');
+  /* Version 2.015. Copyright (c) tyPoland Lukasz Dziedzic */
 }
 @font-face {
   font-family: Lato;
   font-style: normal;
   font-weight: 700;
-  src: url('fonts/lato/lato-bold.woff');
-  /* Version 2.010. Copyright (c) tyPoland Lukasz Dziedzic */
+  src: url('fonts/lato-bold.woff');
+  /* Version 2.015. Copyright (c) tyPoland Lukasz Dziedzic */
 }
 @font-face {
   font-family: Lato;
   font-style: normal;
   font-weight: 900;
-  src: url('fonts/lato/lato-black.woff');
-  /* Version 2.010. Copyright (c) tyPoland Lukasz Dziedzic */
+  src: url('fonts/lato-black.woff');
+  /* Version 2.015. Copyright (c) tyPoland Lukasz Dziedzic */
 }
 
 html {
