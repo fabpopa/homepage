@@ -59,7 +59,6 @@
 
     // enter render context
     c.save();
-    c.translate(cell.x, cell.y);
 
     // compute outside path dimensions
     cell.rdX = cell.size / 2;
@@ -68,15 +67,19 @@
     cell.ctlY = cell.ctlX * cell.rdY / cell.rdX;
 
     // render outside path
+    c.translate(cell.x, cell.y);
     renderCellPath(cell);
     c.lineWidth = 2;
     c.strokeStyle = 'white';
     c.stroke();
 
     // inside path, skip if cell is sideways
-    if (cell.rdY > .4) {
+    if (cell.rdY > cell.rdX * .35) {
       // compute inside path
-      
+      cell.rdX /= 2.2;
+      cell.rdY /= 2.2;
+      cell.ctlX /= 2.2;
+      cell.ctlY /= 2.2;
 
       // render inside path
       renderCellPath(cell);
@@ -89,14 +92,12 @@
     c.restore();
   };
 
-  let raf = function() {
-    window.requestAnimationFrame(function() {
-      c.fillStyle = 'rgb(30, 30, 30)';
-      c.fillRect(0, 0, canvas.width, canvas.height);
-      renderCellFrame(cell);
-      raf();
-    });
+  let renderCells = function() {
+    c.fillStyle = 'rgb(30, 30, 30)';
+    c.fillRect(0, 0, canvas.width, canvas.height);
+    renderCellFrame(cell);
   };
 
+  let raf = function() { renderCells(); window.requestAnimationFrame(raf); };
   raf();
 </script>
