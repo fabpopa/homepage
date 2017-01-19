@@ -38,8 +38,17 @@
     velocityY: 0
   };
 
+  let renderCellPath = function(cell) {
+    c.beginPath();
+    c.moveTo(0, -cell.rdY);
+    c.bezierCurveTo(cell.ctlX, -cell.rdY, cell.rdX, -cell.ctlY, cell.rdX, 0);
+    c.bezierCurveTo(cell.rdX, cell.ctlY, cell.ctlX, cell.rdY, 0, cell.rdY);
+    c.bezierCurveTo(-cell.ctlX, cell.rdY, -cell.rdX, cell.ctlY, -cell.rdX, 0);
+    c.bezierCurveTo(-cell.rdX, -cell.ctlY, -cell.ctlX, -cell.rdY, 0, -cell.rdY);
+  }
+
   let renderCellFrame = function(cell) {
-    // compute
+    // compute animation state
     if (cell.animFrame === cellFrameOpts.animFramesTotal) {
       cell.animFrame = 0;
       cell.animPercent = 0;
@@ -47,26 +56,37 @@
       cell.animFrame += 1;
       cell.animPercent = cell.animFrame / cellFrameOpts.animFramesTotal * 100;
     }
+
+    // enter render context
+    c.save();
+    c.translate(cell.x, cell.y);
+
+    // compute outside path dimensions
     cell.rdX = cell.size / 2;
     cell.rdY = cell.rdX * (.25 + .75 * Math.abs(cell.animPercent - 50) / 50);
     cell.ctlX = 4 / 3 * Math.tan(Math.PI / 8) * cell.rdX;
     cell.ctlY = cell.ctlX * cell.rdY / cell.rdX;
 
-    // display
-    c.save();
-    c.translate(cell.x, cell.y);
-    c.beginPath();
-    c.moveTo(0, -cell.rdY);
-    c.bezierCurveTo(cell.ctlX, -cell.rdY, cell.rdX, -cell.ctlY, cell.rdX, 0);
-    c.bezierCurveTo(cell.rdX, cell.ctlY, cell.ctlX, cell.rdY, 0, cell.rdY);
-    c.bezierCurveTo(-cell.ctlX, cell.rdY, -cell.rdX, cell.ctlY, -cell.rdX, 0);
-    c.bezierCurveTo(-cell.rdX, -cell.ctlY, -cell.ctlX, -cell.rdY, 0, -cell.rdY);
+    // render outside path
+    renderCellPath(cell);
     c.lineWidth = 2;
     c.strokeStyle = 'white';
     c.stroke();
-    c.restore();
 
-    // raf();
+    // inside path, skip if cell is sideways
+    if (cell.rdY > .4) {
+      // compute inside path
+      
+
+      // render inside path
+      renderCellPath(cell);
+      c.lineWidth = 1;
+      c.strokeStyle = 'red';
+      c.stroke();
+    }
+
+    // exit render context
+    c.restore();
   };
 
   let raf = function() {
@@ -74,6 +94,7 @@
       c.fillStyle = 'rgb(30, 30, 30)';
       c.fillRect(0, 0, canvas.width, canvas.height);
       renderCellFrame(cell);
+      raf();
     });
   };
 
