@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<style>
+  * { margin: 0; padding: 0; }
+  html { background: black; }
+</style>
+
+<canvas>No support.</canvas>
+
+<script>
+  const canvas = document.getElementsByTagName('canvas')[0];
+  canvas.width = window.innerWidth;
+  canvas.height = 200;
+  const c = canvas.getContext('2d');
+
+  let cellPool = {
+    cells: [],
+    visible: { start: 0, end: 0 }
+  };
+
+  // storage for cell state between frames
+  let cell = {
+    size: 30,
+    rdX: 0,     // radius horizontal
+    rdY: 0,     // radius vertical
+    ctlX: 0,    // bezier control distance horizontal
+    ctlY: 0,    // bezier control distance vertical
+    x: 50,
+    y: 100,
+    angle: 0,
+    animFrame: 0,
+    animPercent: 0
+  };
+
+  // changes to cell per frame at 60fps
+  let cellFrameOpts = {
+    animFramesTotal: 8 * 60,  // seconds * 60fps
+    velocityX: 0,
+    velocityY: 0
+  };
+
+  let renderCellFrame = function(cell) {
+    // compute
+    if (cell.animFrame === cellFrameOpts.animFramesTotal) {
+      cell.animFrame = 0;
+      cell.animPercent = 0;
+    } else {
+      cell.animFrame += 1;
+      cell.animPercent = cell.animFrame / cellFrameOpts.animFramesTotal * 100;
+    }
+    cell.rdX = cell.size / 2;
+    cell.rdY = cell.rdX * (.25 + .75 * Math.abs(cell.animPercent - 50) / 50);
+    cell.ctlX = 4 / 3 * Math.tan(Math.PI / 8) * cell.rdX;
+    cell.ctlY = cell.ctlX * cell.rdY / cell.rdX;
+
+    // display
+    c.save();
+    c.translate(cell.x, cell.y);
+    c.beginPath();
+    c.moveTo(0, -cell.rdY);
+    c.bezierCurveTo(cell.ctlX, -cell.rdY, cell.rdX, -cell.ctlY, cell.rdX, 0);
+    c.bezierCurveTo(cell.rdX, cell.ctlY, cell.ctlX, cell.rdY, 0, cell.rdY);
+    c.bezierCurveTo(-cell.ctlX, cell.rdY, -cell.rdX, cell.ctlY, -cell.rdX, 0);
+    c.bezierCurveTo(-cell.rdX, -cell.ctlY, -cell.ctlX, -cell.rdY, 0, -cell.rdY);
+    c.lineWidth = 2;
+    c.strokeStyle = 'white';
+    c.stroke();
+    c.restore();
+
+    // raf();
+  };
+
+  let raf = function() {
+    window.requestAnimationFrame(function() {
+      c.fillStyle = 'rgb(30, 30, 30)';
+      c.fillRect(0, 0, canvas.width, canvas.height);
+      renderCellFrame(cell);
+    });
+  };
+
+  raf();
+</script>
