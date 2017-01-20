@@ -19,23 +19,17 @@
 
   // cell state
   let cell = {
-    size: 50,
+    size: 50,         // pixels
+    rotAngle: 90,     // degrees
+    flipDuration: 2,  // seconds
     x: 50,
     y: 100,
-    angle: 0,
-    animFrame: 0
-  };
-
-  // cell animation frame parameters for 60fps
-  let cellFrameOpts = {
-    animFramesTotal: 2 * 60,  // seconds * 60fps
-    velocityX: 0,
-    velocityY: 0
+    flipFrame: 0
   };
 
   // frame-duration cache
   let fc = {
-    rdX: null, rdY: null, ctlX: null, ctlY: null, animPercent: null
+    rdX: null, rdY: null, ctlX: null, ctlY: null, flipPerc: null
   };
 
   let renderCellPath = function() {
@@ -49,37 +43,39 @@
 
   let renderCellFrame = function(cell) {
     // compute animation state
-    if (cell.animFrame === cellFrameOpts.animFramesTotal) cell.animFrame = -1;
-    cell.animFrame += 1;
-    fc.animPercent = cell.animFrame / cellFrameOpts.animFramesTotal * 100;
+    if (cell.flipFrame === cell.flipDuration * 60) cell.flipFrame = -1;
+    cell.flipFrame += 1;
+    fc.flipPerc = cell.flipFrame / cell.flipDuration / 60 * 100;
 
     // enter render context
     c.save();
 
     // compute outside path
     fc.rdX = cell.size / 2;
-    fc.rdY = fc.rdX * (.2 + .8 * Math.abs(fc.animPercent - 50) / 50);
+    fc.rdY = fc.rdX * (.2 + .8 * Math.abs(fc.flipPerc - 50) / 50);
     fc.ctlX = 4 / 3 * Math.tan(Math.PI / 8) * fc.rdX; // horiz bezier handle
     fc.ctlY = fc.ctlX * fc.rdY / fc.rdX;              // verti bezier handle
 
     // render outside path
     c.translate(cell.x, cell.y);
+    c.rotate(cell.rotAngle * Math.PI / 180);
     renderCellPath();
     c.fillStyle = 'rgb(242, 116, 116)';
     c.fill();
 
-    // position inside path while outside rdY available
-    c.translate(0, fc.animPercent < 50 ? fc.rdY : -fc.rdY);
+    // center inside path on edge of outside path while outside rdY available
+    c.translate(0, fc.flipPerc < 50 ? -fc.rdY : fc.rdY);
 
     // compute inside path
     fc.rdX /= 2;
-    fc.rdY = fc.rdX * Math.abs(fc.animPercent - 50) / 50;
+    fc.rdY = fc.rdX * Math.abs(fc.flipPerc - 50) / 50;
     fc.ctlX /= 2;
     fc.ctlY = fc.ctlX * fc.rdY / fc.rdX;
 
     // render inside path
     if (fc.rdY !== 0) {
-      c.translate(0, fc.animPercent < 50 ? -fc.rdY * 2 : fc.rdY * 2);
+      // slide inside path from center of outside path to edge and back
+      c.translate(0, fc.flipPerc < 50 ? fc.rdY * 2 : -fc.rdY * 2);
       renderCellPath();
       c.fillStyle = 'rgb(210, 58, 58)';
       c.fill();
