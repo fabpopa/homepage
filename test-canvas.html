@@ -17,75 +17,72 @@
     visible: { start: 0, end: 0 }
   };
 
-  // storage for cell state between frames
+  // cell state
   let cell = {
-    size: 30,
-    rdX: 0,     // radius horizontal
-    rdY: 0,     // radius vertical
-    ctlX: 0,    // bezier control distance horizontal
-    ctlY: 0,    // bezier control distance vertical
+    size: 50,
     x: 50,
     y: 100,
     angle: 0,
-    animFrame: 0,
-    animPercent: 0
+    animFrame: 0
   };
 
-  // changes to cell per frame at 60fps
+  // cell animation frame parameters for 60fps
   let cellFrameOpts = {
-    animFramesTotal: 8 * 60,  // seconds * 60fps
+    animFramesTotal: 2 * 60,  // seconds * 60fps
     velocityX: 0,
     velocityY: 0
   };
 
-  let renderCellPath = function(cell) {
+  // frame-duration cache
+  let fc = {
+    rdX: null, rdY: null, ctlX: null, ctlY: null, animPercent: null
+  };
+
+  let renderCellPath = function() {
     c.beginPath();
-    c.moveTo(0, -cell.rdY);
-    c.bezierCurveTo(cell.ctlX, -cell.rdY, cell.rdX, -cell.ctlY, cell.rdX, 0);
-    c.bezierCurveTo(cell.rdX, cell.ctlY, cell.ctlX, cell.rdY, 0, cell.rdY);
-    c.bezierCurveTo(-cell.ctlX, cell.rdY, -cell.rdX, cell.ctlY, -cell.rdX, 0);
-    c.bezierCurveTo(-cell.rdX, -cell.ctlY, -cell.ctlX, -cell.rdY, 0, -cell.rdY);
-  }
+    c.moveTo(0, -fc.rdY);
+    c.bezierCurveTo(fc.ctlX, -fc.rdY, fc.rdX, -fc.ctlY, fc.rdX, 0);
+    c.bezierCurveTo(fc.rdX, fc.ctlY, fc.ctlX, fc.rdY, 0, fc.rdY);
+    c.bezierCurveTo(-fc.ctlX, fc.rdY, -fc.rdX, fc.ctlY, -fc.rdX, 0);
+    c.bezierCurveTo(-fc.rdX, -fc.ctlY, -fc.ctlX, -fc.rdY, 0, -fc.rdY);
+  };
 
   let renderCellFrame = function(cell) {
     // compute animation state
-    if (cell.animFrame === cellFrameOpts.animFramesTotal) {
-      cell.animFrame = 0;
-      cell.animPercent = 0;
-    } else {
-      cell.animFrame += 1;
-      cell.animPercent = cell.animFrame / cellFrameOpts.animFramesTotal * 100;
-    }
+    if (cell.animFrame === cellFrameOpts.animFramesTotal) cell.animFrame = -1;
+    cell.animFrame += 1;
+    fc.animPercent = cell.animFrame / cellFrameOpts.animFramesTotal * 100;
 
     // enter render context
     c.save();
 
-    // compute outside path dimensions
-    cell.rdX = cell.size / 2;
-    cell.rdY = cell.rdX * (.25 + .75 * Math.abs(cell.animPercent - 50) / 50);
-    cell.ctlX = 4 / 3 * Math.tan(Math.PI / 8) * cell.rdX;
-    cell.ctlY = cell.ctlX * cell.rdY / cell.rdX;
+    // compute outside path
+    fc.rdX = cell.size / 2;
+    fc.rdY = fc.rdX * (.2 + .8 * Math.abs(fc.animPercent - 50) / 50);
+    fc.ctlX = 4 / 3 * Math.tan(Math.PI / 8) * fc.rdX; // horiz bezier handle
+    fc.ctlY = fc.ctlX * fc.rdY / fc.rdX;              // verti bezier handle
 
     // render outside path
     c.translate(cell.x, cell.y);
-    renderCellPath(cell);
-    c.lineWidth = 2;
-    c.strokeStyle = 'white';
-    c.stroke();
+    renderCellPath();
+    c.fillStyle = 'rgb(242, 116, 116)';
+    c.fill();
 
-    // inside path, skip if cell is sideways
-    if (cell.rdY > cell.rdX * .35) {
-      // compute inside path
-      cell.rdX /= 2.2;
-      cell.rdY /= 2.2;
-      cell.ctlX /= 2.2;
-      cell.ctlY /= 2.2;
+    // position inside path while outside rdY available
+    c.translate(0, fc.animPercent < 50 ? fc.rdY : -fc.rdY);
 
-      // render inside path
-      renderCellPath(cell);
-      c.lineWidth = 1;
-      c.strokeStyle = 'red';
-      c.stroke();
+    // compute inside path
+    fc.rdX /= 2;
+    fc.rdY = fc.rdX * Math.abs(fc.animPercent - 50) / 50;
+    fc.ctlX /= 2;
+    fc.ctlY = fc.ctlX * fc.rdY / fc.rdX;
+
+    // render inside path
+    if (fc.rdY !== 0) {
+      c.translate(0, fc.animPercent < 50 ? -fc.rdY * 2 : fc.rdY * 2);
+      renderCellPath();
+      c.fillStyle = 'rgb(210, 58, 58)';
+      c.fill();
     }
 
     // exit render context
@@ -93,7 +90,7 @@
   };
 
   let renderCells = function() {
-    c.fillStyle = 'rgb(30, 30, 30)';
+    c.fillStyle = 'rgb(255, 255, 255)';
     c.fillRect(0, 0, canvas.width, canvas.height);
     renderCellFrame(cell);
   };
