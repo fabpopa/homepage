@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <style>
   * { margin: 0; padding: 0; }
-  html { background: black; }
+  body { background: white; margin-top: 100px; }
+  /*canvas { transform-origin: center; transform: rotate(-10deg); }*/
 </style>
 
 <canvas>No support.</canvas>
@@ -9,13 +10,13 @@
 <script>
   const canvas = document.getElementsByTagName('canvas')[0];
   canvas.width = window.innerWidth;
-  canvas.height = 200;
+  canvas.height = 150;
   const c = canvas.getContext('2d');
   const opt = {
-    minCellSize: 16,    // pixels, even number
+    minCellSize: 20,    // pixels, even number
     maxCellSize: 50,    // pixels, even number
-    cellBuffer: 20,     // pixels, even number
-    velocity: 40 / 60   // pixels per frame at 60fps
+    cellBuffer: 10,     // pixels, even number
+    velocity: 50 / 60   // pixels per frame at 60fps
   };
 
   const cellPool = (function() {
@@ -169,10 +170,25 @@
           );
     }
 
+    // take out cell buffer at beginning and end of entry line
+    // plus a bit of radom padding
+    let padding = Math.round(Math.random() * canvas.height / 3);
+    entryLine.mark(0, opt.cellBuffer + padding);
+    entryLine.mark(canvas.height - opt.cellBuffer - padding, canvas.height - 1);
+
     // add new cell if entry line has enough space
     let window = entryLine.window();
-    if (window.size < opt.minCellSize) return;
-
+    let cellSize = opt.minCellSize +
+      Math.round(Math.random() * (opt.maxCellSize - opt.minCellSize));
+    if (window.size < cellSize) return;
+    cellPool.new(
+      cellSize,
+      45 + Math.round(Math.random() * 90),
+      2 + Math.round(Math.random() * 2),
+      0 - cellSize / 2,
+      window.start +
+        Math.floor(cellSize / 2 + Math.random() * (window.size - cellSize))
+    );
   };
 
   let raf = function() { renderCells(); window.requestAnimationFrame(raf); };
