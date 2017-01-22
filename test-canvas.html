@@ -11,21 +11,78 @@
   canvas.width = window.innerWidth;
   canvas.height = 200;
   const c = canvas.getContext('2d');
-
-  let cellPool = {
-    cells: [],
-    visible: { start: 0, end: 0 }
+  const opt = {
+    minCellSize: 16,    // pixels, even number
+    maxCellSize: 50,    // pixels, even number
+    cellBuffer: 20,     // pixels, even number
+    velocity: 40 / 60   // pixels per frame at 60fps
   };
 
-  // cell state
-  let cell = {
-    size: 50,         // pixels
-    rotAngle: 90,     // degrees
-    flipDuration: 2,  // seconds
-    x: 50,
-    y: 100,
-    flipFrame: 0
-  };
+  const cellPool = (function() {
+    // choose an object pool size that will not change
+    const pool = new Array(
+      Math.floor(canvas.width * canvas.height / Math.pow(opt.minCellSize, 2))
+    );
+
+    // populate cell pool
+    for (let i = 0; i < pool.length; i++) pool[i] = {
+      size: null,           // pixels
+      rotAngle: null,       // degrees
+      flipDuration: null,   // seconds
+      x: null,
+      y: null,
+      flipFrame: null
+    };
+
+    return {
+      count: pool.length,
+      get: function(i) { return pool[i]; },
+      active: function(i) { return pool[i].x !== null; },
+      reset: function(i) { pool[i].x = null; },
+      new: function(size, rotAngle, flipDuration, x, y) {
+        for (let i = 0; i < pool.length; i++) if (!this.active(i)) {
+            pool[i].size = size;
+            pool[i].rotAngle = rotAngle;
+            pool[i].flipDuration = flipDuration;
+            pool[i].x = x;
+            pool[i].y = y;
+            pool[i].flipFrame = 0;
+            return i;
+          }
+        return false;   // if pool empty, should not happen
+      }
+    };
+  })();
+
+  // canvas line at x = 0 to decide when to insert a new cell
+  let entryLine = (function() {
+    const pixels = new Array(canvas.height);
+
+    return {
+      reset: function() {
+        for (let i = 0; i < pixels.length; i++) pixels[i] = true;
+      },
+      mark: function(from, to) {
+        if (from < 0) from = 0;
+        if (to > pixels.length - 1) to = pixels.length - 1;
+        for (let i = from; i <= to; i++) pixels[i] = false;
+      },
+      window: function() {
+        // return largest continuous block of available pixels
+        let window = { start: 0, end: 0, size: 0 };
+        for (let i = 0, j = 1; j <= pixels.length; j++)
+        	if (j == pixels.length || pixels[j - 1] != pixels[j])
+          	if (pixels[j - 1]) {
+            	if (j - i > window.size) {
+              	window.start = i;
+                window.end = j - 1;
+                window.size = j - i;
+              }
+            } else i = j;
+        return window;
+      }
+    };
+  })();
 
   // frame-duration cache
   let fc = {
@@ -47,7 +104,7 @@
     cell.flipFrame += 1;
     fc.flipPerc = cell.flipFrame / cell.flipDuration / 60 * 100;
 
-    // enter render context
+    // enter canvas state
     c.save();
 
     // compute outside path
@@ -81,14 +138,41 @@
       c.fill();
     }
 
-    // exit render context
+    // exit canvas state
     c.restore();
+
+    // increment positioning
+    cell.x += opt.velocity;
   };
 
   let renderCells = function() {
+    // clear canvas and render background
     c.fillStyle = 'rgb(255, 255, 255)';
     c.fillRect(0, 0, canvas.width, canvas.height);
-    renderCellFrame(cell);
+
+    entryLine.reset();
+
+    // render cells
+    for (let i = 0; i < cellPool.count; i++) {
+      if (!cellPool.active(i)) continue;
+      let cell = cellPool.get(i);
+      renderCellFrame(cell);
+
+      // remove cell if outside of canvas
+      if (cell.x - cell.size / 2 > canvas.width) cellPool.reset(i);
+
+      // compute entry line
+      if (cell.x - cell.size / 2 - opt.cellBuffer < 0)
+          entryLine.mark(
+            Math.floor(cell.y - cell.size / 2 - opt.cellBuffer),
+            Math.ceil(cell.y + cell.size / 2 + opt.cellBuffer)
+          );
+    }
+
+    // add new cell if entry line has enough space
+    let window = entryLine.window();
+    if (window.size < opt.minCellSize) return;
+
   };
 
   let raf = function() { renderCells(); window.requestAnimationFrame(raf); };
