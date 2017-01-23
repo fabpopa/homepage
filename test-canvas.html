@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <style>
   * { margin: 0; padding: 0; }
-  body { background: white; margin-top: 100px; }
+  body { background: black; margin-top: 100px; }
   /*canvas { transform-origin: center; transform: rotate(-10deg); }*/
 </style>
 
@@ -10,13 +10,17 @@
 <script>
   const canvas = document.getElementsByTagName('canvas')[0];
   canvas.width = window.innerWidth;
-  canvas.height = 150;
+  canvas.height = 200;
   const c = canvas.getContext('2d');
   const opt = {
     minCellSize: 20,    // pixels, even number
     maxCellSize: 50,    // pixels, even number
-    cellBuffer: 10,     // pixels, even number
-    velocity: 50 / 60   // pixels per frame at 60fps
+    minCellAngle: 70,   // degrees
+    maxCellAngle: 110,  // degrees
+    minCellFlip: 2,     // seconds
+    maxCellFlip: 2,     // seconds
+    cellBuffer: 8,      // pixels, even number
+    velocity: 60        // pixels per second
   };
 
   const cellPool = (function() {
@@ -27,9 +31,9 @@
 
     // populate cell pool
     for (let i = 0; i < pool.length; i++) pool[i] = {
-      size: null,           // pixels
-      rotAngle: null,       // degrees
-      flipDuration: null,   // seconds
+      size: null,   // pixels
+      angle: null,  // degrees
+      flip: null,   // seconds
       x: null,
       y: null,
       flipFrame: null
@@ -40,11 +44,11 @@
       get: function(i) { return pool[i]; },
       active: function(i) { return pool[i].x !== null; },
       reset: function(i) { pool[i].x = null; },
-      new: function(size, rotAngle, flipDuration, x, y) {
+      new: function(size, angle, flip, x, y) {
         for (let i = 0; i < pool.length; i++) if (!this.active(i)) {
             pool[i].size = size;
-            pool[i].rotAngle = rotAngle;
-            pool[i].flipDuration = flipDuration;
+            pool[i].angle = angle;
+            pool[i].flip = flip;
             pool[i].x = x;
             pool[i].y = y;
             pool[i].flipFrame = 0;
@@ -101,9 +105,9 @@
 
   let renderCellFrame = function(cell) {
     // compute animation state
-    if (cell.flipFrame === cell.flipDuration * 60) cell.flipFrame = -1;
+    if (cell.flipFrame === cell.flip * 60) cell.flipFrame = -1;
     cell.flipFrame += 1;
-    fc.flipPerc = cell.flipFrame / cell.flipDuration / 60 * 100;
+    fc.flipPerc = cell.flipFrame / cell.flip / 60 * 100;
 
     // enter canvas state
     c.save();
@@ -116,7 +120,7 @@
 
     // render outside path
     c.translate(cell.x, cell.y);
-    c.rotate(cell.rotAngle * Math.PI / 180);
+    c.rotate(cell.angle * Math.PI / 180);
     renderCellPath();
     c.fillStyle = 'rgb(242, 116, 116)';
     c.fill();
@@ -143,7 +147,7 @@
     c.restore();
 
     // increment positioning
-    cell.x += opt.velocity;
+    cell.x += opt.velocity / 60;
   };
 
   let renderCells = function() {
@@ -171,23 +175,26 @@
     }
 
     // take out cell buffer at beginning and end of entry line
-    // plus a bit of radom padding
-    let padding = Math.round(Math.random() * canvas.height / 3);
+    // plus a sin wave of padding
+    let padding = Math.round(Math.abs(
+      canvas.height / 4 * Math.sin(Date.now() % 5000 / 5000 * 2 * Math.PI)
+    ));
     entryLine.mark(0, opt.cellBuffer + padding);
     entryLine.mark(canvas.height - opt.cellBuffer - padding, canvas.height - 1);
 
-    // add new cell if entry line has enough space
+    // add new cell
+    if (Math.random() % .3 > .01) return;    // add chance for better spread
     let window = entryLine.window();
     let cellSize = opt.minCellSize +
       Math.round(Math.random() * (opt.maxCellSize - opt.minCellSize));
     if (window.size < cellSize) return;
-    cellPool.new(
-      cellSize,
-      45 + Math.round(Math.random() * 90),
-      2 + Math.round(Math.random() * 2),
-      0 - cellSize / 2,
+    let cellAngle = opt.minCellAngle +
+      Math.round(Math.random() * (opt.maxCellAngle - opt.minCellAngle));
+    let cellFlip = opt.minCellFlip +
+      Math.round(Math.random() * (opt.maxCellFlip - opt.minCellFlip));
+    cellPool.new(cellSize, cellAngle, cellFlip, 0 - cellSize / 2,
       window.start +
-        Math.floor(cellSize / 2 + Math.random() * (window.size - cellSize))
+      Math.round(cellSize / 2 + Math.random() * (window.size - cellSize))
     );
   };
 
