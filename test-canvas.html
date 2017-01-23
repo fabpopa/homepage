@@ -8,32 +8,49 @@
 <canvas>No support.</canvas>
 
 <script>
+  // convenience math functions
+  const rnd = function() { return Math.random(); };
+  const rou = function(x) { return Math.round(x); };
+  const flr = function(x) { return Math.floor(x); };
+  const cei = function(x) { return Math.ceil(x); };
+  const sin = function(x) { return Math.sin(x); };
+  const tan = function(x) { return Math.tan(x); };
+  const abs = function(x) { return Math.abs(x); };
+  const pow = function(x, y) { return Math.pow(x, y); };
+  const msPrg =
+    function(sec) { return Date.now() % (sec * 1000) / (sec * 1000); };
+  const PI = Math.PI;
+
   const canvas = document.getElementsByTagName('canvas')[0];
   canvas.width = window.innerWidth;
   canvas.height = 200;
   const c = canvas.getContext('2d');
   const opt = {
-    minCellSize: 20,    // pixels, even number
-    maxCellSize: 50,    // pixels, even number
-    minCellAngle: 70,   // degrees
-    maxCellAngle: 110,  // degrees
-    minCellFlip: 2,     // seconds
-    maxCellFlip: 2,     // seconds
-    cellBuffer: 8,      // pixels, even number
-    velocity: 60        // pixels per second
+    sizeMin: 20,    // pixels, even number
+    sizeMax: 50,    // pixels, even number
+    angleMin: 60,   // degrees
+    angleMax: 120,  // degrees
+    flipMin: 2,     // seconds
+    flipMax: 5,     // seconds
+    jiggleMin: 1,   // seconds
+    jiggleMax: 2,   // seconds
+    buffer: 10,     // pixels, even number
+    velocity: 60    // pixels per second
   };
 
   const cellPool = (function() {
     // choose an object pool size that will not change
-    const pool = new Array(
-      Math.floor(canvas.width * canvas.height / Math.pow(opt.minCellSize, 2))
-    );
+    const pool =
+      new Array(flr(canvas.width * canvas.height / pow(opt.sizeMin, 2)));
 
     // populate cell pool
     for (let i = 0; i < pool.length; i++) pool[i] = {
-      size: null,   // pixels
-      angle: null,  // degrees
-      flip: null,   // seconds
+      size: null,       // pixels
+      angle: null,      // degrees
+      flip: null,       // seconds
+      jiggle: null,     // seconds
+      jigglePhX: null,
+      jigglePhY: null,
       x: null,
       y: null,
       flipFrame: null
@@ -44,11 +61,14 @@
       get: function(i) { return pool[i]; },
       active: function(i) { return pool[i].x !== null; },
       reset: function(i) { pool[i].x = null; },
-      new: function(size, angle, flip, x, y) {
+      new: function(size, angle, flip, jiggle, jigglePhX, jigglePhY, x, y) {
         for (let i = 0; i < pool.length; i++) if (!this.active(i)) {
             pool[i].size = size;
             pool[i].angle = angle;
             pool[i].flip = flip;
+            pool[i].jiggle = jiggle;
+            pool[i].jigglePhX = jigglePhX;
+            pool[i].jigglePhY = jigglePhY;
             pool[i].x = x;
             pool[i].y = y;
             pool[i].flipFrame = 0;
@@ -91,7 +111,8 @@
 
   // frame-duration cache
   let fc = {
-    rdX: null, rdY: null, ctlX: null, ctlY: null, flipPerc: null
+    rdX: null, rdY: null, ctlX: null, ctlY: null, flipPerc: null,
+    sX: null, sY: null
   };
 
   let renderCellPath = function() {
@@ -114,23 +135,25 @@
 
     // compute outside path
     fc.rdX = cell.size / 2;
-    fc.rdY = fc.rdX * (.2 + .8 * Math.abs(fc.flipPerc - 50) / 50);
-    fc.ctlX = 4 / 3 * Math.tan(Math.PI / 8) * fc.rdX; // horiz bezier handle
-    fc.ctlY = fc.ctlX * fc.rdY / fc.rdX;              // verti bezier handle
+    fc.rdY = fc.rdX * (.2 + .8 * abs(fc.flipPerc - 50) / 50);
+    fc.ctlX = 4 / 3 * tan(PI / 8) * fc.rdX;   // horizontal bezier handle
+    fc.ctlY = fc.ctlX * fc.rdY / fc.rdX;      // vertical bezier handle
 
     // render outside path
-    c.translate(cell.x, cell.y);
-    c.rotate(cell.angle * Math.PI / 180);
+    fc.sX = opt.buffer * sin((msPrg(cell.jiggle) + cell.jigglePhX) * 2 * PI);
+    fc.sY = opt.buffer * sin((msPrg(cell.jiggle) + cell.jigglePhY) * 2 * PI);
+    c.translate(cell.x + fc.sX / 8, cell.y + fc.sY / 8);
+    c.rotate(cell.angle * PI / 180);
     renderCellPath();
     c.fillStyle = 'rgb(242, 116, 116)';
     c.fill();
 
-    // center inside path on edge of outside path while outside rdY available
+    // center inside path towards furthest edge of outside path
     c.translate(0, fc.flipPerc < 50 ? -fc.rdY : fc.rdY);
 
     // compute inside path
     fc.rdX /= 2;
-    fc.rdY = fc.rdX * Math.abs(fc.flipPerc - 50) / 50;
+    fc.rdY = fc.rdX * abs(fc.flipPerc - 50) / 50;
     fc.ctlX /= 2;
     fc.ctlY = fc.ctlX * fc.rdY / fc.rdX;
 
@@ -146,8 +169,25 @@
     // exit canvas state
     c.restore();
 
-    // increment positioning
+    // advance position
     cell.x += opt.velocity / 60;
+  };
+
+  let addCell = function() {
+    if (rnd() % .3 > .01) return;  // better spread through likely rejection
+    let window = entryLine.window();
+    let size = opt.sizeMin + rou(rnd() * (opt.sizeMax - opt.sizeMin));
+    if (window.size < size) return;
+    cellPool.new(
+      size,
+      opt.angleMin + rou(rnd() * (opt.angleMax - opt.angleMin)),
+      opt.flipMin + rou(rnd() * (opt.flipMax - opt.flipMin)),
+      opt.jiggleMin + rou(rnd() * (opt.jiggleMax - opt.jiggleMin)),
+      rnd(),
+      rnd(),
+      0 - size / 2,
+      window.start + rou(size / 2 + rnd() * (window.size - size))
+    );
   };
 
   let renderCells = function() {
@@ -167,35 +207,21 @@
       if (cell.x - cell.size / 2 > canvas.width) cellPool.reset(i);
 
       // compute entry line
-      if (cell.x - cell.size / 2 - opt.cellBuffer < 0)
+      if (cell.x - cell.size / 2 - opt.buffer < 0)
           entryLine.mark(
-            Math.floor(cell.y - cell.size / 2 - opt.cellBuffer),
-            Math.ceil(cell.y + cell.size / 2 + opt.cellBuffer)
+            flr(cell.y - cell.size / 2 - opt.buffer),
+            cei(cell.y + cell.size / 2 + opt.buffer)
           );
     }
 
     // take out cell buffer at beginning and end of entry line
     // plus a sin wave of padding
-    let padding = Math.round(Math.abs(
-      canvas.height / 4 * Math.sin(Date.now() % 5000 / 5000 * 2 * Math.PI)
-    ));
-    entryLine.mark(0, opt.cellBuffer + padding);
-    entryLine.mark(canvas.height - opt.cellBuffer - padding, canvas.height - 1);
+    let padding = rou(abs(canvas.height / 4 * sin(msPrg(5) * 2 * PI)));
+    entryLine.mark(0, opt.buffer + padding);
+    entryLine.mark(canvas.height - opt.buffer - padding, canvas.height - 1);
 
     // add new cell
-    if (Math.random() % .3 > .01) return;    // add chance for better spread
-    let window = entryLine.window();
-    let cellSize = opt.minCellSize +
-      Math.round(Math.random() * (opt.maxCellSize - opt.minCellSize));
-    if (window.size < cellSize) return;
-    let cellAngle = opt.minCellAngle +
-      Math.round(Math.random() * (opt.maxCellAngle - opt.minCellAngle));
-    let cellFlip = opt.minCellFlip +
-      Math.round(Math.random() * (opt.maxCellFlip - opt.minCellFlip));
-    cellPool.new(cellSize, cellAngle, cellFlip, 0 - cellSize / 2,
-      window.start +
-      Math.round(cellSize / 2 + Math.random() * (window.size - cellSize))
-    );
+    addCell();
   };
 
   let raf = function() { renderCells(); window.requestAnimationFrame(raf); };
