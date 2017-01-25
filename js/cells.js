@@ -106,8 +106,8 @@ const cellPool = (function() {
 })();
 
 // canvas line at x = 0 to decide when to insert a new cell
-const entryLine = (function() {
-  const pixels = new Array(canvas.height);
+const entryLine = function(c) {
+  const pixels = new Array(c.canvas.height);
 
   return {
     reset: function() {
@@ -133,16 +133,16 @@ const entryLine = (function() {
       return window;
     }
   };
-})();
+};
 
 // frame-duration cache (a bit quicker garbage collection)
 let fc = {
-  cell: null, heartbeat: null, padding: null, paddingPrg: null,
+  cell: null, entryLine: null, heartbeat: null, pad: null, padPrg: null,
   rdX: null, rdY: null, ctlX: null, ctlY: null, flipPerc: null,
   jigglePrg: null, sX: null, sY: null
 };
 
-const renderCellPath = function() {
+const renderCellPath = function(c) {
   c.beginPath();
   c.moveTo(0, -fc.rdY);
   c.bezierCurveTo(fc.ctlX, -fc.rdY, fc.rdX, -fc.ctlY, fc.rdX, 0);
@@ -151,7 +151,7 @@ const renderCellPath = function() {
   c.bezierCurveTo(-fc.rdX, -fc.ctlY, -fc.ctlX, -fc.rdY, 0, -fc.rdY);
 };
 
-const renderCellFrame = function(cell) {
+const renderCellFrame = function(c, cell) {
   // compute animation state
   if (cell.flipFrame === cell.flip * 60) cell.flipFrame = -1;
   cell.flipFrame += 1;
@@ -172,7 +172,7 @@ const renderCellFrame = function(cell) {
   fc.sY = opt.jiggle * sin((fc.jigglePrg + cell.jigglePhY) * 2 * PI);
   c.translate(cell.x + fc.sX, cell.y + fc.sY);
   c.rotate(cell.angle * PI / 180);
-  renderCellPath();
+  renderCellPath(c);
   c.fillStyle = 'rgb(242, 116, 116)';
   c.fill();
 
@@ -189,7 +189,7 @@ const renderCellFrame = function(cell) {
   if (fc.rdY !== 0) {
     // slide inside path from center of outside path to edge and back
     c.translate(0, fc.flipPerc < 50 ? fc.rdY * 2 : -fc.rdY * 2);
-    renderCellPath();
+    renderCellPath(c);
     c.fillStyle = 'rgb(210, 58, 58)';
     c.fill();
   }
@@ -203,7 +203,7 @@ const renderCellFrame = function(cell) {
 
 const addCell = function() {
   if (rnd() % .3 > .02) return; // likely rejection, better spread
-  let window = entryLine.window();
+  let window = fc.entryLine.window();
   let size = opt.sizeMin + rou(rnd() * (opt.sizeMax - opt.sizeMin));
   if (window.size < size) return;
   cellPool.new(
@@ -218,26 +218,27 @@ const addCell = function() {
   );
 };
 
-const renderCells = function() {
+const renderCells = function(c) {
   // clear canvas and render background
   c.fillStyle = 'rgb(255, 255, 255)';
-  c.fillRect(0, 0, canvas.width, canvas.height);
+  c.fillRect(0, 0, c.canvas.width, c.canvas.height);
 
-  entryLine.reset();
+  if (fc.entryLine === null) fc.entryLine = entryLine(c); // singleton
+  fc.entryLine.reset();
   fc.heartbeat = heartbeat();
 
   // render cells
   for (let i = 0; i < cellPool.count; i++) {
     if (!cellPool.active(i)) continue;
     fc.cell = cellPool.get(i);
-    renderCellFrame(fc.cell);
+    renderCellFrame(c, fc.cell);
 
     // remove cell if outside of canvas
-    if (fc.cell.x - fc.cell.size / 2 > canvas.width) cellPool.reset(i);
+    if (fc.cell.x - fc.cell.size / 2 > c.canvas.width) cellPool.reset(i);
 
     // mark pieces that cross entry line
     if (fc.cell.x - fc.cell.size / 2 - opt.buffer < 0)
-      entryLine.mark(
+      fc.entryLine.mark(
         flr(fc.cell.y - fc.cell.size / 2 - opt.buffer),
         cei(fc.cell.y + fc.cell.size / 2 + opt.buffer)
       );
@@ -245,18 +246,52 @@ const renderCells = function() {
 
   // take out cell buffer at beginning and end of entry line
   // plus a sin wave of padding
-  if (fc.paddingPrg === null) fc.paddingPrg = timePrg(5, 60); // singleton
-  fc.padding = rou(abs(canvas.height / 5 * sin(fc.paddingPrg() * 2 * PI)));
-  entryLine.mark(0, opt.buffer + fc.padding);
-  entryLine.mark(canvas.height - opt.buffer - fc.padding, canvas.height - 1);
+  if (fc.padPrg === null) fc.padPrg = timePrg(5, 60); // singleton
+  fc.pad = rou(abs(c.canvas.height / 5 * sin(fc.padPrg() * 2 * PI)));
+  fc.entryLine.mark(0, opt.buffer + fc.pad);
+  fc.entryLine.mark(c.canvas.height - opt.buffer - fc.pad, c.canvas.height - 1);
 
   // add new cell
   addCell();
 };
 
-const frameBuffer = (function() {
+// buffer for sec * 60fps ImageData frames of the same size as original canvas
+const frameBuffer = function(originalCanvas, sec) {
+  const canvas = document.createElement('canvas');
+  canvas.height = originalCanvas.height;
+  canvas.width = originalCanvas.width;
+  const ctx = canvas.getContext('2d');
+  const frames = new Array(sec * 60);
+  let ins = 0, ext = 0, count = 0, ret;
+  return {
+    addFrameIfSpace: function(makeFrameOnContext) {
+      if (count === frames.length) return;
+      makeFrameOnContext(ctx);
+      frames[ins] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      ins = (ins + 1) % frames.length;
+      count += 1;
+    },
+    getFrameIfAvail: function() {
+      if (count === 0) return;
+      ret = ext;
+      ext = (ext + 1) % frames.length;
+      count -= 1;
+      return frames[ret];
+    }
+  };
+};
 
-})();
+const fb = frameBuffer(canvas, 4);
 
-const raf = function() { renderCells(); window.requestAnimationFrame(raf); };
-raf();
+// pre-populate frame buffer
+for (let i = 0; i < 4 * 60; i++) fb.addFrameIfSpace(renderCells);
+
+// start frame pre-renderer
+window.setInterval(function() { fb.addFrameIfSpace(renderCells); }, 10);
+
+// start animation
+const anim = function() {
+  c.putImageData(fb.getFrameIfAvail(), 0, 0);
+  window.requestAnimationFrame(anim);
+};
+anim();
