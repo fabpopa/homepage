@@ -1,33 +1,29 @@
-<!DOCTYPE html>
+<!doctype html>
 <title>Fabian Popa</title>
 <meta charset="utf-8">
-<meta name="description" content="Hi, I'm Fabian. I try to make nice and purposeful things.">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="viewport" content="initial-scale=1, user-scalable=no">
-<link rel="apple-touch-icon" href="img/touchicon.png">
-<link rel="icon" type="image/png" href="img/touchicon.png" sizes="200x200">
-<link rel="stylesheet" href="style.css">
-<script src="script.js" defer></script>
+<meta name="description" content="Technology, biology, and other nice things.">
+<meta name="viewport" content="initial-scale=1">
 
-<div id="background"></div>
-<div id="avatar"><img alt="avatar" data-preload="/img/avatar.jpg" src=""></div>
-<div id="intro"><span class="m">Hi, </span><strong>I'm Fabian</strong>.<span class="l"> I try to make nice things.</span></div>
-<div id="social">
-  <a class="icon github" href="https://github.com/fabpopa" aria-label="GitHub">&#xf233;</a>
-  <a class="icon twitter" href="https://twitter.com/fabpopa" aria-label="Twitter">&#xf243;</a>
-  <a class="icon facebook" href="https://facebook.com/fabpopa" aria-label="Facebook">&#xf231;</a>
-</div>
-<h1 id="greeting">Good day.</h1>
-<div id="resume">Résumé available in the developer console.</div>
+<style>
+</style>
 
-<div id="oldbrowser">
+<div id="nofeatures">
   <strong>Hi, I'm Fabian.</strong>
   <p>
-    There's more to this website, but it will not <span class="nobr">display well in your current browser.</span><br>
+    There's more to this website, but it will not
+    <span class="nobr">display well in your current browser.</span>
     <a href="http://whatbrowser.org/">Please update to a newer browser.</a>
   </p>
-  <p>
-    Thanks for stopping by!
-  </p>
+  <p>Thank you for stopping by ☺</p>
 </div>
+
+<script>
+// JS available, hide fallback message and check for features
+document.getElementById('nofeatures').hidden = true;
+if (
+  !!document.querySelectorAll &&
+  !!document.createElement('canvas').getContext &&
+  (new XMLHttpRequest()).onload !== undefined
+) { console.log('load site'); }
+else { document.getElementById('nofeatures').hidden = false; }
+</script>

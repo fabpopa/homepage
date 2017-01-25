@@ -294,4 +294,4 @@ const anim = function() {
   c.putImageData(fb.getFrameIfAvail(), 0, 0);
   window.requestAnimationFrame(anim);
 };
-anim();
+// anim();
