@@ -7,23 +7,61 @@
 <style>
 </style>
 
+<h1>Hi, I'm Fabian.</h1>
+<p>I'm working on technology, biology, and other nice things.</p>
+<ul>
+  <li><a href="https://github.com/fabpopa">GitHub</a></li>
+  <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+  <li><a href="résumé.pdf">Résumé</a></li>
+</ul>
 <div id="nofeatures">
-  <strong>Hi, I'm Fabian.</strong>
   <p>
     There's more to this website, but it will not
     <span class="nobr">display well in your current browser.</span>
-    <a href="http://whatbrowser.org/">Please update to a newer browser.</a>
+    <a href="http://whatbrowser.org">Please update to a newer browser.</a>
   </p>
   <p>Thank you for stopping by ☺</p>
 </div>
 
 <script>
-// JS available, hide fallback message and check for features
-document.getElementById('nofeatures').hidden = true;
-if (
-  !!document.querySelectorAll &&
-  !!document.createElement('canvas').getContext &&
-  (new XMLHttpRequest()).onload !== undefined
-) { console.log('load site'); }
-else { document.getElementById('nofeatures').hidden = false; }
+  (function() {
+    var run = function() {
+      // JS and DOM available, hide page and check for features
+      var hidePage = function() { document.body.style.visibility = 'hidden'; };
+      var showPage = function() { document.body.style.visibility = ''; };
+      var browserMsg = document.getElementById('nofeatures');
+      var hideBrowserMsg = function() { browserMsg.style.display = 'none'; };
+      var showBrowserMsg = function() { browserMsg.style.display = ''; };
+
+      hidePage();
+      hideBrowserMsg();
+
+      var featuresOk = (function() {
+        try {
+          return !!document.querySelectorAll &&
+            XMLHttpRequestEventTarget.prototype.hasOwnProperty('onload') &&
+            !!window.requestAnimationFrame &&
+            !!document.createElement('canvas').getContext &&
+            !eval('const a = b => b;');
+        } catch(e) { return false; }
+      })();
+
+      var loadSite = function() {
+        // load things
+        // apply style
+        showPage();
+        // run animations
+      };
+
+      if (featuresOk) { loadSite(); } else { showPage(); showBrowserMsg(); }
+    };
+
+    // wait for DOM
+    var state = document.readyState;
+    if (state === 'interactive' || state === 'complete') { run(); }
+    else { document.addEventListener('readystatechange', function() {
+      document.removeEventListener('readystatechange', arguments.callee);
+      run();
+    }); }
+  })();
 </script>
