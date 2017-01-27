@@ -7,13 +7,16 @@
 <style>
 </style>
 
-<h1>Hi, I'm Fabian.</h1>
-<p>I'm working on technology, biology, and other nice things.</p>
-<ul>
-  <li><a href="https://github.com/fabpopa">GitHub</a></li>
-  <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
-  <li><a href="résumé.pdf">Résumé</a></li>
-</ul>
+<div id="loading"></div>
+<div id="page">
+  <h1>Hi, I'm Fabian.</h1>
+  <p>I'm working on technology, biology, and other nice things.</p>
+  <ul>
+    <li><a href="https://github.com/fabpopa">GitHub</a></li>
+    <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+    <li><a href="résumé.pdf">Résumé</a></li>
+  </ul>
+</div>
 <div id="nofeatures">
   <p>
     There is more to this website, but it will not display well in your
@@ -25,16 +28,15 @@
 
 <script>
   (function() {
-    var run = function() {
+    var js = function() {
       // JS and DOM available, hide page and check for features
-      var hidePage = function() { document.body.style.visibility = 'hidden'; };
-      var showPage = function() { document.body.style.visibility = ''; };
-      var browserMsg = document.getElementById('nofeatures');
-      var hideBrowserMsg = function() { browserMsg.style.display = 'none'; };
-      var showBrowserMsg = function() { browserMsg.style.display = ''; };
+      var page = document.getElementById('page');
+      var nofeatures = document.getElementById('nofeatures');
+      var hide = function(el) { el.style.display = 'none'; };
+      var show = function(el) { el.style.display = ''; };
 
-      hidePage();
-      hideBrowserMsg();
+      hide(page);
+      hide(nofeatures);
 
       var featuresOk = (function() {
         try {
@@ -42,26 +44,27 @@
             XMLHttpRequestEventTarget.prototype.hasOwnProperty('onload') &&
             !!window.requestAnimationFrame &&
             !!document.createElement('canvas').getContext &&
-            !eval('const a = b => b;');
-        } catch(e) { return false; }
+            !eval('let a = b => b;');
+        } catch (e) { return false; }
       })();
 
       var loadSite = function() {
+        // show loader
         // load things
         // apply style
-        showPage();
+        show(page);
         // run animations
       };
 
-      if (featuresOk) { loadSite(); } else { showPage(); showBrowserMsg(); }
+      if (featuresOk) { loadSite(); } else { show(page); show(nofeatures); }
     };
 
     // wait for DOM
     var state = document.readyState;
-    if (state === 'interactive' || state === 'complete') { run(); }
+    if (state === 'interactive' || state === 'complete') { js(); }
     else { document.addEventListener('readystatechange', function() {
       document.removeEventListener('readystatechange', arguments.callee);
-      run();
+      js();
     }); }
   })();
 </script>
