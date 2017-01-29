@@ -4,10 +4,16 @@
 <meta name="description" content="Technology, biology, and other nice things.">
 <meta name="viewport" content="initial-scale=1">
 
+<script>
+  // JS available, hide page elements even before DOM for later reveal
+  var hideStyle = document.createElement('style');
+  hideStyle.innerHTML = '#page, #nofeatures { display: none; }';
+  document.head.appendChild(hideStyle);
+</script>
+
 <style>
 </style>
 
-<div id="loading"></div>
 <div id="page">
   <h1>Hi, I'm Fabian.</h1>
   <p>I'm working on technology, biology, and other nice things.</p>
@@ -28,35 +34,24 @@
 
 <script>
   (function() {
+    // ES5 startup
     var js = function() {
-      // JS and DOM available, hide page and check for features
-      var page = document.getElementById('page');
-      var nofeatures = document.getElementById('nofeatures');
-      var hide = function(el) { el.style.display = 'none'; };
-      var show = function(el) { el.style.display = ''; };
-
-      hide(page);
-      hide(nofeatures);
-
       var featuresOk = (function() {
         try {
           return !!document.querySelectorAll &&
             XMLHttpRequestEventTarget.prototype.hasOwnProperty('onload') &&
+            !!MutationObserver &&
             !!window.requestAnimationFrame &&
             !!document.createElement('canvas').getContext &&
             !eval('let a = b => b;');
         } catch (e) { return false; }
       })();
 
-      var loadSite = function() {
-        // show loader
-        // load things
-        // apply style
-        show(page);
-        // run animations
+      var site = function() {
+
       };
 
-      if (featuresOk) { loadSite(); } else { show(page); show(nofeatures); }
+      if (featuresOk) { site(); } else { document.head.removeChild(hideStyle); }
     };
 
     // wait for DOM
