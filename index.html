@@ -5,13 +5,30 @@
 <meta name="viewport" content="initial-scale=1">
 
 <script>
-  // JS available, hide page elements even before DOM for later reveal
-  var hideStyle = document.createElement('style');
-  hideStyle.innerHTML = '#page, #nofeatures { display: none; }';
-  document.head.appendChild(hideStyle);
+  // JS available, hide page elements before DOM
+  window.site = {};
+  window.site.hideAll = document.createElement('style');
+  window.site.hideAll.innerHTML = '#page, #nofeatures { display: none; }';
+  document.head.appendChild(window.site.hideAll);
 </script>
 
 <style>
+  #loading {
+    position: absolute;
+    z-index: 1;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0 auto;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #F27474;
+    animation: .9s infinite alternate forwards pulse;
+    animation-timing-function: ease-in-out;
+  }
+
+  @keyframes pulse { from { opacity: 0 } to { opacity: 1 } }
 </style>
 
 <div id="page">
@@ -48,10 +65,40 @@
       })();
 
       var site = function() {
+        // global object to control loading animation
+        window.site.loading = (function() {
+          var el = document.createElement('div');
+          el.id = 'loading';
+          return {
+            show: function() { document.body.appendChild(el); },
+            hide: function() {
+              if (!document.body.contains(el)) return;
+              el.addEventListener('animationiteration', function() {
+                el.removeEventListener('animationiteration', arguments.callee);
+                document.body.removeChild(el);
+              });
+            }
+          };
+        })();
 
+        // only display loading animation if startup takes noticeable time
+        window.site.raceLoad = window.setTimeout(window.site.loading.show, 500);
+
+        // if nothing happens after substantial time, fall back
+        window.setTimeout(function() {
+          window.site.loading.hide();
+          if (document.head.contains(window.site.hideAll))
+            document.head.removeChild(window.site.hideAll);
+        }, 10000);
+
+        // start site proper
+        var el = document.createElement('script');
+        el.src = 'script.js';
+        document.body.appendChild(el);
       };
 
-      if (featuresOk) { site(); } else { document.head.removeChild(hideStyle); }
+      if (featuresOk) { site(); }
+      else { document.head.removeChild(window.site.hideAll); }
     };
 
     // wait for DOM
