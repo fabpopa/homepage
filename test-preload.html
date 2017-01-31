@@ -1,0 +1,29 @@
+<style>
+  body { background-color: black; }
+</style>
+
+<script>
+var run = function() {
+  var script = document.createElement('script');
+  script.src = 'js/preload.js';
+  script.addEventListener('load', function() { console.log('loaded'); });
+  script.addEventListener('error', function() { console.log('error'); });
+  document.head.appendChild(script);
+
+  document.body.addEventListener('click', function() {
+    preload.video(
+      'https://video.fmuc2-1.fna.fbcdn.net/v/t42.1790-2/16373310_246745579098332_8099019830067200000_n.mp4?efg=eyJybHIiOjM2OSwicmxhIjo1MTIsInZlbmNvZGVfdGFnIjoic3ZlX3NkIn0%3D&rl=369&vabr=205&oh=25309fc36e04374b42ae23945b1dcf25&oe=5890718F',
+      () => { console.log('done'); },
+      () => { console.log('error') }
+    );
+  });
+};
+
+// wait for DOM
+var state = document.readyState;
+if (state === 'interactive' || state === 'complete') { run(); }
+else { document.addEventListener('readystatechange', function() {
+  document.removeEventListener('readystatechange', arguments.callee);
+  run();
+}); }
+</script>
