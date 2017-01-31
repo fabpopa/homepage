@@ -37,11 +37,20 @@ const preload = (() => {
       if (v.buffered.end(0) === v.duration) { clear(); if (doneCb) doneCb(); }
     };
     v.onsuspend = () => {
-      if (isRetry) { v.onerror(); return; }
       clear();
-      let r = Math.floor(Math.random() * 10000);
-      url = url + (/\?/.test(url) ? '&' : '?') + r;
-      video(url, doneCb, errCb, true);
+      let xhr = new XMLHttpRequest();
+      xhr.open('GET', url);
+      xhr.responseType = 'blob';
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === xhr.HEADERS_RECEIVED) {
+          let status = xhr.status;
+          xhr.abort();
+          if (status >= 200 && status < 300) { if (doneCb) doneCb(); }
+          else { if (errCb) errCb(); }
+        }
+      };
+      xhr.onerror = () => { if (errCb) errCb(); };
+      xhr.send();
     };
     v.onerror = () => { clear(); if (errCb) errCb(); };
 
