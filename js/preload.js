@@ -17,8 +17,9 @@ const preload = (() => {
     p.appendChild(i);
   };
 
-  const video = (url, doneCb, errCb, isRetry) => {
-    let checkInterval, checkLastBuf = -1;
+  const video = (url, doneCb, errCb) => {
+    let checkInterval;
+    const v = document.createElement('video');
     const clear = () => {
       window.clearInterval(checkInterval);
       v.onprogress = null;
@@ -26,13 +27,17 @@ const preload = (() => {
       v.onerror = null;
       p.removeChild(v);
     };
-
-    const v = document.createElement('video');
+    const resetTimeout = () => {
+      window.clearInterval(checkInterval);
+      checkInterval = window.setInterval(() => {
+        if (!v.readyState || !v.buffered.length) v.onerror();
+      }, 10000);
+    };
     v.autoplay = true;
     v.muted = true;
     v.preload = 'auto';
     v.onprogress = () => {
-      checkLastBuf = -1;
+      resetTimeout();
       if (!v.buffered.length) return;
       if (v.buffered.end(0) === v.duration) { clear(); if (doneCb) doneCb(); }
     };
@@ -53,28 +58,23 @@ const preload = (() => {
       xhr.send();
     };
     v.onerror = () => { clear(); if (errCb) errCb(); };
-
     v.src = url;
     p.appendChild(v);
-
-    checkInterval = window.setInterval(() => {
-      if (!v.readyState ||
-          v.buffered.length === 0 ||
-          v.buffered.end(0) === checkLastBuf) {
-        v.onerror();
-      } else {
-        checkLastBuf = v.buffered.end(0);
-      }
-    }, 10000);
+    resetTimeout();
   };
 
   const font = (url, onComplete, onError) => {
 
   };
 
+  const fromStylesheet = () => {
+
+  };
+
   return {
     img: img,
     video: video,
-    font: font
+    font: font,
+    fromStylesheet: fromStylesheet
   };
 })();
