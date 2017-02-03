@@ -131,16 +131,20 @@ const preload = (() => {
       while (match = imgRe.exec(txt)) images.push(`${match[1]}.${match[2]}`);
 
       let count = fonts.length + images.length;
-      const allCb = () => { count -= 1; if (count === 0) complete(txt); };
-      const error = () => { count = -1; if (errCb) errCb(); };
-      fonts.forEach((f) => { font(f, allCb, error, fontGlyphs); });
-      images.forEach((i) => { img(i, allCb, error); });
+      const dCb = () => { count -= 1; if (count === 0) complete(txt); };
+      const eCb = () => { if (errCb && count !== -1) { count = -1; errCb(); } };
+      fonts.forEach((f) => { font(f, dCb, eCb, fontGlyphs); });
+      images.forEach((i) => { img(i, dCb, eCb); });
     };
 
     // fetch stylesheet data
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url);
-    xhr.onload = () => { fetchAssets(xhr.responseText); };
+    xhr.onload = () => {
+      // remove CSS comments and preload any linked assets individually
+      let txt = xhr.responseText.replace(/\/\*[\s\S]*?\*\//g, '');
+      fetchAssets(txt);
+    };
     xhr.onerror = () => { if (errCb) errCb(); };
     xhr.send();
   };
