@@ -131,7 +131,7 @@ const preload = (() => {
       while (match = imgRe.exec(txt)) images.push(`${match[1]}.${match[2]}`);
 
       let count = fonts.length + images.length;
-      const dCb = () => { count -= 1; if (count === 0) complete(txt); };
+      const dCb = () => { count -= 1; if (!count) complete(txt); };
       const eCb = () => { if (errCb && count !== -1) { count = -1; errCb(); } };
       fonts.forEach((f) => { font(f, dCb, eCb, fontGlyphs); });
       images.forEach((i) => { img(i, dCb, eCb); });
