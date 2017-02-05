@@ -71,11 +71,13 @@
           el.id = 'loading';
           return {
             show: function() { document.body.appendChild(el); },
-            hide: function() {
-              if (!document.body.contains(el)) return;
+            hide: function(cb) {
+              if (!document.head.contains(window.site.hideAll)) return;
               el.addEventListener('animationiteration', function() {
                 el.removeEventListener('animationiteration', arguments.callee);
                 document.body.removeChild(el);
+                document.head.removeChild(window.site.hideAll);
+                if (cb) cb();
               });
             }
           };
@@ -84,12 +86,8 @@
         // only display loading animation if startup takes noticeable time
         window.site.raceLoad = window.setTimeout(window.site.loading.show, 500);
 
-        // if nothing happens after substantial time, fall back
-        window.setTimeout(function() {
-          window.site.loading.hide();
-          if (document.head.contains(window.site.hideAll))
-            document.head.removeChild(window.site.hideAll);
-        }, 10000);
+        // if still in loading state after substantial time, fall back
+        window.setTimeout(window.site.loading.hide, 10000);
 
         // start site proper
         var el = document.createElement('script');
