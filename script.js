@@ -6,22 +6,28 @@
 // expects window.site.cells to contain a custom object after loading cells.js
 
 (() => {
-  const styleOk = (attach) => {
-    // start reveal
-    attach();
+  const header = document.querySelector('h1');
+  const message = document.querySelector('p');
+  const social = document.querySelectorAll('li');
+
+  const reveal = (attach) => {
+    // attach();
   };
 
-  const scriptsOk = () => {
+  const prepStyle = () => {
     preload.stylesheet('style.css', (attach) => {
+      // prepare for reveal
+      [header, message, ...social].forEach((e) => { e.style.opacity = 0; });
+
       // clear raceLoad and hide loading
       window.clearTimeout(window.site.raceLoad);
-      window.site.loading.hide(() => { styleOk(attach); });
+      window.site.loading.hide(() => { reveal(attach); });
     });
   };
 
   // attach scripts
   const scripts = ['preload', 'director', 'display', 'cells'];
-  const sCb = (c => () => { c -= 1; if (!c) scriptsOk(); })(scripts.length);
+  const sCb = (c => () => { c -= 1; if (!c) prepStyle(); })(scripts.length);
   scripts.forEach((s) => {
     const el = document.createElement('script');
     el.onload = sCb;

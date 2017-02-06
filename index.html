@@ -8,12 +8,13 @@
   // JS available, hide page elements before DOM
   window.site = {};
   window.site.hideAll = document.createElement('style');
-  window.site.hideAll.innerHTML = '#page, #nofeatures { display: none; }';
+  window.site.hideAll.innerHTML = 'body > * { display: none; }';
   document.head.appendChild(window.site.hideAll);
 </script>
 
 <style>
   #loading {
+    display: block;
     position: absolute;
     z-index: 1;
     top: 30%;
@@ -31,15 +32,14 @@
   @keyframes pulse { 0% { opacity: 0 } 50% { opacity: 1 } 100% { opacity: 0 } }
 </style>
 
-<div id="page">
-  <h1>Hi, I'm Fabian.</h1>
-  <p>I'm working on technology, biology, and other nice things.</p>
-  <ul>
-    <li><a href="https://github.com/fabpopa">GitHub</a></li>
-    <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
-    <li><a href="résumé.pdf">Résumé</a></li>
-  </ul>
-</div>
+<h1>Fabian Popa</h1>
+<p>Technology, biology, and other nice things.</p>
+<ul>
+  <li><a href="https://github.com/fabpopa">GitHub</a></li>
+  <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+  <li><a href="résumé.pdf">Résumé</a></li>
+</ul>
+
 <div id="nofeatures">
   <p>
     There is more to this website, but it will not display well in your
@@ -64,34 +64,37 @@
         } catch (e) { return false; }
       })();
 
-      var site = function() {
+      var start = function() {
         // global object to control loading animation
         window.site.loading = (function() {
-          var onhide, el = document.createElement('div');
-          el.id = 'loading';
+          var onhide;
+          var nof = document.querySelector('#nofeatures');
+          var ldr = document.createElement('div');
+          ldr.id = 'loading';
 
           var cleanup = function() {
             if (!onhide) return;
-            if (document.body.contains(el)) document.body.removeChild(el);
-            if (document.head.contains(window.site.hideAll))
-              document.head.removeChild(window.site.hideAll);
+            [ldr, nof, window.site.hideAll].forEach(function(el) {
+              if (document.head.contains(el)) document.head.removeChild(el);
+              if (document.body.contains(el)) document.body.removeChild(el);
+            });
             onhide();
             onhide = null;
           };
 
-          el.addEventListener('animationend', function() {
+          ldr.addEventListener('animationend', function() {
             cleanup();
-            el.style.animation = 'none';
-            window.setTimeout(function() { el.style.animation = ''; });
+            ldr.style.animation = 'none';
+            window.setTimeout(function() { ldr.style.animation = ''; });
           });
 
           return {
             show: function() {
-              if (!document.body.contains(el)) document.body.appendChild(el);
+              if (!document.body.contains(ldr)) document.body.appendChild(ldr);
             },
             hide: function(cb) {
               if (cb) { onhide = cb; } else { onhide = function() {}; }
-              if (!document.body.contains(el)) cleanup();
+              if (!document.body.contains(ldr)) cleanup();  // not animating
             }
           };
         })();
@@ -108,7 +111,7 @@
         document.head.appendChild(el);
       };
 
-      if (featuresOk) { site(); }
+      if (featuresOk) { start(); }
       else { document.head.removeChild(window.site.hideAll); }
     };
 
