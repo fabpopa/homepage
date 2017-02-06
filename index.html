@@ -24,8 +24,8 @@
     height: 12px;
     border-radius: 50%;
     background-color: #F27474;
-    animation: 1.8s infinite alternate forwards pulse;
-    animation-timing-function: ease-in-out;
+    opacity: 0;
+    animation: 1.8s ease-in-out pulse;
   }
 
   @keyframes pulse { 0% { opacity: 0 } 50% { opacity: 1 } 100% { opacity: 0 } }
@@ -67,24 +67,31 @@
       var site = function() {
         // global object to control loading animation
         window.site.loading = (function() {
-          var el = document.createElement('div');
+          var onhide, el = document.createElement('div');
           el.id = 'loading';
+
+          var cleanup = function() {
+            if (!onhide) return;
+            if (document.body.contains(el)) document.body.removeChild(el);
+            if (document.head.contains(window.site.hideAll))
+              document.head.removeChild(window.site.hideAll);
+            onhide();
+            onhide = null;
+          };
+
+          el.addEventListener('animationend', function() {
+            cleanup();
+            el.style.animation = 'none';
+            window.setTimeout(function() { el.style.animation = ''; });
+          });
+
           return {
-            show: function() { document.body.appendChild(el); },
+            show: function() {
+              if (!document.body.contains(el)) document.body.appendChild(el);
+            },
             hide: function(cb) {
-              if (!document.body.contains(el)) {
-                if (document.head.contains(window.site.hideAll))
-                  document.head.removeChild(window.site.hideAll);
-                if (cb) cb();
-                return;
-              }
-              el.addEventListener('animationiteration', function() {
-                el.style['animation-play-state'] = 'paused';
-                document.body.removeChild(el);
-                el.removeEventListener('animationiteration', arguments.callee);
-                document.head.removeChild(window.site.hideAll);
-                if (cb) cb();
-              });
+              if (cb) { onhide = cb; } else { onhide = function() {}; }
+              if (!document.body.contains(el)) cleanup();
             }
           };
         })();
