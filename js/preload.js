@@ -72,9 +72,10 @@ const preload = (() => {
   // provide optional fontGlyphs if latin chars and punctuation are not in font
   const font = (ffd, doneCb, errCb, fontGlyphs) => {
     const native = () => {
+      // define font, add, preload, then delete (required for Chrome bug)
       const f = new FontFace(ffd.family, ffd.src, ffd);
       document.fonts.add(f);
-      f.load().then(doneCb).catch(errCb);
+      f.load().then(() => { document.fonts.delete(f); doneCb(); }).catch(errCb);
     };
 
     const simulated = () => {
@@ -108,7 +109,7 @@ const preload = (() => {
   const stylesheet = (url, doneCb, errCb, fontGlyphs) => {
     const complete = (txt) => {
       const s = document.createElement('style');
-      s.innerHTML = `/* attached by stylesheet preloader */\n\n${txt}`;
+      s.innerHTML = `/* attached by stylesheet preloader */\n${txt}`;
       if (doneCb) doneCb(() => { document.head.appendChild(s); });
     };
 
@@ -120,9 +121,9 @@ const preload = (() => {
       const fontPropRe = /(font-)?([^: ]+?) ?: ?(.+?);/g;
       while (match = fontRe.exec(txt)) {
         let prop, obj = {};
-        while (prop = fontPropRe.exec(match[0]))
+        obj['_original'] = match[0].replace(/[\r\n]/g, ''); // strip newlines
+        while (prop = fontPropRe.exec(obj['_original']))
           obj[prop[2].replace(/-./g, s => s[1].toUpperCase())] = prop[3];
-        obj['_original'] = match[0];
         if (obj.family && obj.src) fonts.push(obj);
       }
 
@@ -131,6 +132,8 @@ const preload = (() => {
       while (match = imgRe.exec(txt)) images.push(`${match[1]}.${match[2]}`);
 
       let count = fonts.length + images.length;
+      if (!count) { complete(txt); return; }
+
       const dCb = () => { count -= 1; if (!count) complete(txt); };
       const eCb = () => { if (errCb && count !== -1) { count = -1; errCb(); } };
       fonts.forEach((f) => { font(f, dCb, eCb, fontGlyphs); });
