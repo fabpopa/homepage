@@ -36,12 +36,14 @@ const Display = function(cb) {
         .concat('-', Math.floor(Math.random() * Math.pow(10, 17)))
         .concat('-', Date.now() % Math.pow(10, 4));
 
-      // construct keyframes CSS
+      // construct keyframes CSS and will-change
       const keyframes = [];
+      const willChange = new Set();
       Object.keys(task.keyframes).forEach((time) => {
         const styles = [];
         Object.keys(task.keyframes[time]).forEach((style) => {
           styles.push(`${style}: ${task.keyframes[time][style]}`);
+          willChange.add(style);
         });
         if (/^\d+$/.test(time)) time += '%';
         keyframes.push(`${time} { ${styles.join('; ')} }`);
@@ -50,6 +52,7 @@ const Display = function(cb) {
       const animObj = {};
       animObj['animation'] = `${task.animation} ${name}`;
       animObj['animation-direction'] = 'forwards';
+      if (willChange.size) animObj['will-change'] = [...willChange].join(',');
 
       // attach keyframes CSS
       const s = document.createElement('style');
