@@ -32,13 +32,17 @@
   @keyframes pulse { 0% { opacity: 0 } 50% { opacity: 1 } 100% { opacity: 0 } }
 </style>
 
-<h1>Fabian Popa</h1>
-<p>Technology, biology, and other nice things.</p>
-<ul>
-  <li><a href="https://github.com/fabpopa">GitHub</a></li>
-  <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
-  <li><a href="résumé.pdf">Résumé</a></li>
-</ul>
+<div id="introduction">
+  <div>
+    <h1>Fabian Popa</h1>
+    <p>Technology, biology, and other nice things.</p>
+    <ul>
+      <li><a href="https://github.com/fabpopa">GitHub</a></li>
+      <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+      <li><a href="résumé.pdf">Résumé</a></li>
+    </ul>
+  </div>
+</div>
 
 <div id="nofeatures">
   <p>
@@ -60,6 +64,7 @@
             !!MutationObserver &&
             !!window.requestAnimationFrame &&
             !!document.createElement('canvas').getContext &&
+            document.body.style.flexBasis !== undefined &&
             !eval('let a = b => b;');
         } catch (e) { return false; }
       })();

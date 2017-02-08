@@ -1,19 +1,157 @@
 @font-face {
   font-family: Lato;
-  font-style: normal;
-  font-weight: 400;
-  src: url('fonts/lato-regular.woff');
-  /* Version 2.015. Copyright (c) tyPoland Lukasz Dziedzic */
+  font-weight: 300;
+  src: url(fonts/lato-light.woff);
 }
 
-html {
-  font: 15px/100% Lato;
-  font-weight: 400;
-  text-size-adjust: 100%;
-  -webkit-text-size-adjust: 100%;
+@font-face {
+  font-family: Lato;
+  font-weight: 500;
+  src: url(fonts/lato-medium.woff);
+}
+
+* {
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  padding: 0;
-  margin: 0;
+  font: 300 18px/100% Lato;
+  color: #222;
+}
+
+#introduction {
+  position: relative;
+  width: 100vw;
+  height: 50vh;
+}
+
+#introduction > div {
+  position: absolute;
+  bottom: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50vw;
+  text-align: center;
+}
+
+#introduction h1 {
+  font: 500 22px/100% Lato;
+  color: #0C091D;
+}
+
+#introduction p {
+  margin-top: 12px;
+  color: #DDA5B2;
+}
+
+#introduction canvas {
+  margin-top: 60px;
+  width: 100px;
+  height: 20px;
+}
+
+#introduction ul {
+  margin-top: 60px;
+  list-style-type: none;
+  text-align: center;
+}
+
+#introduction li {
+  display: inline;
+  padding: 0 8px;
+}
+
+#introduction li a {
+  text-decoration: none;
+  color: #DDA5B2;
+  outline: none;
+}
+
+#introduction li a:hover {
+  color: #63464D;
+}
+
+#introduction li a:active {
+  color: #E0D0D3;
+}
+
+#works {
+  position: relative;
+  padding-bottom: 80px;
+}
+
+#works ul {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70vw;
+  list-style-type: none;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+}
+
+#works li {
+  margin: 8px;
+}
+
+#works li a {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background-color: #fbfbfb;
+  font-size: 16px;
+  text-decoration: none;
+  color: #DDA5B2;
+}
+
+#works li a:hover {
+  background-color: #f7f7f7;
+  color: #63464D;
+}
+
+#works li a:active {
+  background-color: #fcfcfc;
+  color: #E0D0D3;
+}
+
+#media {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #fff;
+}
+
+#media .close {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  width: 60px;
+  height: 60px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 40px;
+  color: #DDA5B2;
+  cursor: pointer;
+  outline: none;
+}
+
+#media .close:hover {
+  color: #63464D;
+}
+
+#media .close:active {
+  color: #E0D0D3;
+}
+
+#media > div {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60vw;
+  text-align: center;
 }
