@@ -1,14 +1,14 @@
 if (!window.site) window.site = {};
 window.site.cells = (canvas, cb) => {
   // convenience math functions
-  const rnd = function() { return Math.random(); };
-  const rou = function(x) { return Math.round(x); };
-  const flr = function(x) { return Math.floor(x); };
-  const cei = function(x) { return Math.ceil(x); };
-  const sin = function(x) { return Math.sin(x); };
-  const tan = function(x) { return Math.tan(x); };
-  const abs = function(x) { return Math.abs(x); };
-  const pow = function(x, y) { return Math.pow(x, y); };
+  const rnd = () => { return Math.random(); };
+  const rou = (x) => { return Math.round(x); };
+  const flr = (x) => { return Math.floor(x); };
+  const cei = (x) => { return Math.ceil(x); };
+  const sin = (x) => { return Math.sin(x); };
+  const tan = (x) => { return Math.tan(x); };
+  const abs = (x) => { return Math.abs(x); };
+  const pow = (x, y) => { return Math.pow(x, y); };
   const PI = Math.PI;
 
   const c = canvas.getContext('2d');
@@ -27,7 +27,7 @@ window.site.cells = (canvas, cb) => {
   };
 
   // gives function that returns 0 to 1 progress in time interval based on fps
-  // given should be called once per frame at the specified fps
+  // should be called once per frame at the specified fps
   const timePrg = (sec, fps) => {
     const cache = new Array(sec * fps);  // memoize return values
     let index = -1;
@@ -65,8 +65,9 @@ window.site.cells = (canvas, cb) => {
 
   const cellPool = (() => {
     // choose an object pool size that will not change
-    const pool =
-      new Array(flr(canvas.width * canvas.height / pow(opt.sizeMin, 2)));
+    const poolCount = flr(canvas.width * canvas.height / pow(opt.sizeMin, 2));
+    const pool = new Array(poolCount);
+    const active = (i) => { return pool[i].x !== null; };
 
     // populate cell pool
     for (let i = 0; i < pool.length; i++) pool[i] = {
@@ -84,10 +85,10 @@ window.site.cells = (canvas, cb) => {
     return {
       count: pool.length,
       get: (i) => { return pool[i]; },
-      active: (i) => { return pool[i].x !== null; },
+      active: (i) => { return active(i); },
       reset: (i) => { pool[i].x = null; },
       new: (size, angle, flip, jigglePrg, jigglePhX, jigglePhY, x, y) => {
-        for (let i = 0; i < pool.length; i++) if (!this.active(i)) {
+        for (let i = 0; i < pool.length; i++) if (!active(i)) {
           pool[i].size = size;
           pool[i].angle = angle;
           pool[i].flip = flip;
@@ -285,14 +286,22 @@ window.site.cells = (canvas, cb) => {
   for (let i = 0; i < 4 * 60; i++) fb.addFrameIfSpace(renderCells);
 
   // start frame pre-renderer
-  window.setInterval(function() { fb.addFrameIfSpace(renderCells); }, 10);
+  if (window.requestIdleCallback) {
+    const preRender = () => {
+      fb.addFrameIfSpace(renderCells);
+      window.requestIdleCallback(preRender);
+    };
+    preRender();
+  } else {
+    window.setTimeout(() => { fb.addFrameIfSpace(renderCells); }, 10);
+  }
 
   // start animation
-  const anim = function() {
+  const anim = () => {
     c.putImageData(fb.getFrameIfAvail(), 0, 0);
     window.requestAnimationFrame(anim);
   };
 
   anim();
-  cb();
+  if (cb) cb();
 };
