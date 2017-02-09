@@ -1,5 +1,4 @@
-if (!window.site) window.site = {};
-window.site.cells = (canvas, cb) => {
+const Cells = function(canvas, cb) {
   // convenience math functions
   const rnd = () => { return Math.random(); };
   const rou = (x) => { return Math.round(x); };
@@ -285,23 +284,35 @@ window.site.cells = (canvas, cb) => {
   // pre-populate frame buffer
   for (let i = 0; i < 4 * 60; i++) fb.addFrameIfSpace(renderCells);
 
+  // know when to stop and free for garbage collection
+  let isActive = true;
+
   // start frame pre-renderer
   if (window.requestIdleCallback) {
     const preRender = () => {
+      if (!isActive) return;
       fb.addFrameIfSpace(renderCells);
       window.requestIdleCallback(preRender);
     };
     preRender();
   } else {
-    window.setTimeout(() => { fb.addFrameIfSpace(renderCells); }, 10);
+    const tick = window.setInterval(() => {
+      if (!isActive) { window.clearInterval(tick); return; }
+      fb.addFrameIfSpace(renderCells);
+    }, 10);
   }
 
   // start animation
   const anim = () => {
+    if (!isActive) return;
     c.putImageData(fb.getFrameIfAvail(), 0, 0);
     window.requestAnimationFrame(anim);
   };
 
   anim();
+
+  // detach Cells object from environment to be garbage collected
+  this.cleanup = () => { isActive = false; };
+
   if (cb) cb();
 };

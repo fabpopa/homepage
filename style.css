@@ -23,7 +23,7 @@ body {
 #introduction {
   position: relative;
   width: 100vw;
-  height: 50vh;
+  height: 65vh;
 }
 
 #introduction > div {
@@ -31,24 +31,42 @@ body {
   bottom: 25%;
   left: 50%;
   transform: translateX(-50%);
-  width: 50vw;
+  width: 70vw;
   text-align: center;
 }
 
 #introduction h1 {
   font: 500 22px/100% Lato;
-  color: #0C091D;
+  color: #222;
 }
 
 #introduction p {
   margin-top: 12px;
-  color: #DDA5B2;
+  color: #999;
 }
 
-#introduction canvas {
+#introduction #cells {
+  position: relative;
   margin-top: 60px;
-  width: 100px;
-  height: 20px;
+  transform: rotate(-5deg);
+  width: 100%;
+  height: 120px;
+  border-radius: 4px;
+}
+
+#introduction #cells #gradient {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: calc(100% + 5px);
+  height: calc(100% + 5px);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0), #fff);
+}
+
+#introduction #cells canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 #introduction ul {
@@ -64,16 +82,16 @@ body {
 
 #introduction li a {
   text-decoration: none;
-  color: #DDA5B2;
+  color: #999;
   outline: none;
 }
 
 #introduction li a:hover {
-  color: #63464D;
+  color: #222;
 }
 
 #introduction li a:active {
-  color: #E0D0D3;
+  color: #bbb;
 }
 
 #works {
@@ -102,17 +120,17 @@ body {
   background-color: #fbfbfb;
   font-size: 16px;
   text-decoration: none;
-  color: #DDA5B2;
+  color: #999;
 }
 
 #works li a:hover {
   background-color: #f7f7f7;
-  color: #63464D;
+  color: #222;
 }
 
 #works li a:active {
   background-color: #fcfcfc;
-  color: #E0D0D3;
+  color: #bbb;
 }
 
 #media {
@@ -134,17 +152,17 @@ body {
   background: transparent;
   font: inherit;
   font-size: 40px;
-  color: #DDA5B2;
+  color: #999;
   cursor: pointer;
   outline: none;
 }
 
 #media .close:hover {
-  color: #63464D;
+  color: #222;
 }
 
 #media .close:active {
-  color: #E0D0D3;
+  color: #bbb;
 }
 
 #media > div {

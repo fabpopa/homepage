@@ -6,22 +6,75 @@
 // expects window.site.cells to contain a custom object after loading cells.js
 
 (() => {
-  const header = document.querySelector('h1');
-  const message = document.querySelector('p');
-  const social = document.querySelectorAll('li');
+  const reveal = () => {
 
-  const reveal = (attach) => {
-    // attach();
+  };
+
+  const makeItems = () => {
+    // make canvas wrapper and elements
+    const cellWrap = document.createElement('div');
+    cellWrap.id = 'cells';
+    const gradient = document.createElement('div');
+    gradient.id = 'gradient';
+    cellWrap.appendChild(gradient);
+    const location = document.querySelector('#introduction p');
+    location.insertAdjacentElement('afterend', cellWrap);
+
+    // refresh cells animation as it requires steady canvas width and height
+    const makeCells = (() => {
+      let cells;
+      return (canvas, cb) => {
+        // computed style information will only be available on the next frame
+        window.requestAnimationFrame(() => {
+          if (cells) cells.cleanup();
+          canvas.width = /\d+/.exec(getComputedStyle(canvas).width)[0];
+          canvas.height = /\d+/.exec(getComputedStyle(canvas).height)[0];
+          cells = new Cells(canvas, cb);
+        });
+      };
+    })();
+
+    let canvas;
+    const refreshCanvas = () => {
+      canvas = document.createElement('canvas');
+      cellWrap.appendChild(canvas);
+      makeCells(canvas);
+    };
+
+    // refresh cells on resize
+    let resizeTimer;
+    let cellsHidden = false;
+    window.addEventListener('resize', () => {
+      // hide cells while resizing
+      if (!cellsHidden) {
+        gradient.style.display = 'none';
+        cellWrap.style.background = '#fbfbfb';
+        if (canvas) cellWrap.removeChild(canvas);
+        cellsHidden = true;
+      }
+
+      // debounce resize event
+      if (resizeTimer) window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        gradient.style.display = '';
+        cellWrap.style.background = '';
+        cellsHidden = false;
+        refreshCanvas();
+      }, 400);
+    });
+
+    refreshCanvas();
   };
 
   const prepStyle = () => {
     preload.stylesheet('style.css', (attach) => {
-      // prepare for reveal
-      [header, message, ...social].forEach((e) => { e.style.opacity = 0; });
+      makeItems();
 
-      // clear raceLoad and hide loading
+      // prepare for reveal
+
+      // clear raceLoad, hide loading, remove display none on body elements
       window.clearTimeout(window.site.raceLoad);
-      window.site.loading.hide(() => { reveal(attach); });
+      window.site.loading.hide(() => { attach(); reveal(); });
     });
   };
 

@@ -16,7 +16,6 @@
   #loading {
     display: block;
     position: absolute;
-    z-index: 1;
     top: 30%;
     left: 50%;
     transform: translateX(-50%);
@@ -63,6 +62,7 @@
             XMLHttpRequestEventTarget.prototype.hasOwnProperty('onload') &&
             !!MutationObserver &&
             !!window.requestAnimationFrame &&
+            !!window.performance.now &&
             !!document.createElement('canvas').getContext &&
             document.body.style.flexBasis !== undefined &&
             !eval('let a = b => b;');
