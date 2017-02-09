@@ -1,4 +1,4 @@
-const Cells = function(canvas, cb) {
+const Cells = function(canvas) {
   // convenience math functions
   const rnd = () => { return Math.random(); };
   const rou = (x) => { return Math.round(x); };
@@ -287,20 +287,18 @@ const Cells = function(canvas, cb) {
   // know when to stop and free for garbage collection
   let isActive = true;
 
-  // start frame pre-renderer
-  if (window.requestIdleCallback) {
-    const preRender = () => {
-      if (!isActive) return;
-      fb.addFrameIfSpace(renderCells);
-      window.requestIdleCallback(preRender);
-    };
-    preRender();
-  } else {
-    const tick = window.setInterval(() => {
-      if (!isActive) { window.clearInterval(tick); return; }
-      fb.addFrameIfSpace(renderCells);
-    }, 10);
-  }
+  // detach Cells object from environment to be garbage collected
+  this.cleanup = () => { isActive = false; };
+
+  // start frame prerenderer
+  const prender = () => {
+    if (!isActive) return;
+    fb.addFrameIfSpace(renderCells);
+    if (!window.requestIdleCallback) { window.setTimeout(prender, 10); return; }
+    window.requestIdleCallback(prender);
+  };
+
+  prender();
 
   // start animation
   const anim = () => {
@@ -310,9 +308,4 @@ const Cells = function(canvas, cb) {
   };
 
   anim();
-
-  // detach Cells object from environment to be garbage collected
-  this.cleanup = () => { isActive = false; };
-
-  if (cb) cb();
 };

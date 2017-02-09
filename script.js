@@ -3,43 +3,51 @@
 // expects window.preload to contain a custom object after loading preload.js
 // expects window.Display to contain a constructor function after display.js
 // expects window.Director to contain a constructor function after director.js
-// expects window.site.cells to contain a custom object after loading cells.js
+// expects window.Cells to contain a constructor after loading cells.js
 
-(() => {
-  const reveal = () => {
+window.site.go = (attachStyle) => {
+  const direct = new Director();
 
-  };
-
-  const makeItems = () => {
+  // make cells
+  direct.addStep((cb) => {
     // make canvas wrapper and elements
-    const cellWrap = document.createElement('div');
-    cellWrap.id = 'cells';
+    const wrapper = document.createElement('div');
+    wrapper.id = 'cells';
     const gradient = document.createElement('div');
     gradient.id = 'gradient';
-    cellWrap.appendChild(gradient);
+    wrapper.appendChild(gradient);
     const location = document.querySelector('#introduction p');
-    location.insertAdjacentElement('afterend', cellWrap);
+    location.insertAdjacentElement('afterend', wrapper);
 
-    // refresh cells animation as it requires steady canvas width and height
+    // refresh everything, canvas requires steady dimensions
     const makeCells = (() => {
       let cells;
-      return (canvas, cb) => {
-        // computed style information will only be available on the next frame
+      return (canvas) => {
+        // computed style may only be available on the next frame
         window.requestAnimationFrame(() => {
           if (cells) cells.cleanup();
           canvas.width = /\d+/.exec(getComputedStyle(canvas).width)[0];
           canvas.height = /\d+/.exec(getComputedStyle(canvas).height)[0];
-          cells = new Cells(canvas, cb);
+          cells = new Cells(canvas);
         });
       };
     })();
 
+    // wrapper element controls cells animation in response to custom events
     let canvas;
-    const refreshCanvas = () => {
+    wrapper.addEventListener('removecells', () => {
+      gradient.style.display = 'none';
+      wrapper.style.background = '#fbfbfb';
+      if (canvas) wrapper.removeChild(canvas);
+    });
+    wrapper.addEventListener('makecells', () => {
+      gradient.style.display = '';
+      wrapper.style.background = '';
+      cellsHidden = false;
       canvas = document.createElement('canvas');
-      cellWrap.appendChild(canvas);
+      wrapper.appendChild(canvas);
       makeCells(canvas);
-    };
+    });
 
     // refresh cells on resize
     let resizeTimer;
@@ -47,40 +55,57 @@
     window.addEventListener('resize', () => {
       // hide cells while resizing
       if (!cellsHidden) {
-        gradient.style.display = 'none';
-        cellWrap.style.background = '#fbfbfb';
-        if (canvas) cellWrap.removeChild(canvas);
+        wrapper.dispatchEvent(new Event('removecells'));
         cellsHidden = true;
       }
 
       // debounce resize event
       if (resizeTimer) window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(() => {
-        gradient.style.display = '';
-        cellWrap.style.background = '';
-        cellsHidden = false;
-        refreshCanvas();
+        wrapper.dispatchEvent(new Event('makecells'));
       }, 400);
     });
 
-    refreshCanvas();
-  };
+    cb();
+  });
 
-  const prepStyle = () => {
-    preload.stylesheet('style.css', (attach) => {
-      makeItems();
+  // make works
+  direct.addStep((cb) => {
+    cb();
+  });
 
-      // prepare for reveal
+  // prepare reveal
+  direct.addStep((cb) => {
+    cb();
+  });
 
-      // clear raceLoad, hide loading, remove display none on body elements
-      window.clearTimeout(window.site.raceLoad);
-      window.site.loading.hide(() => { attach(); reveal(); });
+  // hide loading
+  direct.addStep((cb) => {
+    window.clearTimeout(window.site.raceLoad);
+    window.site.loading.hide(() => {
+      attachStyle();
+      document.querySelector('#cells').dispatchEvent(new Event('makecells'));
+      cb();
     });
+  });
+
+  // reveal
+  direct.addStep((cb) => {
+    cb();
+  });
+
+  direct.start();
+};
+
+(() => {
+  // preload style
+  const style = () => {
+    preload.stylesheet('style.css', (att) => { window.site.go(att); });
   };
 
-  // attach scripts
+  // preload scripts
   const scripts = ['preload', 'director', 'display', 'cells'];
-  const sCb = (c => () => { c -= 1; if (!c) prepStyle(); })(scripts.length);
+  const sCb = (c => () => { c -= 1; if (!c) style(); })(scripts.length);
   scripts.forEach((s) => {
     const el = document.createElement('script');
     el.onload = sCb;
