@@ -66,33 +66,34 @@ window.site.go = (attachStyle) => {
   direct.addStep((cb) => {
     // media overlay object
     const media = (() => {
-      const overlay = document.createElement('div');
-      overlay.id = 'media';
+      const sheet = document.createElement('div');
+      sheet.id = 'media';
       const close = document.createElement('button');
       close.className = 'close';
       close.innerHTML = '&times;'
-      overlay.appendChild(close);
+      sheet.appendChild(close);
       const wrapper = document.createElement('div');
-      overlay.appendChild(wrapper);
+      sheet.appendChild(wrapper);
       const title = document.createElement('h3');
       wrapper.appendChild(title);
       const description = document.createElement('p');
       wrapper.appendChild(description);
 
-      const show = (work) => {
+      const show = (work, hash) => {
         if (!work) return;
         if (!work.title) work.title = '';
         if (!work.description) work.description = '';
         title.innerHTML = work.title;
         description.innerHTML = work.description;
         document.querySelector('#cells').dispatchEvent(new Event('pause'));
-        if (document.body.contains(overlay)) return;
-        document.body.appendChild(overlay);
+        if (!document.body.contains(sheet)) document.body.appendChild(sheet);
+        window.location.hash = hash;
       };
 
       const hide = () => {
-      document.querySelector('#cells').dispatchEvent(new Event('unpause'));
-        if (document.body.contains(overlay)) document.body.removeChild(overlay);
+        document.querySelector('#cells').dispatchEvent(new Event('unpause'));
+        if (document.body.contains(sheet)) document.body.removeChild(sheet);
+        window.location.hash = '';
       };
 
       close.onclick = (e) => { e.preventDefault(); hide(); };
@@ -111,11 +112,12 @@ window.site.go = (attachStyle) => {
         works[type].forEach((item) => {
           const el = document.createElement('li');
           const a = document.createElement('a');
-          a.href = `${type}/${item.id}`;
+          const hash = `#${type}/${item.id}`
+          a.href = hash;
           a.id = `${type}-${item.id}`;
           a.innerHTML = item.title;
           a.data = item;
-          a.onclick = (e) => { e.preventDefault(); media.show(item); };
+          a.onclick = (e) => { e.preventDefault(); media.show(item, hash); };
           el.appendChild(a);
           list.appendChild(el);
         });
@@ -145,6 +147,10 @@ window.site.go = (attachStyle) => {
     window.site.loading.hide(() => {
       attachStyle();
       document.querySelector('#cells').dispatchEvent(new Event('makecells'));
+      if (!!window.location.hash) window.requestAnimationFrame(() => {
+        const id = window.location.hash.replace('#', '').replace('/','-');
+        document.querySelector(`#${id}`).dispatchEvent(new Event('click'));
+      });
       cb();
     });
   });
