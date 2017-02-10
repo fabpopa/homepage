@@ -1,13 +1,13 @@
 const Cells = function(canvas) {
   // convenience math functions
-  const rnd = () => { return Math.random(); };
-  const rou = (x) => { return Math.round(x); };
-  const flr = (x) => { return Math.floor(x); };
-  const cei = (x) => { return Math.ceil(x); };
-  const sin = (x) => { return Math.sin(x); };
-  const tan = (x) => { return Math.tan(x); };
-  const abs = (x) => { return Math.abs(x); };
-  const pow = (x, y) => { return Math.pow(x, y); };
+  const rnd = () => Math.random();
+  const rou = (x) => Math.round(x);
+  const flr = (x) => Math.floor(x);
+  const cei = (x) => Math.ceil(x);
+  const sin = (x) => Math.sin(x);
+  const tan = (x) => Math.tan(x);
+  const abs = (x) => Math.abs(x);
+  const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
 
   const c = canvas.getContext('2d');

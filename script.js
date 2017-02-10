@@ -71,7 +71,41 @@ window.site.go = (attachStyle) => {
 
   // make works
   direct.addStep((cb) => {
-    cb();
+    // media overlay object
+
+
+    // list of work items
+    const makeWorks = (works) => {
+      if (!works || !Object.keys(works).length) return;
+      const wrapper = document.createElement('div');
+      wrapper.id = 'works';
+      const list = document.createElement('ul');
+      wrapper.appendChild(list);
+
+      Object.keys(works).forEach((type) => {
+        works[type].forEach((item) => {
+          const el = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = `${type}/${item.id}`;
+          a.id = `${type}-${item.id}`;
+          a.innerHTML = item.title;
+          a.data = item;
+          el.appendChild(a);
+          list.appendChild(el);
+        });
+      });
+
+      const intro = document.querySelector('#introduction');
+      intro.insertAdjacentElement('afterend', wrapper);
+    };
+
+    // fetch index of works
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', 'works/index.json');
+    xhr.responseType = 'json';
+    xhr.onload = () => { makeWorks(xhr.response); cb(); }
+    xhr.onerror = () => { cb(); };
+    xhr.send();
   });
 
   // prepare reveal
