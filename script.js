@@ -19,26 +19,13 @@ window.site.go = (attachStyle) => {
     const location = document.querySelector('#introduction p');
     location.insertAdjacentElement('afterend', wrapper);
 
-    // refresh everything, canvas requires steady dimensions
-    const makeCells = (() => {
-      let cells;
-      return (canvas) => {
-        // computed style may only be available on the next frame
-        window.requestAnimationFrame(() => {
-          if (cells) cells.cleanup();
-          canvas.width = /\d+/.exec(getComputedStyle(canvas).width)[0];
-          canvas.height = /\d+/.exec(getComputedStyle(canvas).height)[0];
-          cells = new Cells(canvas);
-        });
-      };
-    })();
-
     // wrapper element controls cells animation in response to custom events
-    let canvas;
+    let canvas, cells;
     wrapper.addEventListener('removecells', () => {
       gradient.style.display = 'none';
       wrapper.style.background = '#fbfbfb';
       if (canvas) wrapper.removeChild(canvas);
+      if (cells) { cells.cleanup(); cells = null; }
     });
     wrapper.addEventListener('makecells', () => {
       gradient.style.display = '';
@@ -46,8 +33,14 @@ window.site.go = (attachStyle) => {
       cellsHidden = false;
       canvas = document.createElement('canvas');
       wrapper.appendChild(canvas);
-      makeCells(canvas);
+      window.requestAnimationFrame(() => {
+        canvas.width = /\d+/.exec(getComputedStyle(canvas).width)[0];
+        canvas.height = /\d+/.exec(getComputedStyle(canvas).height)[0];
+        cells = new Cells(canvas);
+      });
     });
+    wrapper.addEventListener('pause', () => { if (cells) cells.pause(); });
+    wrapper.addEventListener('unpause', () => { if (cells) cells.unpause(); });
 
     // refresh cells on resize
     let resizeTimer;
@@ -92,11 +85,13 @@ window.site.go = (attachStyle) => {
         if (!work.description) work.description = '';
         title.innerHTML = work.title;
         description.innerHTML = work.description;
+        document.querySelector('#cells').dispatchEvent(new Event('pause'));
         if (document.body.contains(overlay)) return;
         document.body.appendChild(overlay);
       };
 
       const hide = () => {
+      document.querySelector('#cells').dispatchEvent(new Event('unpause'));
         if (document.body.contains(overlay)) document.body.removeChild(overlay);
       };
 

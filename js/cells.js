@@ -284,16 +284,17 @@ const Cells = function(canvas) {
   // pre-populate frame buffer
   for (let i = 0; i < 4 * 60; i++) fb.addFrameIfSpace(renderCells);
 
-  // know when to stop and free for garbage collection
-  let isActive = true;
+  let isPaused = false;
+  let isActive = true;  // set false to stop and free for garbage collection
 
-  // detach Cells object from environment to be garbage collected
+  this.pause = () => { isPaused = true; };
+  this.unpause = () => { isPaused = false; };
   this.cleanup = () => { isActive = false; };
 
   // start frame prerenderer
   const prender = () => {
     if (!isActive) return;
-    fb.addFrameIfSpace(renderCells);
+    if (!isPaused) fb.addFrameIfSpace(renderCells);
     if (!window.requestIdleCallback) { window.setTimeout(prender, 10); return; }
     window.requestIdleCallback(prender);
   };
@@ -303,7 +304,7 @@ const Cells = function(canvas) {
   // start animation
   const anim = () => {
     if (!isActive) return;
-    c.putImageData(fb.getFrameIfAvail(), 0, 0);
+    if (!isPaused) c.putImageData(fb.getFrameIfAvail(), 0, 0);
     window.requestAnimationFrame(anim);
   };
 
