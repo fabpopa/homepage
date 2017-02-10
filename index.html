@@ -59,12 +59,12 @@
       var featuresOk = (function() {
         try {
           return !!document.querySelectorAll &&
-            XMLHttpRequestEventTarget.prototype.hasOwnProperty('onload') &&
             !!MutationObserver &&
             !!window.requestAnimationFrame &&
             !!window.performance.now &&
             !!document.createElement('canvas').getContext &&
             document.body.style.flexBasis !== undefined &&
+            (new XMLHttpRequest()).onload !== undefined &&
             !eval('let a = b => b;');
         } catch (e) { return false; }
       })();
