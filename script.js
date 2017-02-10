@@ -72,7 +72,37 @@ window.site.go = (attachStyle) => {
   // make works
   direct.addStep((cb) => {
     // media overlay object
+    const media = (() => {
+      const overlay = document.createElement('div');
+      overlay.id = 'media';
+      const close = document.createElement('button');
+      close.className = 'close';
+      close.innerHTML = '&times;'
+      overlay.appendChild(close);
+      const wrapper = document.createElement('div');
+      overlay.appendChild(wrapper);
+      const title = document.createElement('h3');
+      wrapper.appendChild(title);
+      const description = document.createElement('p');
+      wrapper.appendChild(description);
 
+      const show = (work) => {
+        if (!work) return;
+        if (!work.title) work.title = '';
+        if (!work.description) work.description = '';
+        title.innerHTML = work.title;
+        description.innerHTML = work.description;
+        if (document.body.contains(overlay)) return;
+        document.body.appendChild(overlay);
+      };
+
+      const hide = () => {
+        if (document.body.contains(overlay)) document.body.removeChild(overlay);
+      };
+
+      close.onclick = (e) => { e.preventDefault(); hide(); };
+      return { show, hide };
+    })();
 
     // list of work items
     const makeWorks = (works) => {
@@ -90,6 +120,7 @@ window.site.go = (attachStyle) => {
           a.id = `${type}-${item.id}`;
           a.innerHTML = item.title;
           a.data = item;
+          a.onclick = (e) => { e.preventDefault(); media.show(item); };
           el.appendChild(a);
           list.appendChild(el);
         });
