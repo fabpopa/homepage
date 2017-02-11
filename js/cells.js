@@ -22,8 +22,7 @@ const Cells = function(canvas) {
     jiggleMax: 4,   // seconds
     buffer: 10,     // pixels, even number
     jiggle: 2,      // pixels, lower than buffer
-    velocity: 60,   // pixels per second
-    frameTimeout: .7 // ms time limit for constructing a frame
+    velocity: 60    // pixels per second
   };
 
   // gives function that returns 0 to 1 progress in time interval based on fps
@@ -217,46 +216,15 @@ const Cells = function(canvas) {
     );
   };
 
-  let frameTimer = ((limit) => {
-    let time;
-    return {
-      start: () => { time = window.performance.now(); },
-      isOver: () => { return window.performance.now() - time > limit; }
-    };
-  })(opt.frameTimeout);
-
-  // renderCells cache to keep partial data if frame render timed out
-  const rcc = (() => {
-    const data = {
-      unfinished: null,
-      index: null
-    };
-    const reset = () => {
-      data.unfinished = false;
-      data.index = 0;
-    };
-    data.reset = reset;
-    data.reset();
-    return data;
-  })();
-
-  // returns null if frame timed out or true if succeeded
   const renderCells = (c) => {
-    frameTimer.start();
-
-    if (!rcc.unfinished) {
-      // clear canvas and render background
-      c.fillStyle = 'rgb(255, 255, 255)';
-      c.fillRect(0, 0, c.canvas.width, c.canvas.height);
-      entryLine.reset();
-      fc.heartbeat = heartbeat();
-      rcc.unfinished = true;
-    }
+    // clear canvas and render background
+    c.fillStyle = 'rgb(255, 255, 255)';
+    c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+    entryLine.reset();
+    fc.heartbeat = heartbeat();
 
     // render cells
-    for (let i = rcc.index; i < cellPool.count; i++) {
-      if (frameTimer.isOver()) { rcc.index = i; return null; }
-
+    for (let i = 0; i < cellPool.count; i++) {
       if (!cellPool.active(i)) continue;
       fc.cell = cellPool.get(i);
       renderCellFrame(c, fc.cell);
@@ -280,66 +248,16 @@ const Cells = function(canvas) {
 
     // attempt to add cell to canvas entry line
     addCell();
-
-    rcc.reset();
-    return true;
   };
 
-  // buffer for sec * 60fps ImageData frames of the same size as original canvas
-  const frameBuffer = (originalCanvas, sec) => {
-    const canvas = document.createElement('canvas');
-    canvas.height = originalCanvas.height;
-    canvas.width = originalCanvas.width;
-    const ctx = canvas.getContext('2d');
-    const frames = new Array(sec * 60);
-    let ins = 0, ext = 0, count = 0, ret;
-    return {
-      addFrameIfSpace: (makeFrameOnContext) => {
-        if (count === frames.length) return;
-        if (!makeFrameOnContext(ctx)) return;
-        frames[ins] = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        ins = (ins + 1) % frames.length;
-        count += 1;
-      },
-      getFrameIfAvail: () => {
-        if (count === 0) return;
-        ret = ext;
-        ext = (ext + 1) % frames.length;
-        count -= 1;
-        return frames[ret];
-      }
-    };
-  };
-
-  const fb = frameBuffer(canvas, 30);
-
-  // pre-populate frame buffer
-  for (let i = 0; i < 30 * 60; i++) fb.addFrameIfSpace(renderCells);
-
-  let isPaused = false;
-  let isActive = true;  // set false to stop and free for garbage collection
-
-  this.pause = () => { isPaused = true; };
-  this.unpause = () => { isPaused = false; };
-  this.cleanup = () => { isActive = false; };
-
-  start frame prerenderer
-  const prender = () => {
-    if (!isActive) return;
-    if (!isPaused) fb.addFrameIfSpace(renderCells);
-    window.setTimeout(prender, 7);
-    // if (!window.requestIdleCallback) { window.setTimeout(prender, 10); return; }
-    // window.requestIdleCallback(prender);
-  };
-
-  prender();
-
-  // start animation
+  let raf;
   const anim = () => {
-    if (!isActive) return;
-    if (!isPaused) c.putImageData(fb.getFrameIfAvail(), 0, 0);
-    window.requestAnimationFrame(anim);
+    renderCells(c);
+    raf = window.requestAnimationFrame(anim);
   };
+
+  this.pause = () => { window.cancelAnimationFrame(raf); raf = null; };
+  this.unpause = () => { if (!raf) anim(); };
 
   anim();
 };
