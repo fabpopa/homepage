@@ -22,7 +22,8 @@ const Cells = function(canvas) {
     jiggleMax: 4,   // seconds
     buffer: 10,     // pixels, even number
     jiggle: 2,      // pixels, lower than buffer
-    velocity: 60    // pixels per second
+    velocity: 60,   // pixels per second
+    frameTimeout: .7 // ms time limit for constructing a frame
   };
 
   // gives function that returns 0 to 1 progress in time interval based on fps
@@ -41,14 +42,14 @@ const Cells = function(canvas) {
 
   // curve approximating ref: youtube.com/watch?v=Y3GQiBllgeY
   // returns velocity multiple, has to be called per frame
-  const heartbeat = ((phaseLag) => {
+  const heartbeat = ((phaseDuration) => {
     // velocity multiples: velocity * (1 + phaseInterpolation)
     const phases = [0, .5, -.4, 0, 0, 0, 0];
-    const cache = new Array(phaseLag * 60 * phases.length);
-    const phasePrg = timePrg(phaseLag, 60);
+    const cache = new Array(phaseDuration * 60 * phases.length);
+    const phasePrg = timePrg(phaseDuration, 60);
     let ph, phNext, index = -1;
     for (let i = 0; i < cache.length; i++) {
-      ph = flr(i / (phaseLag * 60));
+      ph = flr(i / (phaseDuration * 60));
       phNext = ph + 1;
       if (phNext === phases.length) phNext = 0;
       cache[i] =
@@ -58,7 +59,7 @@ const Cells = function(canvas) {
     return () => {
       index += 1;
       if (index === cache.length) index = 0;
-      return 0;
+      return 0; //TODO heartbeat return cache[index]
     };
   })(.3);
 
@@ -105,7 +106,7 @@ const Cells = function(canvas) {
   })();
 
   // canvas line at x = 0 to decide when to insert a new cell
-  const entryLine = (c) => {
+  const entryLine = ((c) => {
     const pixels = new Array(c.canvas.height);
     return {
       reset: () => {
@@ -131,11 +132,11 @@ const Cells = function(canvas) {
         return space;
       }
     };
-  };
+  })(c);
 
   // frame-duration cache (a bit quicker garbage collection)
   let fc = {
-    cell: null, entryLine: null, heartbeat: null, pad: null, padPrg: null,
+    cell: null, heartbeat: null, pad: null, padPrg: null,
     rdX: null, rdY: null, ctlX: null, ctlY: null, flipPerc: null,
     jigglePrg: null, sX: null, sY: null
   };
@@ -201,7 +202,7 @@ const Cells = function(canvas) {
 
   const addCell = () => {
     if (rnd() % .3 > .02) return; // likely rejection, better spread
-    let space = fc.entryLine.window();
+    let space = entryLine.window();
     let size = opt.sizeMin + rou(rnd() * (opt.sizeMax - opt.sizeMin));
     if (space.size < size) return;
     cellPool.new(
@@ -216,17 +217,46 @@ const Cells = function(canvas) {
     );
   };
 
-  const renderCells = (c) => {
-    // clear canvas and render background
-    c.fillStyle = 'rgb(255, 255, 255)';
-    c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+  let frameTimer = ((limit) => {
+    let time;
+    return {
+      start: () => { time = window.performance.now(); },
+      isOver: () => { return window.performance.now() - time > limit; }
+    };
+  })(opt.frameTimeout);
 
-    if (fc.entryLine === null) fc.entryLine = entryLine(c); // singleton
-    fc.entryLine.reset();
-    fc.heartbeat = heartbeat();
+  // renderCells cache to keep partial data if frame render timed out
+  const rcc = (() => {
+    const data = {
+      unfinished: null,
+      index: null
+    };
+    const reset = () => {
+      data.unfinished = false;
+      data.index = 0;
+    };
+    data.reset = reset;
+    data.reset();
+    return data;
+  })();
+
+  // returns null if frame timed out or true if succeeded
+  const renderCells = (c) => {
+    frameTimer.start();
+
+    if (!rcc.unfinished) {
+      // clear canvas and render background
+      c.fillStyle = 'rgb(255, 255, 255)';
+      c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+      entryLine.reset();
+      fc.heartbeat = heartbeat();
+      rcc.unfinished = true;
+    }
 
     // render cells
-    for (let i = 0; i < cellPool.count; i++) {
+    for (let i = rcc.index; i < cellPool.count; i++) {
+      if (frameTimer.isOver()) { rcc.index = i; return null; }
+
       if (!cellPool.active(i)) continue;
       fc.cell = cellPool.get(i);
       renderCellFrame(c, fc.cell);
@@ -235,22 +265,24 @@ const Cells = function(canvas) {
       if (fc.cell.x - fc.cell.size / 2 > c.canvas.width) cellPool.reset(i);
 
       // mark pieces that cross entry line
-      if (fc.cell.x - fc.cell.size / 2 - opt.buffer < 0)
-        fc.entryLine.mark(
-          flr(fc.cell.y - fc.cell.size / 2 - opt.buffer),
-          cei(fc.cell.y + fc.cell.size / 2 + opt.buffer)
-        );
+      if (fc.cell.x - fc.cell.size / 2 - opt.buffer < 0) entryLine.mark(
+        flr(fc.cell.y - fc.cell.size / 2 - opt.buffer),
+        cei(fc.cell.y + fc.cell.size / 2 + opt.buffer)
+      );
     }
 
     // take out cell buffer at beginning and end of entry line
     // plus a sin wave of padding
     if (fc.padPrg === null) fc.padPrg = timePrg(5, 60); // singleton
     fc.pad = rou(abs(c.canvas.height / 5 * sin(fc.padPrg() * 2 * PI)));
-    fc.entryLine.mark(0, opt.buffer + fc.pad);
-    fc.entryLine.mark(c.canvas.height - opt.buffer - fc.pad, c.canvas.height);
+    entryLine.mark(0, opt.buffer + fc.pad);
+    entryLine.mark(c.canvas.height - opt.buffer - fc.pad, c.canvas.height);
 
-    // add new cell
+    // attempt to add cell to canvas entry line
     addCell();
+
+    rcc.reset();
+    return true;
   };
 
   // buffer for sec * 60fps ImageData frames of the same size as original canvas
@@ -264,7 +296,7 @@ const Cells = function(canvas) {
     return {
       addFrameIfSpace: (makeFrameOnContext) => {
         if (count === frames.length) return;
-        makeFrameOnContext(ctx);
+        if (!makeFrameOnContext(ctx)) return;
         frames[ins] = ctx.getImageData(0, 0, canvas.width, canvas.height);
         ins = (ins + 1) % frames.length;
         count += 1;
@@ -279,10 +311,10 @@ const Cells = function(canvas) {
     };
   };
 
-  const fb = frameBuffer(canvas, 4);
+  const fb = frameBuffer(canvas, 30);
 
   // pre-populate frame buffer
-  for (let i = 0; i < 4 * 60; i++) fb.addFrameIfSpace(renderCells);
+  for (let i = 0; i < 30 * 60; i++) fb.addFrameIfSpace(renderCells);
 
   let isPaused = false;
   let isActive = true;  // set false to stop and free for garbage collection
@@ -291,12 +323,13 @@ const Cells = function(canvas) {
   this.unpause = () => { isPaused = false; };
   this.cleanup = () => { isActive = false; };
 
-  // start frame prerenderer
+  start frame prerenderer
   const prender = () => {
     if (!isActive) return;
     if (!isPaused) fb.addFrameIfSpace(renderCells);
-    if (!window.requestIdleCallback) { window.setTimeout(prender, 10); return; }
-    window.requestIdleCallback(prender);
+    window.setTimeout(prender, 7);
+    // if (!window.requestIdleCallback) { window.setTimeout(prender, 10); return; }
+    // window.requestIdleCallback(prender);
   };
 
   prender();
