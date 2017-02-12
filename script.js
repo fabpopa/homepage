@@ -25,7 +25,7 @@ window.site.go = (attachStyle) => {
       gradient.style.display = 'none';
       wrapper.style.background = '#fbfbfb';
       if (canvas) wrapper.removeChild(canvas);
-      if (cells) { cells.cleanup(); cells = null; }
+      if (cells) { cells.pause(); cells = null; }
     });
     wrapper.addEventListener('makecells', () => {
       gradient.style.display = '';
@@ -57,6 +57,11 @@ window.site.go = (attachStyle) => {
       resizeTimer = window.setTimeout(() => {
         wrapper.dispatchEvent(new Event('makecells'));
       }, 400);
+    });
+
+    // pause cells when web page not in view
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { cells.pause(); } else { cells.unpause(); }
     });
 
     cb();
