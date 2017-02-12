@@ -12,31 +12,26 @@ const Cells = function(canvas) {
 
   const c = canvas.getContext('2d');
   const opt = {
-    sizeMin: 20,    // pixels, even number
-    sizeMax: 50,    // pixels, even number
-    angleMin: 60,   // degrees
-    angleMax: 120,  // degrees
-    flipMin: 2,     // seconds
-    flipMax: 5,     // seconds
-    jiggleMin: 2,   // seconds
-    jiggleMax: 4,   // seconds
-    buffer: 10,     // pixels, even number
-    jiggle: 2,      // pixels, lower than buffer
-    velocity: 60    // pixels per second
+    sizeMin: 20,      // pixels, even number
+    sizeMax: 50,      // pixels, even number
+    angleMin: 60,     // degrees
+    angleMax: 120,    // degrees
+    flipMin: 2,       // seconds
+    flipMax: 5,       // seconds
+    jiggleMin: 2,     // seconds
+    jiggleMax: 4,     // seconds
+    buffer: 10,       // pixels, even number
+    jiggle: 2,        // pixels, lower than buffer
+    velocity: 60,     // pixels per second
+    sinPadHeight: canvas.height / 5,  // pixels
+    sinPadDuration: 5 // seconds
   };
 
-  // gives function that returns 0 to 1 progress in time interval based on fps
-  // should be called once per frame at the specified fps
-  const timePrg = (sec, fps) => {
-    const cache = new Array(sec * fps);  // memoize return values
-    let index = -1;
-    for (let i = 0; i < cache.length; i++)
-      cache[i] = rou(i / cache.length * 1000) / 1000;
-    return () => {
-      index += 1;
-      if (index === cache.length) index = 0;
-      return cache[index];
-    };
+  // gives function that returns 0 to 1 progress in time interval based on Δt
+  // should be called once per frame with the time delta in ms
+  const timePrg = (totalTime) => {
+    let time = 0;
+    return (dt) => { time = (time + dt) % totalTime; return time / totalTime; };
   };
 
   // curve approximating ref: youtube.com/watch?v=Y3GQiBllgeY
@@ -44,22 +39,7 @@ const Cells = function(canvas) {
   const heartbeat = ((phaseDuration) => {
     // velocity multiples: velocity * (1 + phaseInterpolation)
     const phases = [0, .5, -.4, 0, 0, 0, 0];
-    const cache = new Array(phaseDuration * 60 * phases.length);
-    const phasePrg = timePrg(phaseDuration, 60);
-    let ph, phNext, index = -1;
-    for (let i = 0; i < cache.length; i++) {
-      ph = flr(i / (phaseDuration * 60));
-      phNext = ph + 1;
-      if (phNext === phases.length) phNext = 0;
-      cache[i] =
-        rou((phases[ph] + (phases[phNext] - phases[ph]) * phasePrg()) * 1000)
-        / 1000;
-    }
-    return () => {
-      index += 1;
-      if (index === cache.length) index = 0;
-      return 0; //TODO heartbeat return cache[index]
-    };
+    return (dt) => { return 0; }; //TODO heartbeat
   })(.3);
 
   const cellPool = (() => {
@@ -72,13 +52,12 @@ const Cells = function(canvas) {
     for (let i = 0; i < pool.length; i++) pool[i] = {
       size: null,       // pixels
       angle: null,      // degrees
-      flip: null,       // seconds
-      jigglePrg: null,  // timePrg function made by timePrg(jiggleDuration, fps)
+      flipPrg: null,    // seconds
+      jigglePrg: null,  // timePrg function
       jigglePhX: null,
       jigglePhY: null,
       x: null,
-      y: null,
-      flipFrame: null
+      y: null
     };
 
     return {
@@ -86,17 +65,16 @@ const Cells = function(canvas) {
       get: (i) => { return pool[i]; },
       active: (i) => { return active(i); },
       reset: (i) => { pool[i].x = null; },
-      new: (size, angle, flip, jigglePrg, jigglePhX, jigglePhY, x, y) => {
+      new: (size, angle, flipPrg, jigglePrg, jigglePhX, jigglePhY, x, y) => {
         for (let i = 0; i < pool.length; i++) if (!active(i)) {
           pool[i].size = size;
           pool[i].angle = angle;
-          pool[i].flip = flip;
+          pool[i].flipPrg = flipPrg;
           pool[i].jigglePrg = jigglePrg;
           pool[i].jigglePhX = jigglePhX;
           pool[i].jigglePhY = jigglePhY;
           pool[i].x = x;
           pool[i].y = y;
-          pool[i].flipFrame = 0;
           return i;
         }
         return false;   // if pool empty, should not happen
@@ -105,7 +83,7 @@ const Cells = function(canvas) {
   })();
 
   // canvas line at x = 0 to decide when to insert a new cell
-  const entryLine = ((c) => {
+  const entryLine = (() => {
     const pixels = new Array(c.canvas.height);
     return {
       reset: () => {
@@ -131,16 +109,17 @@ const Cells = function(canvas) {
         return space;
       }
     };
-  })(c);
+  })();
 
   // frame-duration cache (a bit quicker garbage collection)
   let fc = {
-    cell: null, heartbeat: null, pad: null, padPrg: null,
+    cell: null, heartbeat: null,
+    sinPad: null, sinPadPrg: timePrg(opt.sinPadDuration * 1000),
     rdX: null, rdY: null, ctlX: null, ctlY: null, flipPerc: null,
     jigglePrg: null, sX: null, sY: null
   };
 
-  const renderCellPath = (c) => {
+  const renderCellPath = () => {
     c.beginPath();
     c.moveTo(0, -fc.rdY);
     c.bezierCurveTo(fc.ctlX, -fc.rdY, fc.rdX, -fc.ctlY, fc.rdX, 0);
@@ -149,11 +128,8 @@ const Cells = function(canvas) {
     c.bezierCurveTo(-fc.rdX, -fc.ctlY, -fc.ctlX, -fc.rdY, 0, -fc.rdY);
   };
 
-  const renderCellFrame = (c, cell) => {
-    // compute animation state
-    if (cell.flipFrame === cell.flip * 60) cell.flipFrame = -1;
-    cell.flipFrame += 1;
-    fc.flipPerc = cell.flipFrame / cell.flip / 60 * 100;
+  const renderCellFrame = (dt, cell) => {
+    fc.flipPerc = rou(cell.flipPrg(dt) * 100);
 
     // enter canvas state
     c.save();
@@ -165,12 +141,12 @@ const Cells = function(canvas) {
     fc.ctlY = fc.ctlX * fc.rdY / fc.rdX;      // vertical bezier handle
 
     // render outside path
-    fc.jigglePrg = cell.jigglePrg();
+    fc.jigglePrg = cell.jigglePrg(dt);
     fc.sX = opt.jiggle * sin((fc.jigglePrg + cell.jigglePhX) * 2 * PI);
     fc.sY = opt.jiggle * sin((fc.jigglePrg + cell.jigglePhY) * 2 * PI);
     c.translate(cell.x + fc.sX, cell.y + fc.sY);
     c.rotate(cell.angle * PI / 180);
-    renderCellPath(c);
+    renderCellPath();
     c.fillStyle = 'rgb(242, 116, 116)';
     c.fill();
 
@@ -187,7 +163,7 @@ const Cells = function(canvas) {
     if (fc.rdY !== 0) {
       // slide inside path from center of outside path to edge and back
       c.translate(0, fc.flipPerc < 50 ? fc.rdY * 2 : -fc.rdY * 2);
-      renderCellPath(c);
+      renderCellPath();
       c.fillStyle = 'rgb(210, 58, 58)';
       c.fill();
     }
@@ -196,7 +172,7 @@ const Cells = function(canvas) {
     c.restore();
 
     // advance position
-    cell.x += opt.velocity / 60 * (1 + fc.heartbeat);
+    cell.x += opt.velocity * dt / 1000 * (1 + fc.heartbeat);
   };
 
   const addCell = () => {
@@ -204,11 +180,13 @@ const Cells = function(canvas) {
     let space = entryLine.window();
     let size = opt.sizeMin + rou(rnd() * (opt.sizeMax - opt.sizeMin));
     if (space.size < size) return;
+    let flipDelta = opt.flipMax - opt.flipMin;
+    let jiggleDelta = opt.jiggleMax - opt.jiggleMin;
     cellPool.new(
       size,
       opt.angleMin + rou(rnd() * (opt.angleMax - opt.angleMin)),
-      opt.flipMin + rou(rnd() * (opt.flipMax - opt.flipMin)),
-      timePrg(opt.jiggleMin + rou(rnd() * (opt.jiggleMax - opt.jiggleMin)), 60),
+      timePrg((opt.flipMin + rou(rnd() * flipDelta)) * 1000),
+      timePrg((opt.jiggleMin + rou(rnd() * jiggleDelta)) * 1000),
       rnd(),
       rnd(),
       0 - size / 2,
@@ -216,21 +194,21 @@ const Cells = function(canvas) {
     );
   };
 
-  const renderCells = (c) => {
+  const renderCells = (dt) => {
     // clear canvas and render background
     c.fillStyle = 'rgb(255, 255, 255)';
-    c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+    c.fillRect(0, 0, canvas.width, canvas.height);
     entryLine.reset();
-    fc.heartbeat = heartbeat();
+    fc.heartbeat = heartbeat(dt);
 
     // render cells
     for (let i = 0; i < cellPool.count; i++) {
       if (!cellPool.active(i)) continue;
       fc.cell = cellPool.get(i);
-      renderCellFrame(c, fc.cell);
+      renderCellFrame(dt, fc.cell);
 
       // remove cell if outside of canvas
-      if (fc.cell.x - fc.cell.size / 2 > c.canvas.width) cellPool.reset(i);
+      if (fc.cell.x - fc.cell.size / 2 > canvas.width) cellPool.reset(i);
 
       // mark pieces that cross entry line
       if (fc.cell.x - fc.cell.size / 2 - opt.buffer < 0) entryLine.mark(
@@ -239,25 +217,24 @@ const Cells = function(canvas) {
       );
     }
 
-    // take out cell buffer at beginning and end of entry line
-    // plus a sin wave of padding
-    if (fc.padPrg === null) fc.padPrg = timePrg(5, 60); // singleton
-    fc.pad = rou(abs(c.canvas.height / 5 * sin(fc.padPrg() * 2 * PI)));
-    entryLine.mark(0, opt.buffer + fc.pad);
-    entryLine.mark(c.canvas.height - opt.buffer - fc.pad, c.canvas.height);
+    // take out cell buffer at beginning and end of entry line plus padding wave
+    fc.sinPad = rou(abs(opt.sinPadHeight * sin(fc.sinPadPrg(dt) * 2 * PI)));
+    entryLine.mark(0, opt.buffer + fc.sinPad);
+    entryLine.mark(canvas.height - opt.buffer - fc.sinPad, canvas.height);
 
     // attempt to add cell to canvas entry line
     addCell();
   };
 
-  let raf;
-  const anim = () => {
-    renderCells(c);
+  let raf, lastTime = 0, dt;
+  const anim = (time) => {
+    dt = time - lastTime;
+    lastTime = time;
+    if (dt < 50) renderCells(dt); // throw away superlong frames
     raf = window.requestAnimationFrame(anim);
   };
 
   this.pause = () => { window.cancelAnimationFrame(raf); raf = null; };
   this.unpause = () => { if (!raf) anim(); };
-
   anim();
 };
