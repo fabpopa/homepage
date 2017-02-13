@@ -11,6 +11,7 @@ const Cells = function(canvas) {
   const PI = Math.PI;
 
   const c = canvas.getContext('2d');
+  let scaleRatio = 1;
 
   // scale for hidpi screens ref: html5rocks.com/en/tutorials/canvas/hidpi
   (() => {
@@ -18,12 +19,12 @@ const Cells = function(canvas) {
     const backingStoreRatio = c.webkitBackingStorePixelRatio ||
       c.mozBackingStorePixelRatio || c.msBackingStorePixelRatio ||
       c.oBackingStorePixelRatio || c.backingStorePixelRatio || 1;
-    const ratio = devicePixelRatio / backingStoreRatio;
-    if (ratio === 1) return;
+    if (devicePixelRatio === backingStoreRatio) return;
+    scaleRatio = flr(devicePixelRatio / backingStoreRatio * 1000) / 1000;
     const oldWidth = canvas.width;
     const oldHeight = canvas.height;
-    canvas.width = oldWidth * ratio;
-    canvas.height = oldHeight * ratio;
+    canvas.width = oldWidth * scaleRatio;
+    canvas.height = oldHeight * scaleRatio;
     canvas.style.width = `${oldWidth}px`;
     canvas.style.height = `${oldHeight}px`;
   })();
@@ -43,6 +44,10 @@ const Cells = function(canvas) {
     sinPadHeight: canvas.height / 5,  // pixels
     sinPadDuration: 5 // seconds
   };
+
+  // adapt size options to scale ratio
+  ['sizeMin', 'sizeMax', 'buffer', 'jiggle', 'velocity']
+    .forEach((o) => { opt[o] *= scaleRatio; });
 
   // gives function that returns 0 to 1 progress in time interval based on Δt
   // should be called once per frame with the time delta in ms
