@@ -11,6 +11,25 @@ const Cells = function(canvas) {
   const PI = Math.PI;
 
   const c = canvas.getContext('2d');
+
+  // scale for hidpi screens ref: html5rocks.com/en/tutorials/canvas/hidpi
+  (() => {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const backingStoreRatio = c.webkitBackingStorePixelRatio ||
+      c.mozBackingStorePixelRatio || c.msBackingStorePixelRatio ||
+      c.oBackingStorePixelRatio || c.backingStorePixelRatio || 1;
+    const ratio = devicePixelRatio / backingStoreRatio;
+    if (ratio === 1) return;
+    console.log(ratio);
+    const oldWidth = canvas.width;
+    const oldHeight = canvas.height;
+    canvas.width = oldWidth * ratio;
+    canvas.height = oldHeight * ratio;
+    canvas.style.width = `${oldWidth}px`;
+    canvas.style.height = `${oldHeight}px`;
+    c.scale(ratio, ratio);
+  })();
+
   const opt = {
     sizeMin: 20,      // pixels, even number
     sizeMax: 50,      // pixels, even number
@@ -115,7 +134,7 @@ const Cells = function(canvas) {
   let fc = {
     cell: null, heartbeat: null,
     sinPad: null, sinPadPrg: timePrg(opt.sinPadDuration * 1000),
-    rdX: null, rdY: null, ctlX: null, ctlY: null, flipPerc: null,
+    rdX: null, rdY: null, ctlX: null, ctlY: null, flipPerc: null, insideY: null,
     jigglePrg: null, sX: null, sY: null
   };
 
@@ -151,7 +170,7 @@ const Cells = function(canvas) {
     c.fill();
 
     // center inside path towards furthest edge of outside path
-    c.translate(0, fc.flipPerc < 50 ? -fc.rdY : fc.rdY);
+    fc.insideY = fc.flipPerc < 50 ? -fc.rdY : fc.rdY;
 
     // compute inside path
     fc.rdX /= 2;
@@ -162,7 +181,9 @@ const Cells = function(canvas) {
     // render inside path
     if (fc.rdY !== 0) {
       // slide inside path from center of outside path to edge and back
-      c.translate(0, fc.flipPerc < 50 ? fc.rdY * 2 : -fc.rdY * 2);
+      fc.insideY += fc.flipPerc < 50 ? fc.rdY * 2 : -fc.rdY * 2;
+      fc.insideY *= .75;  // zero before outside edge, illusion of thickness
+      c.translate(0, fc.insideY);
       renderCellPath();
       c.fillStyle = 'rgb(210, 58, 58)';
       c.fill();
@@ -230,7 +251,7 @@ const Cells = function(canvas) {
   const anim = (time) => {
     dt = time - lastTime;
     lastTime = time;
-    if (dt < 50) renderCells(dt); // throw away superlong frames
+    if (dt < 200) renderCells(dt); // throw away superlong frames
     raf = window.requestAnimationFrame(anim);
   };
 
