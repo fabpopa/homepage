@@ -20,14 +20,12 @@ const Cells = function(canvas) {
       c.oBackingStorePixelRatio || c.backingStorePixelRatio || 1;
     const ratio = devicePixelRatio / backingStoreRatio;
     if (ratio === 1) return;
-    console.log(ratio);
     const oldWidth = canvas.width;
     const oldHeight = canvas.height;
     canvas.width = oldWidth * ratio;
     canvas.height = oldHeight * ratio;
     canvas.style.width = `${oldWidth}px`;
     canvas.style.height = `${oldHeight}px`;
-    c.scale(ratio, ratio);
   })();
 
   const opt = {
@@ -103,7 +101,7 @@ const Cells = function(canvas) {
 
   // canvas line at x = 0 to decide when to insert a new cell
   const entryLine = (() => {
-    const pixels = new Array(c.canvas.height);
+    const pixels = new Array(canvas.height);
     return {
       reset: () => {
         for (let i = 0; i < pixels.length; i++) pixels[i] = true;
