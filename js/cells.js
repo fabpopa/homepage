@@ -250,6 +250,9 @@ const Cells = function(canvas) {
     addCell();
   };
 
+  // pre-advance animation by 10 seconds
+  for (let i = 0; i < flr(10 * 1000 / 16); i++) renderCells(16);
+
   let raf, lastTime = 0, dt;
   const anim = (time) => {
     dt = time - lastTime;
