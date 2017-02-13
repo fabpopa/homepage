@@ -12,6 +12,7 @@ const Cells = function(canvas) {
 
   const c = canvas.getContext('2d');
   let scaleRatio = 1;
+  let preload = true;  // remove if preload not required
 
   // scale for hidpi screens ref: html5rocks.com/en/tutorials/canvas/hidpi
   (() => {
@@ -86,7 +87,7 @@ const Cells = function(canvas) {
       count: pool.length,
       get: (i) => { return pool[i]; },
       active: (i) => { return active(i); },
-      reset: (i) => { pool[i].x = null; },
+      reset: (i) => { pool[i].x = null; preload = false; },
       new: (size, angle, flipPrg, jigglePrg, jigglePhX, jigglePhY, x, y) => {
         for (let i = 0; i < pool.length; i++) if (!active(i)) {
           pool[i].size = size;
@@ -250,8 +251,8 @@ const Cells = function(canvas) {
     addCell();
   };
 
-  // pre-advance animation by 10 seconds
-  for (let i = 0; i < flr(10 * 1000 / 16); i++) renderCells(16);
+  // pre-advance animation until first cell passes end of canvas
+  while (preload) renderCells(17);
 
   let raf, lastTime = 0, dt;
   const anim = (time) => {
