@@ -6,85 +6,60 @@ body { background: black; }
 .cells {
   margin-top: 20px;
   width: 100%;
-  height: 60px;
+  height: 100px;
   background: white;
 }
 
-.cell {
-  position: absolute;
+.cell { position: absolute; width: 4em; height: 4em; }
+.cell .jiggleX { animation: 1s ease-in-out infinite alternate jiggleX; }
+.cell .jiggleY { animation: .6s ease-in-out infinite alternate jiggleY; }
+.cell .jiggleY > * { position: absolute; border-radius: 50%; }
+
+.cell .outside {
   width: 4em;
   height: 4em;
-}
-
-.cell .jiggleX {
-  width: 100%;
-  height: 100%;
-  animation: 1s ease-in-out infinite alternate jiggleX;
-}
-
-.cell .jiggleY {
-  width: 100%;
-  height: 100%;
-  animation: .6s ease-in-out infinite alternate jiggleY;
-}
-
-.cell .out {
-  width: 100%;
-  height: 100%;
   background: #f27474;
-  border-radius: 50%;
-  animation: 2s linear infinite out;
+  animation: 2s linear infinite outside;
 }
 
-.cell .in {
-  position: absolute;
-  top: 0;
-  left: 25%;
+.cell .inside {
   width: 2em;
   height: 2em;
   background: #d23a3a;
-  border-radius: 50%;
-  animation: 2s linear infinite in;
+  animation: 2s linear infinite inside;
 }
 
 @keyframes jiggleX {
-  0% { transform: translateX(-.1em); }
-  100% { transform: translateX(.1em); }
+  0% { transform: translateX(-1em); }
+  100% { transform: translateX(1em); }
 }
 
 @keyframes jiggleY {
-  0% { transform: translateY(-.1em); }
-  100% { transform: translateY(.1em); }
+  0% { transform: translateY(-1em); }
+  100% { transform: translateY(1em); }
 }
 
-@keyframes out {
+@keyframes outside {
   0%, 100% { transform: scaleY(.2); }
   50% { transform: scaleY(1); }
 }
 
-@keyframes in {
-  0% { transform: translateY(.65em) scale(.95, 0); }
-  50% { transform: translateY(1em) scale(1, 1); }
-  100% { transform: translateY(1.35em) scale(.9, 0); }
+@keyframes inside {
+  0% { transform: translate(1em, .68em) scale(.96, 0); }
+  50% { transform: translate(1em, 1em) scale(1, 1); }
+  100% { transform: translate(1em, 1.32em) scale(.9, 0); }
 }
 </style>
 
 <!-- <div class="cells">
-  <div class="cell" style="transform:translateX(10px);font-size:10px">
-    <div class="jiggleX"><div class="jiggleY">
-      <div class="out"></div><div class="in"></div>
-    </div></div>
-  </div>
-  <div class="cell" style="transform:translateX(60px);font-size:14px">
-    <div class="jiggleX"><div class="jiggleY">
-      <div class="out"></div><div class="in"></div>
-    </div></div>
-  </div>
-    <div class="cell" style="transform:translateX(140px);font-size:18px">
-      <div class="jiggleX"><div class="jiggleY">
-        <div class="out"></div><div class="in"></div>
-      </div></div>
+  <div class="cell" style="padding:2px;transform:translateX(10px);">
+    <div class="jiggleX" style="font-size:2px">
+      <div class="jiggleY">
+        <div class="outside" style="font-size:30px"></div>
+        <div class="inside" style="font-size:30px"></div>
+      </div>
     </div>
+  </div>
 </div> -->
 
 <script>
@@ -99,23 +74,27 @@ const go = () => {
   document.body.appendChild(cells);
 
   const addCell = () => {
-    const emPx = 4 + Math.round(Math.random() * 10);
-    const posXPx = Math.round(Math.random() * 500);
-    const angleDeg = -120 + Math.round(Math.random() * 60);
+    const size = (14 + Math.round(Math.random() * 30)) / 4;
+    const position = Math.round(Math.random() * 500);
+    const angle = -120 + Math.round(Math.random() * 60);
+    const jiggle = 1 + Math.round(Math.random() * 2);
 
     const cell = elWithClass('div', 'cell');
     const jiggleX = elWithClass('div', 'jiggleX');
     const jiggleY = elWithClass('div', 'jiggleY');
-    const cellOut = elWithClass('div', 'out');
-    const cellIn = elWithClass('div', 'in');
-    jiggleY.appendChild(cellOut);
-    jiggleY.appendChild(cellIn);
+    const outside = elWithClass('div', 'outside');
+    const inside = elWithClass('div', 'inside');
+    jiggleY.appendChild(outside);
+    jiggleY.appendChild(inside);
     jiggleX.appendChild(jiggleY);
     cell.appendChild(jiggleX);
 
-    cell.style.cssText = ''
-      .concat(`font-size: ${emPx}px;`)
-      .concat(`transform: translateX(${posXPx}px) rotate(${angleDeg}deg)`);
+    cell.style['font-size'] = `${size}px`;
+    cell.style['padding'] = `${jiggle}px`;
+    cell.style['transform'] = `translateX(${position}px) rotate(${angle}deg)`;
+    jiggleX.style['font-size'] = `${jiggle}px`;
+    outside.style['font-size'] = `${size}px`;
+    inside.style['font-size'] = `${size}px`;
     cells.appendChild(cell);
   };
 
