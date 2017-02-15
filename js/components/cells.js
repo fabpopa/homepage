@@ -3,8 +3,8 @@
 const Cells = function(width, height) {
   // animation options
   const opt = {
-    sizeMin: 20,        // pixels, even number
-    sizeMax: 50,        // pixels, even number
+    sizeMin: 14,        // pixels, even number
+    sizeMax: 36,        // pixels, even number
     angMin: -120,       // degrees
     angMax: -60,        // degrees
     flipTMin: 2,        // seconds
@@ -25,6 +25,7 @@ const Cells = function(width, height) {
   const flr = (x) => Math.floor(x);
   const cei = (x) => Math.ceil(x);
   const sin = (x) => Math.sin(x);
+  const abs = (x) => Math.abs(x);
   const min = (x, y) => Math.min(x, y);
   const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
@@ -32,8 +33,8 @@ const Cells = function(width, height) {
   // HTMLElement to return
   const el = document.createElement('div');
   el.setAttribute('component', 'cells');
-  el.style.width = width;
-  el.style.height = height;
+  el.style['width'] = `${width}px`;
+  el.style['height'] = `${height}px`;
 
   // stylesheet element to append to document.head
   const style = (() => {
@@ -51,7 +52,7 @@ const Cells = function(width, height) {
       ${c} .inside { width: 2em; height: 2em; background: #d23a3a;
                      animation: 0s linear infinite inside; }
       @keyframes move { from { transform: translateX(-100%); }
-                        to { transform: translateX(${width}); } }
+                        to { transform: translateX(${width}px); } }
       @keyframes jiggleX { from { transform: translateX(-1em); }
                            to { transform: translateX(1em); } }
       @keyframes jiggleY { from { transform: translateY(-1em); }
@@ -69,7 +70,7 @@ const Cells = function(width, height) {
     return el;
   })();
 
-  const makeCellEl = () => {
+  const makeCellEl = (cells) => {
     const cell = document.createElement('div');
     const angle = document.createElement('div');
     const jiggleX = document.createElement('div');
@@ -96,9 +97,9 @@ const Cells = function(width, height) {
     return cell;
   };
 
-  // canvas line at x = 0 to insert cells where they don't overlap
-  const entryLine = ((canvas) => {
-    const pixels = new Array(canvas.style.height);
+  // line at x = 0 to insert cells where they don't overlap
+  const entryLine = (() => {
+    const pixels = new Array(height);
     return {
       reset: () => {
         for (let i = 0; i < pixels.length; i++) pixels[i] = true;
@@ -123,7 +124,7 @@ const Cells = function(width, height) {
         return space;
       }
     };
-  })(el);
+  })();
 
   const sinPad = ((size, cycle) => {
     let lastTime, progress, value;
@@ -162,26 +163,24 @@ const Cells = function(width, height) {
   };
 
   // cell elements created in advance, attached to DOM and never removed
-  const cells = ((canvas) => {
+  const cells = (() => {
     // allocate objects for theoretical max number of cells
-    const width = canvas.style.width;
-    const height = canvas.style.height;
     const poolCount = flr(width * height / pow(opt.sizeMin, 2));
     const pool = new Array(poolCount);
     const travelTime = flr(width / opt.velocity);
 
     // populate cell pool
     for (let i = 0; i < pool.length; i++) pool[i] = {
-      size: null,       // pixels
-      angle: null,      // degrees
-      flipTime: null,   // seconds
-      jiggle: null,     // pixels
-      jiggleTime: null, // seconds
-      jigglePhX: null,  // time phase shift within 0-jiggleTime seconds
-      jigglePhY: null,  // time phase shift within 0-jiggleTime seconds
-      y: null,          // pixels, vertical center of cell
-      launchedAt: null  // ms returned from performance.now()
-      el: makeCellEl()  // DOM element
+      size: null,        // pixels
+      angle: null,       // degrees
+      flipTime: null,    // seconds
+      jiggle: null,      // pixels
+      jiggleTime: null,  // seconds
+      jigglePhX: null,   // time phase shift within 0-jiggleTime seconds
+      jigglePhY: null,   // time phase shift within 0-jiggleTime seconds
+      y: null,           // pixels, vertical center of cell
+      launchedAt: null,  // ms returned from performance.now()
+      el: makeCellEl(el) // DOM element
     };
 
     const active = (i) => { return pool[i].y !== null; };
@@ -224,18 +223,19 @@ const Cells = function(width, height) {
       launch(c.cell);
     };
 
-    return { addIfSpace };
-  })(el);
+    return addIfSpace;
+  })();
 
   // attach stylesheet
   document.head.appendChild(style);
 
   let raf, lastNow, time = 0;
   const anim = (now) => {
-    if (!now) now = window.performance.now();
+    if (!now) { raf = window.requestAnimationFrame(anim); return; }
     if (!lastNow) lastNow = now;
     time += now - lastNow;
-    cells.addIfSpace(time);
+    cells(time);
+    lastNow = now;
     raf = window.requestAnimationFrame(anim);
   };
 
