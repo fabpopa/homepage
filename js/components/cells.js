@@ -44,7 +44,7 @@ const Cells = function(width, height) {
     const c = '[component=cells]';
     const css = `
       ${c} { position: relative; width: 100%; height: 100%; overflow: hidden; }
-      ${c} .paused * { animation-play-state: paused !important; }
+      ${c}.paused *, ${c} .paused * { animation-play-state: paused !important; }
       ${c} .cell { position: absolute; width: 4em; height: 4em;
                    transform: translateX(-100%); }
       ${c} .cell * { width: 100%; height: 100%; }
