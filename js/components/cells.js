@@ -1,23 +1,8 @@
 // creates cells animation component
 // requires width and height in pixels
 const Cells = function(width, height) {
-  // animation options
-  const opt = {
-    sizeMin: 14,        // pixels, even number
-    sizeMax: 36,        // pixels, even number
-    angMin: -120,       // degrees
-    angMax: -60,        // degrees
-    flipTMin: 2,        // seconds
-    flipTMax: 5,        // seconds
-    jigMin: 1,          // pixels
-    jigMax: 3,          // pixels
-    jigTMin: 2,         // seconds
-    jigTMax: 4,         // seconds
-    buffer: 10,         // pixels
-    velocity: 60,       // pixels per second
-    padMax: height / 5, // pixels
-    padTime: 5          // seconds
-  };
+  if (typeof width !== 'number' || typeof height !== 'number')
+    throw new Error('Cells requires number params');
 
   // convenience math functions
   const rnd = () => Math.random();
@@ -30,6 +15,24 @@ const Cells = function(width, height) {
   const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
 
+  // animation options
+  const opt = {
+    sizeMin: flr(height / 5),   // pixels, even number
+    sizeMax: flr(height / 2.5), // pixels, even number
+    angMin: -120,               // degrees
+    angMax: -60,                // degrees
+    flipTMin: 2,                // seconds
+    flipTMax: 5,                // seconds
+    jigMin: 2,                  // pixels
+    jigMax: 2,                  // pixels
+    jigTMin: 2,                 // seconds
+    jigTMax: 4,                 // seconds
+    buffer: flr(height / 14),   // pixels
+    velocity: 40,               // pixels per second
+    padMax: flr(height / 4),    // pixels
+    padTime: 14                 // seconds
+  };
+
   // HTMLElement to return
   const el = document.createElement('div');
   el.setAttribute('component', 'cells');
@@ -40,10 +43,11 @@ const Cells = function(width, height) {
   const style = (() => {
     const c = '[component=cells]';
     const css = `
-      ${c} { width: 100%; height: 100%; overflow: hidden; }
+      ${c} { position: relative; width: 100%; height: 100%; overflow: hidden; }
       ${c} .paused * { animation-play-state: paused !important; }
       ${c} .cell { position: absolute; width: 4em; height: 4em;
                    transform: translateX(-100%); }
+      ${c} .cell * { width: 100%; height: 100%; }
       ${c} .jiggleX { animation: 0s ease-in-out infinite alternate jiggleX; }
       ${c} .jiggleY { animation: 0s ease-in-out infinite alternate jiggleY; }
       ${c} .jiggleY > * { position: absolute; border-radius: 50%; }
@@ -93,6 +97,7 @@ const Cells = function(width, height) {
     cell['jiggleY'] = jiggleY;
     cell['outside'] = outside;
     cell['inside'] = inside;
+    cell.classList.add('paused');
     cells.appendChild(cell);
     return cell;
   };
@@ -138,24 +143,26 @@ const Cells = function(width, height) {
   })(opt.padMax, opt.padTime * 1000);
 
   const launch = (cell) => {
-    cell.el.style['font-size'] = `${cell.size}px`;
-    cell.el.outside.style['font-size'] = `${cell.size}px`;
-    cell.el.inside.style['font-size'] = `${cell.size}px`;
+    cell.el.style['font-size'] = `${cell.size / 4}px`;
+    cell.el.outside.style['font-size'] = `${cell.size / 4}px`;
+    cell.el.inside.style['font-size'] = `${cell.size / 4}px`;
     cell.el.angle.style['transform'] = `rotate(${cell.angle}deg)`;
     cell.el.outside.style['animation-duration'] = `${cell.flipTime}s`;
     cell.el.inside.style['animation-duration'] = `${cell.flipTime}s`;
     cell.el.style['padding'] = `${cell.jiggle}px`;
     cell.el.jiggleX.style['font-size'] = `${cell.jiggle}px`;
     cell.el.jiggleX.style['animation-duration'] = `${cell.jiggleTime}s`;
-    cell.el.jiggleX.style['animation-delay'] = `${cell.jigglePhX}s`;
+    // cell.el.jiggleX.style['animation-delay'] = `${cell.jigglePhX}s`;
     cell.el.jiggleY.style['animation-duration'] = `${cell.jiggleTime}s`;
-    cell.el.jiggleY.style['animation-delay'] = `${cell.jigglePhY}s`;
-    cell.el.style['top'] = `${cell.y - flr(cell.size / 2)}px`;
-    cell.el.onanimationend = () => {
-      cell.el.onanimationend = null;
+    // cell.el.jiggleY.style['animation-delay'] = `${cell.jigglePhY}s`;
+    cell.el.style['top'] = `${cell.y - flr(cell.size / 2) - cell.jiggle}px`;
+    cell.el.classList.remove('paused');
+    cell.el.addEventListener('animationend', function() {
+      cell.el.removeEventListener('animationend', arguments.callee);
+      cell.el.classList.add('paused');
       cell.el.style['animation'] = '';
-      cell.y = null;
-    };
+      window.requestAnimationFrame(() => { cell.y = null; });
+    });
     window.requestAnimationFrame((time) => {
       cell.launchedAt = time;
       cell.el.style['animation'] = `${width / opt.velocity}s linear move`;
@@ -204,12 +211,13 @@ const Cells = function(width, height) {
         entryLine.mark(pool[c.i].y - c.half, pool[c.i].y + c.half);
       }
       entryLine.mark(0, c.pad);
-      entryLine.mark(height - c.pad, height);
+      entryLine.mark(height - c.pad - 1, height - 1);
 
       c.space = entryLine.window();
       if (c.space.size < opt.sizeMin + opt.jigMin * 2) return;
 
       for (c.i = 0; c.i < pool.length; c.i++) if (!active(c.i)) break;
+      if (c.i === pool.length) return;
       c.cell = pool[c.i];
       c.cell.angle = opt.angMin + rou(rnd() * abs(opt.angMax - opt.angMin));
       c.cell.flipTime = opt.flipTMin + rnd() * (opt.flipTMax - opt.flipTMin);
@@ -218,8 +226,9 @@ const Cells = function(width, height) {
       c.cell.jigglePhX = rnd() * c.cell.jiggleTime;
       c.cell.jigglePhY = rnd() * c.cell.jiggleTime;
       c.cell.y = rou(c.space.start + c.space.size / 2);
-      c.cell.size = opt.sizeMin +
-        rou(rnd() * (min(opt.sizeMax, c.space.size) - opt.sizeMin));
+      c.cell.size =
+        opt.sizeMin + rnd() * (min(opt.sizeMax, c.space.size) - opt.sizeMin);
+      c.cell.size = flr(c.cell.size);
       launch(c.cell);
     };
 
