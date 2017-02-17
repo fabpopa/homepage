@@ -162,18 +162,20 @@ const Cells = function(width, height) {
     cell.el.style['padding'] = `${cell.jiggle}px`;
     cell.el.jiggleX.style['font-size'] = `${cell.jiggle}px`;
     cell.el.style['top'] = `${cell.y - flr(cell.size / 2) - cell.jiggle}px`;
-    cell.el.classList.remove('paused');
-    cell.el.addEventListener('animationend', function() {
-      cell.el.removeEventListener('animationend', arguments.callee);
-      cell.el.classList.add('paused');
-      cell.el.style['animation'] = '';
-      cell.el.outside.style['animation'] = '';
-      cell.el.inside.style['animation'] = '';
-      cell.el.jiggleX.style['animation'] = '';
-      cell.el.jiggleY.style['animation'] = '';
-      window.requestAnimationFrame(() => { cell.y = null; });
-    });
+
+    // at least one frame between animation end and element reuse
     window.requestAnimationFrame((now) => {
+      cell.el.classList.remove('paused');
+      cell.el.addEventListener('animationend', function() {
+        cell.el.removeEventListener('animationend', arguments.callee);
+        cell.el.classList.add('paused');
+        cell.el.style['animation'] = '';
+        cell.el.outside.style['animation'] = '';
+        cell.el.inside.style['animation'] = '';
+        cell.el.jiggleX.style['animation'] = '';
+        cell.el.jiggleY.style['animation'] = '';
+        cell.y = null;
+      });
       cell.launchedAt = time + now - lastNow;
       cell.el.outside.style['animation'] =
         `${cell.flipTime}s linear infinite outside`;
@@ -183,7 +185,8 @@ const Cells = function(width, height) {
         `${cell.jiggleTime}s ease-in-out infinite alternate jiggleX`;
       cell.el.jiggleY.style['animation'] =
         `${cell.jiggleTime}s ease-in-out infinite alternate jiggleY`;
-      cell.el.style['animation'] = `${width / opt.velocity}s linear move`;
+      cell.el.style['animation'] =
+        `${(width + cell.size + 2 * cell.jiggle) / opt.velocity}s linear move`;
     });
   };
 
