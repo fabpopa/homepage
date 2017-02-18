@@ -46,7 +46,8 @@ const Cells = function(width, height) {
       ${c} { position: relative; width: 100%; height: 100%; overflow: hidden; }
       ${c}.paused *, ${c} .paused * { animation-play-state: paused !important; }
       ${c} .cell { position: absolute; width: 4em; height: 4em;
-                   transform: translateX(-100%); }
+                   transform: translateX(-100%);
+                   background: black; }
       ${c} .cell * { width: 100%; height: 100%; }
       ${c} .jiggleY > * { position: absolute; border-radius: 50%; }
       ${c} .outside { width: 4em; height: 4em; background: #f27474; }
@@ -154,6 +155,9 @@ const Cells = function(width, height) {
     return buffer;
   })();
 
+  // avoid work on a frame when possible
+  let sleepTil = 0;
+
   const launch = (cell, time, lastNow) => {
     cell.el.style['font-size'] = `${cell.size / 4}px`;
     cell.el.outside.style['font-size'] = `${cell.size / 4}px`;
@@ -178,6 +182,8 @@ const Cells = function(width, height) {
         cell.y = null;
       });
       cell.launchedAt = time + now - lastNow;
+      sleepTil = cell.launchedAt;
+      sleepTil += (cell.size / 2 + cell.jiggle) / opt.velocity * 1000;
       cell.el.outside.style['animation'] =
         `${cell.flipTime}s linear infinite outside`;
       cell.el.inside.style['animation'] =
@@ -229,6 +235,7 @@ const Cells = function(width, height) {
 
     const addIfSpace = (time, now) => {
       c.pad = sinPad(time);         // advance sin pad
+      if (time < sleepTil) return;  // sleep for half of last cell
       if (rnd() % .3 > .02) return; // increase spread by random rejection
 
       entryLine.reset();
