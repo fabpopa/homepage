@@ -147,7 +147,7 @@ const Cells = function(width, height) {
 
   // circular buffer for last launched cell indexes
   const lastLaunched = (() => {
-    const maxCount = flr(height / (opt.sizeMin + 2 * opt.jigMin + opt.buffer));
+    const maxCount = cei(height / (opt.sizeMin + 2 * opt.jigMin + opt.buffer));
     const buffer = new Array(maxCount);
     let i = 0;
     buffer.add = (item) => { buffer[i] = item; i = (i + 1) % buffer.length; };
@@ -211,11 +211,11 @@ const Cells = function(width, height) {
       el: makeCellEl(el) // DOM element
     };
 
-    const active = (i) => { return pool[i].y !== null; };
+    const active = (i) => typeof i == 'number' && pool[i].y !== null;
 
     // cache, hot object
-    let c = {
-      pad: null, space: null, cell: null, i: null,
+    const c = {
+      pad: null, space: null, cell: null, i: null, li: null,
       occupied: null, half: null, traveled: null
     };
 
@@ -227,12 +227,13 @@ const Cells = function(width, height) {
     el.appendChild(pb);
 
     const addIfSpace = (time, now) => {
-      console.log(time);
       c.pad = sinPad(time);         // advance sin pad
       if (rnd() % .3 > .02) return; // increase spread by random rejection
 
       entryLine.reset();
-      for (c.i = 0; c.i < pool.length; c.i++) if (active(c.i)) {
+      for (c.li = 0; c.li < lastLaunched.length; c.li++) {
+        c.i = lastLaunched[c.li];
+        if (!active(c.i)) continue;
         c.occupied = pool[c.i].size + pool[c.i].jiggle * 2 + opt.buffer * 2;
         c.half = flr(c.occupied / 2);
         c.traveled = flr((time - pool[c.i].launchedAt) * opt.velocity / 1000);
@@ -262,6 +263,7 @@ const Cells = function(width, height) {
         opt.sizeMin + rnd() * (min(opt.sizeMax, c.space.size) - opt.sizeMin);
       c.cell.size = flr(c.cell.size);
       launch(c.cell, time, now);
+      lastLaunched.add(c.i);
     };
 
     return addIfSpace;
