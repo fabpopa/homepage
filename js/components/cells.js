@@ -307,7 +307,11 @@ const Cells = function(width, height) {
     el.classList.add('paused');
   };
 
-  el.unpause = () => { go(() => { el.classList.remove('paused'); }); };
+  el.unpause = () => {
+    if (lastNow) return;
+    go(() => { el.classList.remove('paused'); });
+  };
+
   el.cleanup = () => { el.pause(); document.head.removeChild(style); };
 
   // some browsers pause animation on visibility change silently, be explicit
