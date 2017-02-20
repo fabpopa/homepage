@@ -34,6 +34,7 @@ const Audio = function(src) {
 
   // state
   const data = { pcm: null, peaks: null };
+  let audio;
 
   //TODO build element
 
@@ -46,7 +47,7 @@ const Audio = function(src) {
   };
 
   const display = () => {
-
+    console.log('ready to play');
     //TODO hide progress if it's somehow stuck
   };
 
@@ -99,16 +100,22 @@ const Audio = function(src) {
   // wave mapping checkpoint, requires parent node and the decoded PCM peaks
   let readyToMap = (c => () => { c -= 1; if (!c) map(); })(2);
 
-  // decode audio data for waveform visual and create media elem for playback
   const parseAudio = (encoded) => {
+    // decode audio data for waveform visual
     const ac = new AudioContext();
     const decodeOk = (pcm) => { data.pcm = pcm; readyToMap(); };
     const decodeErr = () => { error('Error decoding media'); };
     ac.decodeAudioData(encoded).then(decodeOk).catch(decodeErr);
 
-    // const audio = new Audio();
-    //TODO src and playback
-    //readyToPlay();
+    // create media element for playback
+    const audioExt = /\.(.+)$/.exec(src)[1];
+    const audioBlob = new Blob([encoded], { type: `audio/${audioExt}` });
+    const audioBlobUrl = window.URL.createObjectURL(audioBlob);
+    audio = document.createElement('audio');
+    audio.onload = () => { readyToPlay(); };
+    audio.onsuspend = audio.onload; // may fire when fetching from cache
+    audio.onerror = () => { error('Error passing data to audio element'); };
+    audio.src = audioBlobUrl;
   };
 
   const downloadProgress = (e) => {
