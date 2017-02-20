@@ -7,6 +7,7 @@ const Audio = function(src) {
   // convenience math functions
   const flr = x => Math.floor(x);
   const cei = x => Math.ceil(x);
+  const abs = x => Math.abs(x);
 
   // HTMLElement to return
   const el = document.createElement('div');
@@ -49,13 +50,50 @@ const Audio = function(src) {
     //TODO hide progress if it's somehow stuck
   };
 
+  // playing requires display peaks to be computed and Audio elem ready
+  let readyToPlay = (c => () => { c -= 1; if (!c) display(); })(2);
+
   // extract peaks from decoded audio data at the set resolution
   const map = () => {
     const style = window.getComputedStyle(el);
     const width = parseInt(style['width'], 10);
     const height = parseInt(style['height'], 10);
-    const peakCount = cei(width / opt.peakWidth);
-    console.log(width, height);
+    const bucketCount = cei(width / opt.peakWidth);
+    if (!width || !height || bucketCount < 3) {
+      error('Error sizing audio component');
+      return;
+    }
+
+    // divide samples into as many buckets as peaks can visually fit in width
+    // average samples inside a bucket and across channels
+    let buckets = new Array(bucketCount);
+    const bucketSize = cei(data.pcm.length / bucketCount);
+    const ch = new Array(data.pcm.numberOfChannels);
+    for (let i = 0; i < ch.length; i++) ch[i] = data.pcm.getChannelData(i);
+    for (let i = 0, j, chAvg, bkt, bktI, bktAvg; i < data.pcm.length; i++) {
+      // get a channel average for abs values of samples in all channels at i
+      chAvg = 0;
+      for (j = 0; j < ch.length; j++) chAvg += abs(ch[j][i]);
+      chAvg /= ch.length;
+
+      // continuously save the bucket average of channel averages in the bucket
+      bkt = flr(i / bucketSize);
+      bktI = i % bucketSize;
+      bktAvg = buckets[bkt];
+      if (!bktAvg) { bktAvg = chAvg; }
+      else { bktAvg = bktI / (bktI + 1) * bktAvg + 1 / (bktI + 1) * chAvg; }
+      buckets[bkt] = bktAvg;
+    }
+
+    // normalize values to 0 - 1 interval
+    const bktMax = Math.max(...buckets);
+    const bktMin = Math.min(...buckets);
+    let bktNorm = x => (x - bktMin) / (bktMax - bktMin);
+    if (bktMax === bktMin) bktNorm = x => 1;
+    buckets = buckets.map(bktNorm);
+
+    data.peaks = buckets;
+    readyToPlay();
   };
 
   // wave mapping checkpoint, requires parent node and the decoded PCM peaks
@@ -70,6 +108,7 @@ const Audio = function(src) {
 
     // const audio = new Audio();
     //TODO src and playback
+    //readyToPlay();
   };
 
   const downloadProgress = (e) => {
