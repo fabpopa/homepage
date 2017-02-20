@@ -7,7 +7,6 @@ const Audio = function(src) {
   // convenience math functions
   const flr = x => Math.floor(x);
   const cei = x => Math.ceil(x);
-  const abs = x => Math.abs(x);
 
   // HTMLElement to return
   const el = document.createElement('div');
@@ -17,7 +16,7 @@ const Audio = function(src) {
 
   // detect features
   const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const features = AudioContext && !!Audio && !!MutationObserver;
+  const features = AudioContext && !!Audio && !!Worker && !!Blob;
 
   // fall back to audio element if web audio api unavailable
   if (!features) {
@@ -48,10 +47,11 @@ const Audio = function(src) {
 
   const display = () => {
     console.log('ready to play');
+    console.log(data.peaks);
     //TODO hide progress if it's somehow stuck
   };
 
-  // playing requires display peaks to be computed and Audio elem ready
+  // playable checkpoint, requires computed peaks and audio playback element
   let readyToPlay = (c => () => { c -= 1; if (!c) display(); })(2);
 
   // extract peaks from decoded audio data at the set resolution
@@ -65,39 +65,59 @@ const Audio = function(src) {
       return;
     }
 
-    // divide samples into as many buckets as peaks can visually fit in width
-    // average samples inside a bucket and across channels
-    let buckets = new Array(bucketCount);
-    const bucketSize = cei(data.pcm.length / bucketCount);
+    const workerJS = `onmessage = (e) => {
+      const ch = e.data.ch;
+      const length = e.data.length;
+      const bucketCount = e.data.bucketCount;
+      const bucketSize = Math.ceil(length / bucketCount);
+      let buckets = new Array(bucketCount);
+
+      // divide samples into as many buckets as peaks can fit in width
+      // average samples inside a bucket and across channels
+      for (let i = 0, j, chAvg, bkt, bktI, bktAvg; i < length; i++) {
+        // average of absolute values across all channels for sample i
+        chAvg = 0;
+        for (j = 0; j < ch.length; j++) chAvg += Math.abs(ch[j][i]);
+        chAvg /= ch.length;
+
+        // continuously save bucket average
+        bkt = Math.floor(i / bucketSize);
+        bktI = i % bucketSize;
+        bktAvg = buckets[bkt];
+        if (!bktAvg) { bktAvg = chAvg; }
+        else { bktAvg = bktI / (bktI + 1) * bktAvg + 1 / (bktI + 1) * chAvg; }
+        buckets[bkt] = bktAvg;
+      }
+
+      // normalize values to 0-1 interval
+      const bktMax = Math.max(...buckets);
+      const bktMin = Math.min(...buckets);
+      let bktNorm = x => (x - bktMin) / (bktMax - bktMin);
+      if (bktMax === bktMin) bktNorm = x => 0;
+      buckets = buckets.map(bktNorm);
+
+      postMessage(buckets);
+    };`;
+
+    // processing peaks may take 3 sec or more, send to separate worker thread
+    const workerBlob = new Blob([workerJS], { type: 'application/javascript' });
+    const workerBlobURL = window.URL.createObjectURL(workerBlob);
+    const worker = new Worker(workerBlobURL);
+    worker.onerror = () => { error('Error inside peaks worker'); return; };
+    worker.onmessage = (e) => {
+      data.peaks = e.data;
+      worker.terminate();
+      window.URL.revokeObjectURL(workerBlobURL);
+      readyToPlay();
+    };
+
     const ch = new Array(data.pcm.numberOfChannels);
     for (let i = 0; i < ch.length; i++) ch[i] = data.pcm.getChannelData(i);
-    for (let i = 0, j, chAvg, bkt, bktI, bktAvg; i < data.pcm.length; i++) {
-      // get a channel average for abs values of samples in all channels at i
-      chAvg = 0;
-      for (j = 0; j < ch.length; j++) chAvg += abs(ch[j][i]);
-      chAvg /= ch.length;
-
-      // continuously save the bucket average of channel averages in the bucket
-      bkt = flr(i / bucketSize);
-      bktI = i % bucketSize;
-      bktAvg = buckets[bkt];
-      if (!bktAvg) { bktAvg = chAvg; }
-      else { bktAvg = bktI / (bktI + 1) * bktAvg + 1 / (bktI + 1) * chAvg; }
-      buckets[bkt] = bktAvg;
-    }
-
-    // normalize values to 0 - 1 interval
-    const bktMax = Math.max(...buckets);
-    const bktMin = Math.min(...buckets);
-    let bktNorm = x => (x - bktMin) / (bktMax - bktMin);
-    if (bktMax === bktMin) bktNorm = x => 1;
-    buckets = buckets.map(bktNorm);
-
-    data.peaks = buckets;
-    readyToPlay();
+    const workerData = { ch, length: data.pcm.length, bucketCount };
+    worker.postMessage(workerData);
   };
 
-  // wave mapping checkpoint, requires parent node and the decoded PCM peaks
+  // wave mapping checkpoint, requires parent node and decoded PCM peaks
   let readyToMap = (c => () => { c -= 1; if (!c) map(); })(2);
 
   const parseAudio = (encoded) => {
@@ -110,12 +130,12 @@ const Audio = function(src) {
     // create media element for playback
     const audioExt = /\.(.+)$/.exec(src)[1];
     const audioBlob = new Blob([encoded], { type: `audio/${audioExt}` });
-    const audioBlobUrl = window.URL.createObjectURL(audioBlob);
+    const audioBlobURL = window.URL.createObjectURL(audioBlob);
     audio = document.createElement('audio');
     audio.onload = () => { readyToPlay(); };
     audio.onsuspend = audio.onload; // may fire when fetching from cache
     audio.onerror = () => { error('Error passing data to audio element'); };
-    audio.src = audioBlobUrl;
+    audio.src = audioBlobURL;
   };
 
   const downloadProgress = (e) => {
