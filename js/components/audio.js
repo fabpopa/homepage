@@ -1,7 +1,12 @@
 const Audio = function(src) {
   const opt = {
     peakWidth: 20,      // pixels width for a peak on the sound curve
-    barHeightMax: 20    // pixels height for the base bar
+    heightUnitMin: 4,   // pixels height min for the height unit
+    heightUnitMax: 30,  // pixels height max for the height unit
+    barHULoading: 2,    // height unit multiple for bar when loading
+    barHUWaveform: 1,   // height unit multiple for bar when part of waveform
+    waveformHU: 5,      // height unit multiple for full waveform
+    peakCurveHandle: 1  // pixels length of bezier curve handle at tip of peak
   };
 
   // convenience math functions
@@ -14,28 +19,33 @@ const Audio = function(src) {
   el.style['width'] = '100%';
   el.style['height'] = '100%';
 
+  const fallBack = () => {
+    const fb = document.createElement('audio');
+    fb.setAttribute('controls', '');
+    fb.style['width'] = '100%';
+    fb.style['text-align'] = 'center';
+    fb.src = src;
+    const fbLink = document.createElement('a');
+    fbLink.href = src;
+    fbLink.innerHTML = 'Download here';
+    fb.appendChild(fbLink);
+    el.appendChild(fb);
+    return el;
+  };
+
   // detect features
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const features = AudioContext && !!Audio && !!Worker && !!Blob;
 
   // fall back to audio element if web audio api unavailable
-  if (!features) {
-    const fallBack = document.createElement('audio');
-    fallBack.setAttribute('controls', '');
-    fallBack.src = src;
-    const fallBackLink = document.createElement('a');
-    fallBackLink.href = src;
-    fallBackLink.innerHTML = 'Download here';
-    fallBack.appendChild(fallBackLink);
-    el.appendChild(fallBack);
-    return el;
-  }
+  if (!features) fallBack();
 
   // state
   const data = { pcm: null, peaks: null };
   let audio;
 
-  //TODO build element
+  // build element
+
 
   // event dispatchers
   const dispatch = (e) => { el.dispatchEvent(e); };
@@ -46,8 +56,6 @@ const Audio = function(src) {
   };
 
   const display = () => {
-    console.log('ready to play');
-    console.log(data.peaks);
     //TODO hide progress if it's somehow stuck
   };
 
@@ -61,6 +69,7 @@ const Audio = function(src) {
     const height = parseInt(style['height'], 10);
     const bucketCount = cei(width / opt.peakWidth);
     if (!width || !height || bucketCount < 3) {
+      //TODO check if parent height can accommodate all pieces
       error('Error sizing audio component');
       return;
     }
@@ -99,7 +108,7 @@ const Audio = function(src) {
       postMessage(buckets);
     };`;
 
-    // processing peaks may take 3 sec or more, send to separate worker thread
+    // processing peaks may block main thread 3 sec or more, send to worker
     const workerBlob = new Blob([workerJS], { type: 'application/javascript' });
     const workerBlobURL = window.URL.createObjectURL(workerBlob);
     const worker = new Worker(workerBlobURL);

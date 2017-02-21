@@ -46,8 +46,7 @@ const Cells = function(width, height) {
       ${c} { position: relative; width: 100%; height: 100%; overflow: hidden; }
       ${c}.paused *, ${c} .paused * { animation-play-state: paused !important; }
       ${c} .cell { position: absolute; width: 4em; height: 4em;
-                   transform: translateX(-100%);
-                   background: black; }
+                   transform: translateX(-100%); }
       ${c} .cell * { width: 100%; height: 100%; }
       ${c} .jiggleY > * { position: absolute; border-radius: 50%; }
       ${c} .outside { width: 4em; height: 4em; background: #f27474; }
@@ -65,8 +64,6 @@ const Cells = function(width, height) {
         { 0% { transform: translate(1em, .68em) scale(.96, 0); }
           50% { transform: translate(1em, 1em) scale(1, 1); }
           100% { transform: translate(1em, 1.32em) scale(.9, 0); } }
-      #padTop { position: absolute; top: 0; width: 10px; background: green; }
-      #padBottom { position: absolute; bottom: 0; width: 10px; background: green; }
     `;
 
     const el = document.createElement('style');
@@ -158,6 +155,7 @@ const Cells = function(width, height) {
   // avoid work on a frame when possible
   let sleepTil = 0;
 
+  // all the element styling to facilitate animation
   const launch = (cell, time, lastNow) => {
     cell.el.style['font-size'] = `${cell.size / 4}px`;
     cell.el.outside.style['font-size'] = `${cell.size / 4}px`;
@@ -226,13 +224,6 @@ const Cells = function(width, height) {
       occupied: null, half: null, traveled: null
     };
 
-    const pt = document.createElement('div');
-    const pb = document.createElement('div');
-    pt.id = 'padTop';
-    pb.id = 'padBottom';
-    el.appendChild(pt);
-    el.appendChild(pb);
-
     const addIfSpace = (time, now) => {
       c.pad = sinPad(time);         // advance sin pad
       if (time < sleepTil) return;  // sleep for half of last cell
@@ -252,9 +243,6 @@ const Cells = function(width, height) {
       }
       entryLine.mark(0, c.pad);
       entryLine.mark(height - c.pad - 1, height - 1);
-
-      pt.style.height = `${c.pad}px`;
-      pb.style.height = `${c.pad}px`;
 
       c.space = entryLine.window();
       if (c.space.size < opt.sizeMin + opt.jigMin * 2) return;
