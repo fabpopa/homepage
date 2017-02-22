@@ -1,7 +1,7 @@
 <!doctype html>
 <title>Fabian Popa</title>
 <meta charset="utf-8">
-<meta name="description" content="Technology, biology, and other fine things.">
+<meta name="description" content="Technology, biology, and other adventures.">
 <meta name="viewport" content="initial-scale=1">
 
 <script>
@@ -34,7 +34,7 @@
 <div id="introduction">
   <div>
     <h1>Fabian Popa</h1>
-    <p>Technology, biology, and other fine things.</p>
+    <p>Technology, biology, and other adventures.</p>
     <ul>
       <li><a href="https://github.com/fabpopa">GitHub</a></li>
       <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
@@ -123,8 +123,8 @@
     // wait for DOM
     var state = document.readyState;
     if (state === 'interactive' || state === 'complete') { js(); }
-    else { document.addEventListener('readystatechange', function() {
-      document.removeEventListener('readystatechange', arguments.callee);
+    else { document.addEventListener('readystatechange', function h() {
+      document.removeEventListener('readystatechange', h);
       js();
     }); }
   })();

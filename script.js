@@ -59,9 +59,9 @@ window.site.go = (attachStyle) => {
       }, 400);
     });
 
-    // pause cells when web page not in view
+    // pause cells when web page not visible
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) { cells.pause(); } else { cells.unpause(); }
+      if (document.hidden && cells) { cells.pause(); } else { cells.unpause(); }
     });
 
     cb();

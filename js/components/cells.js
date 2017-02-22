@@ -169,8 +169,8 @@ const Cells = function(width, height) {
     // at least one frame between animation end and element reuse
     window.requestAnimationFrame((now) => {
       cell.el.classList.remove('paused');
-      cell.el.addEventListener('animationend', function() {
-        cell.el.removeEventListener('animationend', arguments.callee);
+      cell.el.addEventListener('animationend', function h() {
+        cell.el.removeEventListener('animationend', h);
         cell.el.classList.add('paused');
         cell.el.style['animation'] = '';
         cell.el.outside.style['animation'] = '';
@@ -300,12 +300,15 @@ const Cells = function(width, height) {
     go(() => { el.classList.remove('paused'); });
   };
 
-  el.cleanup = () => { el.pause(); document.head.removeChild(style); };
-
   // some browsers pause animation on visibility change silently, be explicit
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { el.pause(); } else { el.unpause(); }
-  });
+  let v = () => { if (document.hidden) { el.pause(); } else { el.unpause(); } };
+  document.addEventListener('visibilitychange', v);
+
+  el.cleanup = () => {
+    el.pause();
+    document.head.removeChild(style);
+    document.removeEventListener('visibilitychange', v);
+  };
 
   go();
   return el;

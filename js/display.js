@@ -60,8 +60,8 @@ const Display = function(cb) {
       document.head.appendChild(s);
 
       // listen for animation end to move on
-      task.el.addEventListener('animationend', function() {
-        task.el.removeEventListener('animationend', arguments.callee);
+      task.el.addEventListener('animationend', function h() {
+        task.el.removeEventListener('animationend', h);
 
         // apply styles from end keyframe
         Object.keys(task.keyframes).forEach((frame) => {
