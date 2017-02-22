@@ -1,17 +1,20 @@
 const Audio = function(src) {
+  // options
   const opt = {
     peakWidth: 20,      // pixels width for a peak on the sound curve
+    peakCountMin: 3,    // count of peaks to display at a minimum
     heightUnitMin: 4,   // pixels height min for the height unit
     heightUnitMax: 30,  // pixels height max for the height unit
     barHULoading: 2,    // height unit multiple for bar when loading
-    barHUWaveform: 1,   // height unit multiple for bar when part of waveform
-    waveformHU: 5,      // height unit multiple for full waveform
+    barHUWave: 1,       // height unit multiple for bar when part of waveform
+    waveHU: 5,          // height unit multiple for full waveform
     peakCurveHandle: 1  // pixels length of bezier curve handle at tip of peak
   };
 
   // convenience math functions
   const flr = x => Math.floor(x);
   const cei = x => Math.ceil(x);
+  const min = (x, y) => Math.min(x, y);
 
   // HTMLElement to return
   const el = document.createElement('div');
@@ -42,37 +45,36 @@ const Audio = function(src) {
 
   // state
   const data = { pcm: null, peaks: null };
+  let width, height, heightUnit;
   let audio;
 
-  // build element
+  // draw audio component in different states
+  const draw = (() => {
+    // progress param within 0-1 interval
+    const preload = (progress) => {};
 
+    const analyze = () => {};
+
+    const complete = () => {};
+
+    return { preload, analyze, complete };
+  })();
 
   // event dispatchers
   const dispatch = (e) => { el.dispatchEvent(e); };
   const event = (type) => { dispatch(new Event(type)); };
   const error = (m) => {
-    //TODO display error state
-    dispatch(new ErrorEvent('error', { message: m }));
-  };
-
-  const display = () => {
-    //TODO hide progress if it's somehow stuck
+    dispatch(new ErrorEvent('error', { message: `${m} (audio component)` }));
   };
 
   // playable checkpoint, requires computed peaks and audio playback element
-  let readyToPlay = (c => () => { c -= 1; if (!c) display(); })(2);
+  let readyToPlay = (c => () => { c -= 1; if (!c) draw.complete(); })(2);
 
   // extract peaks from decoded audio data at the set resolution
   const map = () => {
-    const style = window.getComputedStyle(el);
-    const width = parseInt(style['width'], 10);
-    const height = parseInt(style['height'], 10);
     const bucketCount = cei(width / opt.peakWidth);
-    if (!width || !height || bucketCount < 3) {
-      //TODO check if parent height can accommodate all pieces
-      error('Error sizing audio component');
-      return;
-    }
+    const ok = bucketCount >= opt.peakCountMin;
+    if (!ok) { fallBack(); error('Error peak count'); return; }
 
     const workerJS = `onmessage = (e) => {
       const ch = e.data.ch;
@@ -126,13 +128,10 @@ const Audio = function(src) {
     worker.postMessage(workerData);
   };
 
-  // wave mapping checkpoint, requires parent node and decoded PCM peaks
-  let readyToMap = (c => () => { c -= 1; if (!c) map(); })(2);
-
   const parseAudio = (encoded) => {
     // decode audio data for waveform visual
     const ac = new AudioContext();
-    const decodeOk = (pcm) => { data.pcm = pcm; readyToMap(); };
+    const decodeOk = (pcm) => { data.pcm = pcm; map(); };
     const decodeErr = () => { error('Error decoding media'); };
     ac.decodeAudioData(encoded).then(decodeOk).catch(decodeErr);
 
@@ -147,26 +146,36 @@ const Audio = function(src) {
     audio.src = audioBlobURL;
   };
 
-  const downloadProgress = (e) => {
-    // console.log(e.lengthComputable);
-    // console.log(Math.round(e.loaded / e.total * 100));
+  // fetch raw audio media bytes
+  const fetchData = () => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', src);
+    xhr.responseType = 'arraybuffer';
+    xhr.onprogress = (e) => { draw.preload(e.loaded / e.total); };
+    xhr.onload = () => {
+      if (xhr.status >= 400) { error(`HTTP error ${xhr.status}`); return; }
+      draw.analyze();
+      parseAudio(xhr.response);
+    };
+    xhr.onerror = () => { error('Error fetching audio media'); };
+    xhr.send();
   };
 
-  // fetch raw audio media bytes
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', src);
-  xhr.responseType = 'arraybuffer';
-  xhr.onprogress = downloadProgress;
-  xhr.onload = () => {
-    if (xhr.status >= 400) { error(`HTTP error ${xhr.status}`); return; }
-    parseAudio(xhr.response);
+  // set global dimensions
+  const dimension = () => {
+    const style = window.getComputedStyle(el);
+    width = parseInt(style['width'], 10);
+    height = parseInt(style['height'], 10);
+    heightUnit = min(flr(height / opt.waveHU), opt.heightUnitMax);
+    const ok = !!width && !!height && heightUnit >= opt.heightUnitMin;
+    if (!ok) { fallBack(); error('Error sizing'); return; }
+    draw.preload(0);
+    fetchData();
   };
-  xhr.onerror = () => { error('Error fetching audio media'); };
-  xhr.send();
 
   // wait for el to be appended to parent node to get dimensions and first draw
   const checkParent = () => {
-    if (el.parentNode) { readyToMap(); return; }
+    if (el.parentNode) { dimension(); return; }
     window.requestAnimationFrame(checkParent);
   };
 
