@@ -145,24 +145,38 @@ const Audio = function(src) {
     const preload = (progress) => {
       if (state === 'init') { reveal(); return; }
       if (state !== 'reveal' && state !== 'load') return;
+      if (progress === 1) bar.addEventListener('transitionend', function h() {
+        bar.removeEventListener('transitionend', h);
+        state = 'analyze';
+        analyze();
+      });
       seek(progress);
     }
 
-    const analyze = () => {
+    const prepWave = () => {
       // straighten out progress bar layer
-      // const cv = curve(0, 0);
-      // cv.l(width, 0);
-      // cv.l(0, height);
-      // cv.l(-width, 0);
-      // cv.l(0, -height);
-      // const barShape = cv.close();
-      // setAttr(bar, { 'd': barShape });
+      const cv = curve(0, 0);
+      cv.l(width, 0);
+      cv.l(0, height);
+      cv.l(-width, 0);
+      cv.l(0, -height);
+      const barShape = cv.close();
+      setAttr(bar, { 'd': barShape });
 
+      
+    };
 
+    const analyze = () => {
+      if (state === 'load') preload(1);
+      if (state !== 'analyze') return;
+      prepWave();
+      // move curve in sin motion
     };
 
     const complete = () => {
-
+      if (state !== 'analyze') prepWave();
+      state = 'complete';
+      // animate curve into wave, set interaction listeners and hint when done
     };
 
     return { init, preload, analyze, complete };
