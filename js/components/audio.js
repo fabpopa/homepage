@@ -1,15 +1,15 @@
 const Audio = function(src) {
-  // options
   const opt = {
-    peakWidth: 20,        // pixels width for a peak on the sound curve
-    peakCountMin: 3,      // count of peaks to display at a minimum
-    heightUnitMin: 4,     // pixels height min for the height unit
-    heightUnitMax: 30,    // pixels height max for the height unit
-    barHULoading: 2,      // height unit multiple for bar when loading
-    barHUWave: 1,         // height unit multiple for bar when part of waveform
-    waveHU: 5,            // height unit multiple for full waveform
-    peakCurveHandle: 1,   // pixels length of bezier curve handle at tip of peak
-    bgColor: '#fee',
+    peakWidth: 20,          // pixels width for a peak on the sound curve
+    peakCountMin: 3,        // count of peaks to display at a minimum
+    heightUnitMin: 4,       // pixels height min for the height unit
+    heightUnitMax: 16,      // pixels height max for the height unit
+    barHULoading: .5,       // height unit multiple for bar when loading
+    barHUWave: 1,           // height unit multiple for bar when part of wave
+    waveHU: 5,              // height unit multiple for full waveform
+    peakCurveHandle: 1,     // pixels length of bezier curve handle at peak
+    loadingWidthRatio: .5,  // width ratio of bar when loading to full waveform
+    bgColor: '#efe8e8',
     barColor: 'lightblue'
   };
 
@@ -18,6 +18,7 @@ const Audio = function(src) {
   const flr = (x) => Math.floor(x);
   const cei = (x) => Math.ceil(x);
   const rou = (x) => Math.round(x);
+  const sin = (x) => Math.sin(x);
   const tan = (x) => Math.tan(x);
   const min = (x, y) => Math.min(x, y);
   const pow = (x, y) => Math.pow(x, y);
@@ -40,7 +41,6 @@ const Audio = function(src) {
     fbLink.innerHTML = 'Download here';
     fb.appendChild(fbLink);
     el.appendChild(fb);
-    return el;
   };
 
   // detect features
@@ -48,18 +48,19 @@ const Audio = function(src) {
   const features = AudioContext && !!Audio && !!Worker && !!Blob;
 
   // fall back to audio element if web audio api unavailable
-  if (!features) fallBack();
+  if (!features) { fallBack(); return el; }
 
-  // state
+  // component state
   const data = { pcm: null, peaks: null };
   let width, height, heightUnit;
   let audio;
 
   // draw audio component in different states
   const draw = (() => {
-    let svg, bg, bar, clip, shape, revealed = false;
+    let state = 'none'; // none → init → reveal → load → analyze → complete
+    let svg, bg, bar, clip, shape;
 
-    // make SVG bezier curve
+    // build SVG bezier curve
     const curve = (startX, startY) => {
       let d = `M ${startX},${startY}`;
       const bezier = (type, xC1, yC1, xC2, yC2, x, y) =>
@@ -72,11 +73,13 @@ const Audio = function(src) {
       return { C, c, l, close };
     };
 
+    // set multiple attributes on an element
     const setAttr = (elem, attr) => {
       Object.keys(attr).forEach(k => { elem.setAttribute(k, attr[k]); });
     };
 
     const init = () => {
+      if (state !== 'none') return;
       const svgNS = 'http://www.w3.org/2000/svg';
       const svgEl = (elem) => { return document.createElementNS(svgNS, elem); };
       svg = svgEl('svg');
@@ -96,15 +99,17 @@ const Audio = function(src) {
 
       const barHeight = opt.barHULoading * heightUnit;
       const barHalf = barHeight / 2;
-      const barCtl = barHalf * 4 / 3 * tan(PI / 8); // handles for circle tip
-      const tmp = curve(0, height / 2);
-      tmp.c(0, -barCtl, barHalf - barCtl, -barHalf, barHalf, -barHalf);
-      tmp.l(width - 2 * barHalf, 0);
-      tmp.c(barCtl, 0, barHalf, barHalf - barCtl, barHalf, barHalf);
-      tmp.c(0, barCtl, -barHalf + barCtl, barHalf, -barHalf, barHalf);
-      tmp.l(-width + 2 * barHalf, 0);
-      tmp.c(-barCtl, 0, -barHalf, -barHalf + barCtl, -barHalf, -barHalf);
-      const loadShape = tmp.close();
+      const barCtl = barHalf * 4 / 3 * tan(PI / 8); // handles for circular end
+      const barWidth = width * opt.loadingWidthRatio;
+      const barWidthDiffHalf = width * (1 - opt.loadingWidthRatio) / 2;
+      const cv = curve(barWidthDiffHalf, height / 2);
+      cv.c(0, -barCtl, barHalf - barCtl, -barHalf, barHalf, -barHalf);
+      cv.l(barWidth - 2 * barHalf, 0);
+      cv.c(barCtl, 0, barHalf, barHalf - barCtl, barHalf, barHalf);
+      cv.c(0, barCtl, -barHalf + barCtl, barHalf, -barHalf, barHalf);
+      cv.l(-barWidth + 2 * barHalf, 0);
+      cv.c(-barCtl, 0, -barHalf, -barHalf + barCtl, -barHalf, -barHalf);
+      const loadShape = cv.close();
       setAttr(bg, { 'x': 0, 'y': 0, 'width': width, 'height': height });
       setAttr(bar, { 'd': loadShape });
       setAttr(shape, { 'd': loadShape });
@@ -112,31 +117,53 @@ const Audio = function(src) {
       setAttr(bg, { 'fill': opt.bgColor });
       setAttr(bar, { 'fill': opt.barColor });
       bar.style['transform'] = 'translateX(-100%)';
-      bar.style['transition'] = 'transform .3s ease-out';
+      bar.style['transition'] = 'transform .3s';
       svg.style['opacity'] = 0;
       svg.style['transform'] = 'scale(.8, .8)';
-      svg.style['transition'] = 'opacity .3s, transform .3s';
+      svg.style['transition'] = 'opacity .4s, transform .3s';
 
       el.appendChild(svg);
+      state = 'init';
     };
 
     const reveal = () => {
-      revealed = true;
+      state = 'reveal';
       svg.style['opacity'] = 1;
       svg.style['transform'] = 'scale(1, 1)';
+      svg.addEventListener('transitionend', function h() {
+        state = 'load';
+        svg.removeEventListener('transitionend', h);
+      });
     };
 
     // progress param within 0-1 interval
-    const preload = (progress) => {
-      if (!bar) return;
-      if (!revealed) reveal();
-      const position = 0 - width * (1 - progress);
-      bar.style['transform'] = `translateX(${position}px)`;
+    const seek = (progress) => {
+      const position = rou(0 - 100 * (1 - progress));
+      bar.style['transform'] = `translateX(${position}%)`;
     };
 
-    const analyze = () => {};
+    const preload = (progress) => {
+      if (state === 'init') { reveal(); return; }
+      if (state !== 'reveal' && state !== 'load') return;
+      seek(progress);
+    }
 
-    const complete = () => {};
+    const analyze = () => {
+      // straighten out progress bar layer
+      // const cv = curve(0, 0);
+      // cv.l(width, 0);
+      // cv.l(0, height);
+      // cv.l(-width, 0);
+      // cv.l(0, -height);
+      // const barShape = cv.close();
+      // setAttr(bar, { 'd': barShape });
+
+
+    };
+
+    const complete = () => {
+
+    };
 
     return { init, preload, analyze, complete };
   })();
@@ -214,7 +241,7 @@ const Audio = function(src) {
     const ac = new AudioContext();
     const decodeOk = (pcm) => { data.pcm = pcm; map(); };
     const decodeErr = () => { error('Error decoding media'); };
-    ac.decodeAudioData(encoded).then(decodeOk).catch(decodeErr);
+    ac.decodeAudioData(encoded, decodeOk, decodeErr);
 
     // create media element for playback
     const audioExt = /\.(.+)$/.exec(src)[1];
