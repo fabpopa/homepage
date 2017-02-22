@@ -1,20 +1,27 @@
 const Audio = function(src) {
   // options
   const opt = {
-    peakWidth: 20,      // pixels width for a peak on the sound curve
-    peakCountMin: 3,    // count of peaks to display at a minimum
-    heightUnitMin: 4,   // pixels height min for the height unit
-    heightUnitMax: 30,  // pixels height max for the height unit
-    barHULoading: 2,    // height unit multiple for bar when loading
-    barHUWave: 1,       // height unit multiple for bar when part of waveform
-    waveHU: 5,          // height unit multiple for full waveform
-    peakCurveHandle: 1  // pixels length of bezier curve handle at tip of peak
+    peakWidth: 20,        // pixels width for a peak on the sound curve
+    peakCountMin: 3,      // count of peaks to display at a minimum
+    heightUnitMin: 4,     // pixels height min for the height unit
+    heightUnitMax: 30,    // pixels height max for the height unit
+    barHULoading: 2,      // height unit multiple for bar when loading
+    barHUWave: 1,         // height unit multiple for bar when part of waveform
+    waveHU: 5,            // height unit multiple for full waveform
+    peakCurveHandle: 1,   // pixels length of bezier curve handle at tip of peak
+    bgColor: '#fee',
+    barColor: 'lightblue'
   };
 
   // convenience math functions
-  const flr = x => Math.floor(x);
-  const cei = x => Math.ceil(x);
+  const rnd = () => Math.random();
+  const flr = (x) => Math.floor(x);
+  const cei = (x) => Math.ceil(x);
+  const rou = (x) => Math.round(x);
+  const tan = (x) => Math.tan(x);
   const min = (x, y) => Math.min(x, y);
+  const pow = (x, y) => Math.pow(x, y);
+  const PI = Math.PI;
 
   // HTMLElement to return
   const el = document.createElement('div');
@@ -50,14 +57,88 @@ const Audio = function(src) {
 
   // draw audio component in different states
   const draw = (() => {
+    let svg, bg, bar, clip, shape, revealed = false;
+
+    // make SVG bezier curve
+    const curve = (startX, startY) => {
+      let d = `M ${startX},${startY}`;
+      const bezier = (type, xC1, yC1, xC2, yC2, x, y) =>
+        { d += ` ${type} ${xC1},${yC1} ${xC2},${yC2} ${x},${y}`; };
+      const C = (...args) => { bezier('C', ...args); };
+      const c = (...args) => { bezier('c', ...args); };
+      const L = (x, y) => { d += ` L ${x},${y}`; };
+      const l = (x, y) => { d += ` l ${x},${y}`; };
+      const close = () => { d += ` Z`; return d; }
+      return { C, c, l, close };
+    };
+
+    const setAttr = (elem, attr) => {
+      Object.keys(attr).forEach(k => { elem.setAttribute(k, attr[k]); });
+    };
+
+    const init = () => {
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svgEl = (elem) => { return document.createElementNS(svgNS, elem); };
+      svg = svgEl('svg');
+      setAttr(svg, { 'width': width, 'height': height });
+      g = svgEl('g');
+      bg = svgEl('rect');
+      bar = svgEl('path');
+      clip = svgEl('clipPath');
+      shape = svgEl('path');
+      clip.id = `clip-${+Date.now()}${rou(rnd() * pow(10, 5))}`;
+      setAttr(g, { 'clip-path': `url(#${clip.id})` });
+      clip.appendChild(shape);
+      g.appendChild(bg);
+      g.appendChild(bar);
+      svg.appendChild(clip);
+      svg.appendChild(g);
+
+      const barHeight = opt.barHULoading * heightUnit;
+      const barHalf = barHeight / 2;
+      const barCtl = barHalf * 4 / 3 * tan(PI / 8); // handles for circle tip
+      const tmp = curve(0, height / 2);
+      tmp.c(0, -barCtl, barHalf - barCtl, -barHalf, barHalf, -barHalf);
+      tmp.l(width - 2 * barHalf, 0);
+      tmp.c(barCtl, 0, barHalf, barHalf - barCtl, barHalf, barHalf);
+      tmp.c(0, barCtl, -barHalf + barCtl, barHalf, -barHalf, barHalf);
+      tmp.l(-width + 2 * barHalf, 0);
+      tmp.c(-barCtl, 0, -barHalf, -barHalf + barCtl, -barHalf, -barHalf);
+      const loadShape = tmp.close();
+      setAttr(bg, { 'x': 0, 'y': 0, 'width': width, 'height': height });
+      setAttr(bar, { 'd': loadShape });
+      setAttr(shape, { 'd': loadShape });
+
+      setAttr(bg, { 'fill': opt.bgColor });
+      setAttr(bar, { 'fill': opt.barColor });
+      bar.style['transform'] = 'translateX(-100%)';
+      bar.style['transition'] = 'transform .3s ease-out';
+      svg.style['opacity'] = 0;
+      svg.style['transform'] = 'scale(.8, .8)';
+      svg.style['transition'] = 'opacity .3s, transform .3s';
+
+      el.appendChild(svg);
+    };
+
+    const reveal = () => {
+      revealed = true;
+      svg.style['opacity'] = 1;
+      svg.style['transform'] = 'scale(1, 1)';
+    };
+
     // progress param within 0-1 interval
-    const preload = (progress) => {};
+    const preload = (progress) => {
+      if (!bar) return;
+      if (!revealed) reveal();
+      const position = 0 - width * (1 - progress);
+      bar.style['transform'] = `translateX(${position}px)`;
+    };
 
     const analyze = () => {};
 
     const complete = () => {};
 
-    return { preload, analyze, complete };
+    return { init, preload, analyze, complete };
   })();
 
   // event dispatchers
@@ -169,7 +250,7 @@ const Audio = function(src) {
     heightUnit = min(flr(height / opt.waveHU), opt.heightUnitMax);
     const ok = !!width && !!height && heightUnit >= opt.heightUnitMin;
     if (!ok) { fallBack(); error('Error sizing'); return; }
-    draw.preload(0);
+    draw.init();
     fetchData();
   };
 
