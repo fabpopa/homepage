@@ -127,13 +127,8 @@ const Audio = function(src) {
     };
 
     const reveal = () => {
-      state = 'reveal';
       svg.style['opacity'] = 1;
       svg.style['transform'] = 'scale(1, 1)';
-      svg.addEventListener('transitionend', function h() {
-        state = 'load';
-        svg.removeEventListener('transitionend', h);
-      });
     };
 
     // progress param within 0-1 interval
@@ -142,19 +137,21 @@ const Audio = function(src) {
       bar.style['transform'] = `translateX(${position}%)`;
     };
 
-    const preload = (progress) => {
-      if (state === 'init') { reveal(); return; }
-      if (state !== 'reveal' && state !== 'load') return;
-      if (progress === 1) bar.addEventListener('transitionend', function h() {
-        bar.removeEventListener('transitionend', h);
-        state = 'analyze';
-        analyze();
-      });
-      seek(progress);
-    }
+    const preload = (() => {
+      let lastProgress = -1;
+      return (progress) => {
+        if (progress <= lastProgress) return;
+        if (state === 'init') { reveal(); state = 'load'; }
+        if (state !== 'load') return;
+        seek(progress);
+        lastProgress = progress;
+        if (progress === 1) state = 'analyze';
+      };
+    })();
 
     // p is array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
-    const paintPoints = (p) => {
+    let p;
+    const paintPoints = () => {
       const eCtl = opt.barHUWave / 2 * heightUnit * 4 / 3 * tan(PI / 8); // end
       const pCtl = opt.peakCurveHandle; // peak
       let i, cv = curve(p[0].x, p[0].y);
@@ -189,30 +186,60 @@ const Audio = function(src) {
       const topY = height / 2 - barHeightHalf;
       const btmY = height / 2 + barHeightHalf;
       const peakWidth = barWidth / peakCount;
-      let p = [];
+      p = [];
       p.push({ x: barWidthDiffHalf, y: height / 2 });
       for (let i = 0; i < peakCount; i++)
         p.push({ x: barWidthDiffHalf + (i + .5) * peakWidth, y: topY });
       p.push({ x: width - barWidthDiffHalf, y: height / 2 });
       for (let i = peakCount - 1; i >= 0; i--)
         p.push({ x: barWidthDiffHalf + (i + .5) * peakWidth, y: btmY });
-      paintPoints(p);
+      paintPoints();
     };
 
     let azraf;
     const analyze = () => {
-      if (state === 'load') { preload(1); return; } // sets state 'analyzed'
-      if (state !== 'analyze') return;
+      if (state === 'load')
+        { preload(1); window.setTimeout(analyze, 400); return; }
+      if (state !== 'analyze' || azraf) return;
       prepWave();
-      // animFunc
-      // animate();
+
+      let points = JSON.parse(JSON.stringify(p)); // deep copy
+      let diff = new Array(points.length).fill(0);
+      let amplitude = opt.barHULoading * heightUnit / 2;
+      let t = 0, cycle = 1400, val, i, pair;
+      const render = (dt) => {
+        val = amplitude * sin(t / cycle * 2 * PI);
+        t = (t + dt) % cycle;
+        for (i = 0; i <= diff.length / 2; i++) {
+          diff[i] = (diff[i] * 3 + (i == 0 ? val : diff[i-1])) / 4;
+          p[i].y = points[i].y + diff[i];
+          pair = (diff.length - i) % diff.length;
+          p[pair].y = points[pair].y + diff[i];
+        }
+        paintPoints();
+      };
+
+      let lastTime;
+      const anim = (t) => {
+        if (!t) { azraf = window.requestAnimationFrame(anim); return; }
+        if (!lastTime) lastTime = t;
+        render(t - lastTime);
+        lastTime = t;
+        azraf = window.requestAnimationFrame(anim);
+      };
+      anim();
     };
 
     const complete = () => {
       if (state === 'complete') return;
-      // if (state !== 'analyze') prepWave();
+      if (state !== 'analyze') prepWave();
       state = 'complete';
-      // animate curve into wave, set interaction listeners and hint when done
+
+      // animate into wave
+      window.cancelAnimationFrame(azraf);
+
+
+      // set interavtions
     };
 
     return { init, preload, analyze, complete };
