@@ -23,6 +23,8 @@ const Audio = function(src) {
   const min = (x, y) => Math.min(x, y);
   const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
+  const easeOutExp = (t, b, c, d) =>
+    { return t == d ? b + c : c * (-Math.pow(2, -10 * t / d) + 1) + b; }
 
   // HTMLElement to return
   const el = document.createElement('div');
@@ -155,17 +157,17 @@ const Audio = function(src) {
       const eCtl = barHU * heightUnit * 4 / 3 * tan(PI / 8); // end
       const pCtl = opt.peakCurveHandle; // peak
       let i, cv = curve(p[0].x, p[0].y);
-      cv.C(p[0].x, p[0].y - eCtl, p[1].x - pCtl, p[1].y, p[1].x, p[1].y);
+      cv.C(p[0].x, p[0].y - eCtl, p[1].x, p[1].y, p[1].x, p[1].y);
       for (i = 2; i <= peakCount; i++)
         cv.C(p[i-1].x + pCtl, p[i-1].y, p[i].x - pCtl, p[i].y, p[i].x, p[i].y);
       i = peakCount + 1;  // right end
-      cv.C(p[i-1].x + pCtl, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
+      cv.C(p[i-1].x, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
       i += 1; // first bottom point after right end
-      cv.C(p[i-1].x, p[i-1].y + eCtl, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
+      cv.C(p[i-1].x, p[i-1].y + eCtl, p[i].x, p[i].y, p[i].x, p[i].y);
       for (i = peakCount + 3; i < p.length; i++)
         cv.C(p[i-1].x - pCtl, p[i-1].y, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
       i = p.length - 1;
-      cv.C(p[i].x - pCtl, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
+      cv.C(p[i].x, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
       setAttr(shape, { 'd': cv.close() });
     };
 
@@ -230,6 +232,10 @@ const Audio = function(src) {
       anim();
     };
 
+    const interact = () => {
+      console.log('interact');
+    };
+
     const complete = () => {
       if (state === 'complete') return;
       if (state !== 'analyze') prepWave();
@@ -246,24 +252,36 @@ const Audio = function(src) {
       points.push({ x: width, y: height / 2 });
       for (let i = peakCount - 1; i >= 0; i--)
         points.push({ x: (i + .5) * pkWidth, y: height - (1 - pk[i]) * peakH });
-      window.cancelAnimationFrame(azraf);
-      p = points;
-      paintPoints(opt.barHUWave);
 
-      const render = () => {
+      const start = JSON.parse(JSON.stringify(p)); // deep copy
+      const diff = new Array(points.length);
+      for (let i = 0; i < points.length; i++)
+        diff[i] = { x: points[i].x - p[i].x, y: points[i].y - p[i].y };
+
+      let craf, t = 0, duration = 300, i;
+      const render = (dt) => {
+        t += dt;
+        if (t >= duration) { t = duration; window.cancelAnimationFrame(craf); }
+
+        for (i = 0; i < points.length; i++) {
+          p[i].x = easeOutExp(t, start[i].x, diff[i].x, duration);
+          p[i].y = easeOutExp(t, start[i].y, diff[i].y, duration);
+        }
+
         if (azraf) window.cancelAnimationFrame(azraf);
-
+        paintPoints(opt.barHUWave * .7);
+        if (t == duration) interact();
       };
 
       let lastTime;
       const anim = (t) => {
-        if (!t) { window.requestAnimationFrame(anim); return; }
+        if (!t) { craf = window.requestAnimationFrame(anim); return; }
         if (!lastTime) lastTime = t;
+        craf = window.requestAnimationFrame(anim);
         render(t - lastTime);
         lastTime = t;
-        window.requestAnimationFrame(anim);
       };
-      // anim();
+      anim();
     };
 
     return { init, preload, analyze, complete };
