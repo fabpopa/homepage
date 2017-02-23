@@ -7,7 +7,7 @@ const Audio = function(src) {
     barHULoading: .4,       // height unit multiple for bar when loading
     barHUWave: 1,           // height unit multiple for bar when part of wave
     waveHU: 5,              // height unit multiple for full waveform
-    peakCurveHandle: 10,    // pixels length of bezier curve handle at peak
+    peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
     loadingWidthRatio: .5,  // width ratio of bar when loading to full waveform
     bgColor: '#efe8e8',
     barColor: 'lightblue'
@@ -31,6 +31,7 @@ const Audio = function(src) {
   el.setAttribute('component', 'audio');
   el.style['width'] = '100%';
   el.style['height'] = '100%';
+  el.style['position'] = 'relative';
 
   const fallBack = () => {
     const fb = document.createElement('audio');
@@ -60,7 +61,7 @@ const Audio = function(src) {
   // draw audio component in different states
   const draw = (() => {
     let state = 'none'; // none → init → reveal → load → analyze → complete
-    let svg, bg, bar, clip, shape;
+    let svg, bg, bar, clip, shape, replay;
 
     // build SVG bezier curve
     const curve = (startX, startY) => {
@@ -124,7 +125,15 @@ const Audio = function(src) {
       svg.style['transform'] = 'scale(.8, .8)';
       svg.style['transition'] = 'opacity .4s, transform .3s';
 
+      replay = document.createElement('div');
+      replay.style['position'] = 'absolute';
+      replay.style['top'] = '0';
+      replay.style['min-width'] = '25px';
+      replay.style['width'] = '7%';
+      replay.style['height'] = '100%';
+
       el.appendChild(svg);
+      el.appendChild(replay);
       state = 'init';
     };
 
@@ -233,7 +242,21 @@ const Audio = function(src) {
     };
 
     const interact = () => {
-      console.log('interact');
+      svg.style['cursor'] = 'pointer';
+      replay.style['cursor'] = 'pointer';
+      svg.style['transition'] = 'transform .15s';
+      svg.addEventListener('mousedown', () => {
+        svg.style['transform'] = 'translateY(2px) scale(.99, .99)';
+      });
+      svg.addEventListener('mouseup', () => {
+        svg.style['transform'] = 'translateY(0) scale(1, 1)';
+      });
+      replay.addEventListener('mousedown', () => {
+        svg.style['transform'] = 'perspective(1000px) rotateY(-5deg)';
+      });
+      replay.addEventListener('mouseup', () => {
+        svg.style['transform'] = 'perspective(0) rotateY(0)';
+      });
     };
 
     const complete = () => {
@@ -353,6 +376,8 @@ const Audio = function(src) {
   };
 
   const parseAudio = (encoded) => {
+    const copy = encoded.slice(0);  // firefox bug: empties ArrayBuffer after ac
+
     // decode audio data for waveform visual
     const ac = new AudioContext();
     const decodeOk = (pcm) => { data.pcm = pcm; map(); };
@@ -361,7 +386,7 @@ const Audio = function(src) {
 
     // create media element for playback
     const audioExt = /\.(.+)$/.exec(src)[1];
-    const audioBlob = new Blob([encoded], { type: `audio/${audioExt}` });
+    const audioBlob = new Blob([copy], { type: `audio/${audioExt}` });
     const audioBlobURL = window.URL.createObjectURL(audioBlob);
     audio = document.createElement('audio');
     audio.onload = () => { readyToPlay(); };
