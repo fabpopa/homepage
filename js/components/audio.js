@@ -4,10 +4,10 @@ const Audio = function(src) {
     peakCountMin: 3,        // count of peaks to display at a minimum
     heightUnitMin: 4,       // pixels height min for the height unit
     heightUnitMax: 16,      // pixels height max for the height unit
-    barHULoading: .5,       // height unit multiple for bar when loading
+    barHULoading: .4,       // height unit multiple for bar when loading
     barHUWave: 1,           // height unit multiple for bar when part of wave
     waveHU: 5,              // height unit multiple for full waveform
-    peakCurveHandle: 1,     // pixels length of bezier curve handle at peak
+    peakCurveHandle: 10,    // pixels length of bezier curve handle at peak
     loadingWidthRatio: .5,  // width ratio of bar when loading to full waveform
     bgColor: '#efe8e8',
     barColor: 'lightblue'
@@ -151,8 +151,8 @@ const Audio = function(src) {
 
     // p is array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
     let p;
-    const paintPoints = () => {
-      const eCtl = opt.barHUWave / 2 * heightUnit * 4 / 3 * tan(PI / 8); // end
+    const paintPoints = (barHU) => {
+      const eCtl = barHU * heightUnit * 4 / 3 * tan(PI / 8); // end
       const pCtl = opt.peakCurveHandle; // peak
       let i, cv = curve(p[0].x, p[0].y);
       cv.C(p[0].x, p[0].y - eCtl, p[1].x - pCtl, p[1].y, p[1].x, p[1].y);
@@ -193,7 +193,7 @@ const Audio = function(src) {
       p.push({ x: width - barWidthDiffHalf, y: height / 2 });
       for (let i = peakCount - 1; i >= 0; i--)
         p.push({ x: barWidthDiffHalf + (i + .5) * peakWidth, y: btmY });
-      paintPoints();
+      paintPoints(opt.barHULoading);
     };
 
     let azraf;
@@ -204,19 +204,19 @@ const Audio = function(src) {
       prepWave();
 
       let points = JSON.parse(JSON.stringify(p)); // deep copy
-      let diff = new Array(points.length).fill(0);
+      let diff = new Array(points.length / 2 + 1).fill(0);
       let amplitude = opt.barHULoading * heightUnit / 2;
       let t = 0, cycle = 1400, val, i, pair;
       const render = (dt) => {
         val = amplitude * sin(t / cycle * 2 * PI);
         t = (t + dt) % cycle;
-        for (i = 0; i <= diff.length / 2; i++) {
+        for (i = 0; i < diff.length; i++) {
           diff[i] = (diff[i] * 3 + (i == 0 ? val : diff[i-1])) / 4;
           p[i].y = points[i].y + diff[i];
-          pair = (diff.length - i) % diff.length;
+          pair = (points.length - i) % points.length;
           p[pair].y = points[pair].y + diff[i];
         }
-        paintPoints();
+        paintPoints(opt.barHULoading);
       };
 
       let lastTime;
@@ -235,11 +235,35 @@ const Audio = function(src) {
       if (state !== 'analyze') prepWave();
       state = 'complete';
 
-      // animate into wave
+      // final wave points
+      const pk = data.peaks;
+      const pkWidth = opt.peakWidth;
+      const peakH = (height - opt.barHUWave * heightUnit) / 2;
+      const points = [];
+      points.push({ x: 0, y: height / 2 });
+      for (let i = 0; i < peakCount; i++)
+        points.push({ x: (i + .5) * pkWidth, y: (1 - pk[i]) * peakH });
+      points.push({ x: width, y: height / 2 });
+      for (let i = peakCount - 1; i >= 0; i--)
+        points.push({ x: (i + .5) * pkWidth, y: height - (1 - pk[i]) * peakH });
       window.cancelAnimationFrame(azraf);
+      p = points;
+      paintPoints(opt.barHUWave);
 
+      const render = () => {
+        if (azraf) window.cancelAnimationFrame(azraf);
 
-      // set interavtions
+      };
+
+      let lastTime;
+      const anim = (t) => {
+        if (!t) { window.requestAnimationFrame(anim); return; }
+        if (!lastTime) lastTime = t;
+        render(t - lastTime);
+        lastTime = t;
+        window.requestAnimationFrame(anim);
+      };
+      // anim();
     };
 
     return { init, preload, analyze, complete };
@@ -307,6 +331,7 @@ const Audio = function(src) {
     for (let i = 0; i < ch.length; i++) ch[i] = data.pcm.getChannelData(i);
     const workerData = { ch, length: data.pcm.length, bucketCount: peakCount };
     worker.postMessage(workerData);
+    draw.analyze();
   };
 
   const parseAudio = (encoded) => {
@@ -335,7 +360,6 @@ const Audio = function(src) {
     xhr.onprogress = (e) => { draw.preload(e.loaded / e.total); };
     xhr.onload = () => {
       if (xhr.status >= 400) { error(`HTTP error ${xhr.status}`); return; }
-      draw.analyze();
       parseAudio(xhr.response);
     };
     xhr.onerror = () => { error('Error fetching audio media'); };
