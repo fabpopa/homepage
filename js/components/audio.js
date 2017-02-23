@@ -52,7 +52,7 @@ const Audio = function(src) {
 
   // component state
   const data = { pcm: null, peaks: null };
-  let width, height, heightUnit;
+  let width, height, heightUnit, peakCount;
   let audio;
 
   // draw audio component in different states
@@ -153,8 +153,27 @@ const Audio = function(src) {
       seek(progress);
     }
 
+    // p is array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
+    const paintPoints = (p) => {
+      const eCtl = opt.barHUWave / 2 * heightUnit * 4 / 3 * tan(PI / 8); // end
+      const pCtl = opt.peakCurveHandle; // peak
+      let i, cv = curve(p[0].x, p[0].y);
+      cv.C(p[0].x, p[0].y - eCtl, p[1].x - pCtl, p[1].y, p[1].x, p[1].y);
+      for (i = 2; i <= peakCount; i++)
+        cv.C(p[i-1].x + pCtl, p[i-1].y, p[i].x - pCtl, p[i].y, p[i].x, p[i].y);
+      i = peakCount + 1;  // right end
+      cv.C(p[i-1].x + pCtl, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
+      i += 1; // first bottom point after right end
+      cv.C(p[i-1].x, p[i-1].y + eCtl, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
+      for (i = peakCount + 3; i < p.length; i++)
+        cv.C(p[i-1].x - pCtl, p[i-1].y, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
+      i = p.length - 1;
+      cv.C(p[i].x - pCtl, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
+      setAttr(shape, { 'd': cv.close() });
+    };
+
     const prepWave = () => {
-      // straighten out progress bar layer
+      // blow up progress bar layer
       const cv = curve(0, 0);
       cv.l(width, 0);
       cv.l(0, height);
@@ -163,18 +182,35 @@ const Audio = function(src) {
       const barShape = cv.close();
       setAttr(bar, { 'd': barShape });
 
-      
+      // make clip path into loading bar shape
+      const barWidth = width * opt.loadingWidthRatio;
+      const barWidthDiffHalf = width * (1 - opt.loadingWidthRatio) / 2;
+      const barHeightHalf = opt.barHULoading * heightUnit / 2;
+      const topY = height / 2 - barHeightHalf;
+      const btmY = height / 2 + barHeightHalf;
+      const peakWidth = barWidth / peakCount;
+      let p = [];
+      p.push({ x: barWidthDiffHalf, y: height / 2 });
+      for (let i = 0; i < peakCount; i++)
+        p.push({ x: barWidthDiffHalf + (i + .5) * peakWidth, y: topY });
+      p.push({ x: width - barWidthDiffHalf, y: height / 2 });
+      for (let i = peakCount - 1; i >= 0; i--)
+        p.push({ x: barWidthDiffHalf + (i + .5) * peakWidth, y: btmY });
+      paintPoints(p);
     };
 
+    let azraf;
     const analyze = () => {
-      if (state === 'load') preload(1);
+      if (state === 'load') { preload(1); return; } // sets state 'analyzed'
       if (state !== 'analyze') return;
       prepWave();
-      // move curve in sin motion
+      // animFunc
+      // animate();
     };
 
     const complete = () => {
-      if (state !== 'analyze') prepWave();
+      if (state === 'complete') return;
+      // if (state !== 'analyze') prepWave();
       state = 'complete';
       // animate curve into wave, set interaction listeners and hint when done
     };
@@ -194,10 +230,6 @@ const Audio = function(src) {
 
   // extract peaks from decoded audio data at the set resolution
   const map = () => {
-    const bucketCount = cei(width / opt.peakWidth);
-    const ok = bucketCount >= opt.peakCountMin;
-    if (!ok) { fallBack(); error('Error peak count'); return; }
-
     const workerJS = `onmessage = (e) => {
       const ch = e.data.ch;
       const length = e.data.length;
@@ -246,7 +278,7 @@ const Audio = function(src) {
 
     const ch = new Array(data.pcm.numberOfChannels);
     for (let i = 0; i < ch.length; i++) ch[i] = data.pcm.getChannelData(i);
-    const workerData = { ch, length: data.pcm.length, bucketCount };
+    const workerData = { ch, length: data.pcm.length, bucketCount: peakCount };
     worker.postMessage(workerData);
   };
 
@@ -289,7 +321,9 @@ const Audio = function(src) {
     width = parseInt(style['width'], 10);
     height = parseInt(style['height'], 10);
     heightUnit = min(flr(height / opt.waveHU), opt.heightUnitMax);
-    const ok = !!width && !!height && heightUnit >= opt.heightUnitMin;
+    peakCount = cei(width / opt.peakWidth);
+    let ok = !!width && !!height;
+    ok = ok && heightUnit >= opt.heightUnitMin && peakCount >= opt.peakCountMin;
     if (!ok) { fallBack(); error('Error sizing'); return; }
     draw.init();
     fetchData();
