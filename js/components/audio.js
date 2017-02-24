@@ -1,10 +1,10 @@
 const Audio = function(src) {
   const opt = {
-    peakWidth: 20,          // pixels width for a peak on the sound curve
+    peakWidth: 17,          // pixels width for a peak on the sound curve
     peakCountMin: 3,        // count of peaks to display at a minimum
     heightUnitMin: 4,       // pixels height min for the height unit
     heightUnitMax: 16,      // pixels height max for the height unit
-    barHULoading: .4,       // height unit multiple for bar when loading
+    barHULoading: 2,        // height unit multiple for bar when loading
     barHUWave: 1,           // height unit multiple for bar when part of wave
     waveHU: 5,              // height unit multiple for full waveform
     peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
@@ -55,7 +55,7 @@ const Audio = function(src) {
 
   // component state
   const data = { pcm: null, peaks: null };
-  let width, height, heightUnit, peakCount;
+  let width, height, heightUnit, peakCount, peakWidth;
   let audio;
 
   // draw audio component in different states
@@ -222,7 +222,7 @@ const Audio = function(src) {
         val = amplitude * sin(t / cycle * 2 * PI);
         t = (t + dt) % cycle;
         for (i = 0; i < diff.length; i++) {
-          diff[i] = (diff[i] * 3 + (i == 0 ? val : diff[i-1])) / 4;
+          diff[i] = (diff[i] * 2 + (i == 0 ? val : diff[i-1])) / 3;
           p[i].y = points[i].y + diff[i];
           pair = (points.length - i) % points.length;
           p[pair].y = points[pair].y + diff[i];
@@ -244,7 +244,7 @@ const Audio = function(src) {
     const interact = () => {
       svg.style['cursor'] = 'pointer';
       replay.style['cursor'] = 'pointer';
-      svg.style['transition'] = 'transform .15s';
+      svg.style['transition'] = 'transform .1s';
       svg.addEventListener('mousedown', () => {
         svg.style['transform'] = 'translateY(2px) scale(.99, .99)';
       });
@@ -252,7 +252,7 @@ const Audio = function(src) {
         svg.style['transform'] = 'translateY(0) scale(1, 1)';
       });
       replay.addEventListener('mousedown', () => {
-        svg.style['transform'] = 'perspective(1000px) rotateY(-5deg)';
+        svg.style['transform'] = 'perspective(1000px) rotateY(-3deg)';
       });
       replay.addEventListener('mouseup', () => {
         svg.style['transform'] = 'perspective(0) rotateY(0)';
@@ -266,7 +266,7 @@ const Audio = function(src) {
 
       // final wave points
       const pk = data.peaks;
-      const pkWidth = opt.peakWidth;
+      const pkWidth = peakWidth;
       const peakH = (height - opt.barHUWave * heightUnit) / 2;
       const points = [];
       points.push({ x: 0, y: height / 2 });
@@ -304,7 +304,7 @@ const Audio = function(src) {
         render(t - lastTime);
         lastTime = t;
       };
-      anim();
+      // anim();
     };
 
     return { init, preload, analyze, complete };
@@ -415,7 +415,8 @@ const Audio = function(src) {
     width = parseInt(style['width'], 10);
     height = parseInt(style['height'], 10);
     heightUnit = min(flr(height / opt.waveHU), opt.heightUnitMax);
-    peakCount = cei(width / opt.peakWidth);
+    peakCount = rou(width / opt.peakWidth);
+    peakWidth = width / peakCount;
     let ok = !!width && !!height;
     ok = ok && heightUnit >= opt.heightUnitMin && peakCount >= opt.peakCountMin;
     if (!ok) { fallBack(); error('Error sizing'); return; }
