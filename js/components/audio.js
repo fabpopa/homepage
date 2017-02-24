@@ -4,7 +4,7 @@ const Audio = function(src) {
     peakCountMin: 3,        // count of peaks to display at a minimum
     heightUnitMin: 4,       // pixels height min for the height unit
     heightUnitMax: 16,      // pixels height max for the height unit
-    barHULoading: 2,        // height unit multiple for bar when loading
+    barHULoading: .4,        // height unit multiple for bar when loading
     barHUWave: 1,           // height unit multiple for bar when part of wave
     waveHU: 5,              // height unit multiple for full waveform
     peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
@@ -24,7 +24,7 @@ const Audio = function(src) {
   const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
   const easeOutExp = (t, b, c, d) =>
-    { return t == d ? b + c : c * (-Math.pow(2, -10 * t / d) + 1) + b; }
+    t == d ? b + c : c * (-pow(2, -10 * t / d) + 1) + b;
 
   // HTMLElement to return
   const el = document.createElement('div');
@@ -60,67 +60,51 @@ const Audio = function(src) {
 
   // draw audio component in different states
   const draw = (() => {
-    let state = 'none'; // none → init → reveal → load → analyze → complete
-    let svg, bg, bar, clip, shape, replay;
+    let state = 'none'; // none → init → load → analyze → complete
+    let svg, bar, shape, replay; // DOM elements
+    let p; // array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
+
+    // set multiple attributes on an element
+    const setAttr = (elem, attr) =>
+      Object.keys(attr).forEach(k => elem.setAttribute(k, attr[k]));
 
     // build SVG bezier curve
     const curve = (startX, startY) => {
       let d = `M ${startX},${startY}`;
       const bezier = (type, xC1, yC1, xC2, yC2, x, y) =>
-        { d += ` ${type} ${xC1},${yC1} ${xC2},${yC2} ${x},${y}`; };
-      const C = (...args) => { bezier('C', ...args); };
-      const c = (...args) => { bezier('c', ...args); };
-      const L = (x, y) => { d += ` L ${x},${y}`; };
-      const l = (x, y) => { d += ` l ${x},${y}`; };
-      const close = () => { d += ` Z`; return d; }
-      return { C, c, l, close };
-    };
-
-    // set multiple attributes on an element
-    const setAttr = (elem, attr) => {
-      Object.keys(attr).forEach(k => { elem.setAttribute(k, attr[k]); });
+        d += ` ${type} ${xC1},${yC1} ${xC2},${yC2} ${x},${y}`;
+      const C = (...args) => bezier('C', ...args);
+      const c = (...args) => bezier('c', ...args);
+      const L = (x, y) => d += ` L ${x},${y}`;
+      const l = (x, y) => d += ` l ${x},${y}`;
+      const close = () => d += ` Z`;
+      return { C, c, L, l, close };
     };
 
     const init = () => {
       if (state !== 'none') return;
       const svgNS = 'http://www.w3.org/2000/svg';
-      const svgEl = (elem) => { return document.createElementNS(svgNS, elem); };
+      const svgEl = (el) => document.createElementNS(svgNS, el);
       svg = svgEl('svg');
-      setAttr(svg, { 'width': width, 'height': height });
-      g = svgEl('g');
-      bg = svgEl('rect');
-      bar = svgEl('path');
-      clip = svgEl('clipPath');
-      shape = svgEl('path');
+      const defs = svgEl('defs');
+      const clip = svgEl('clipPath');
       clip.id = `clip-${+Date.now()}${rou(rnd() * pow(10, 5))}`;
+      shape = svgEl('path');
+      const g = svgEl('g');
       setAttr(g, { 'clip-path': `url(#${clip.id})` });
+      const bg = svgEl('rect');
+      bar = svgEl('path');
+      defs.appendChild(clip);
       clip.appendChild(shape);
       g.appendChild(bg);
       g.appendChild(bar);
-      svg.appendChild(clip);
+      svg.appendChild(defs);
       svg.appendChild(g);
 
-      const barHeight = opt.barHULoading * heightUnit;
-      const barHalf = barHeight / 2;
-      const barCtl = barHalf * 4 / 3 * tan(PI / 8); // handles for circular end
-      const barWidth = width * opt.loadingWidthRatio;
-      const barWidthDiffHalf = width * (1 - opt.loadingWidthRatio) / 2;
-      const cv = curve(barWidthDiffHalf, height / 2);
-      cv.c(0, -barCtl, barHalf - barCtl, -barHalf, barHalf, -barHalf);
-      cv.l(barWidth - 2 * barHalf, 0);
-      cv.c(barCtl, 0, barHalf, barHalf - barCtl, barHalf, barHalf);
-      cv.c(0, barCtl, -barHalf + barCtl, barHalf, -barHalf, barHalf);
-      cv.l(-barWidth + 2 * barHalf, 0);
-      cv.c(-barCtl, 0, -barHalf, -barHalf + barCtl, -barHalf, -barHalf);
-      const loadShape = cv.close();
+      setAttr(svg, { 'width': width, 'height': height });
       setAttr(bg, { 'x': 0, 'y': 0, 'width': width, 'height': height });
-      setAttr(bar, { 'd': loadShape });
-      setAttr(shape, { 'd': loadShape });
-
       setAttr(bg, { 'fill': opt.bgColor });
       setAttr(bar, { 'fill': opt.barColor });
-      bar.style['transform'] = 'translateX(-100%)';
-      bar.style['transition'] = 'transform .3s';
       svg.style['opacity'] = 0;
       svg.style['transform'] = 'scale(.8, .8)';
       svg.style['transition'] = 'opacity .4s, transform .3s';
@@ -137,47 +121,58 @@ const Audio = function(src) {
       state = 'init';
     };
 
-    const reveal = () => {
-      svg.style['opacity'] = 1;
-      svg.style['transform'] = 'scale(1, 1)';
-    };
-
-    // progress param within 0-1 interval
-    const seek = (progress) => {
-      const position = rou(0 - 100 * (1 - progress));
-      bar.style['transform'] = `translateX(${position}%)`;
-    };
-
-    const preload = (() => {
+    let preload = (() => {
+      let barWidth, barWidthDiffHalf, barHHalf, barCtl, barStraightPart;
       let lastProgress = -1;
+
+      const sh = (barStraightPart) => {
+        const sh = curve(barWidthDiffHalf, height / 2);
+        sh.c(0, -barCtl, barHHalf - barCtl, -barHHalf, barHHalf, -barHHalf);
+        sh.l(barStraightPart, 0);
+        sh.c(barCtl, 0, barHHalf, barHHalf - barCtl, barHHalf, barHHalf);
+        sh.c(0, barCtl, -barHHalf + barCtl, barHHalf, -barHHalf, barHHalf);
+        sh.l(-barStraightPart, 0);
+        sh.c(-barCtl, 0, -barHHalf, -barHHalf + barCtl, -barHHalf, -barHHalf);
+        return sh.close();
+      };
+
+      const initAndReveal = () => {
+        barWidth = width * opt.loadingWidthRatio;
+        barWidthDiffHalf = (width - barWidth) / 2;
+        barHHalf = opt.barHULoading * heightUnit / 2;
+        barCtl = barHHalf * 4 / 3 * tan(PI / 8); // circle quarter arc
+        barStraightPart = barWidth - 2 * barHHalf;
+        setAttr(shape, { 'd': sh(barStraightPart) });
+        svg.style['opacity'] = 1;
+        svg.style['transform'] = 'scale(1, 1)';
+      };
+
       return (progress) => {
         if (progress <= lastProgress) return;
-        if (state === 'init') { reveal(); state = 'load'; }
+        if (state === 'init') { initAndReveal(); state = 'load'; }
         if (state !== 'load') return;
-        seek(progress);
+        setAttr(bar, { 'd': sh(barStraightPart * progress) });
         lastProgress = progress;
         if (progress === 1) state = 'analyze';
       };
     })();
 
-    // p is array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
-    let p;
-    const paintPoints = (barHU) => {
-      const eCtl = barHU * heightUnit * 4 / 3 * tan(PI / 8); // end
-      const pCtl = opt.peakCurveHandle; // peak
+    // ctl params are bezier handle lengths for ends, points, and corners
+    const makeShape = (p, eCtl, pCtl, cCtl) => {
+      if (!eCtl || !pCtl || !cCtl) return;
       let i, cv = curve(p[0].x, p[0].y);
-      cv.C(p[0].x, p[0].y - eCtl, p[1].x, p[1].y, p[1].x, p[1].y);
+      cv.C(p[0].x, p[0].y - eCtl, p[1].x - cCtl, p[1].y, p[1].x, p[1].y);
       for (i = 2; i <= peakCount; i++)
         cv.C(p[i-1].x + pCtl, p[i-1].y, p[i].x - pCtl, p[i].y, p[i].x, p[i].y);
       i = peakCount + 1;  // right end
-      cv.C(p[i-1].x, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
+      cv.C(p[i-1].x + cCtl, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
       i += 1; // first bottom point after right end
-      cv.C(p[i-1].x, p[i-1].y + eCtl, p[i].x, p[i].y, p[i].x, p[i].y);
+      cv.C(p[i-1].x, p[i-1].y + eCtl, p[i].x + cCtl, p[i].y, p[i].x, p[i].y);
       for (i = peakCount + 3; i < p.length; i++)
         cv.C(p[i-1].x - pCtl, p[i-1].y, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
       i = p.length - 1;
-      cv.C(p[i].x, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
-      setAttr(shape, { 'd': cv.close() });
+      cv.C(p[i].x - cCtl, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
+      return cv.close();
     };
 
     const prepWave = () => {
@@ -192,7 +187,7 @@ const Audio = function(src) {
 
       // make clip path into loading bar shape
       const barWidth = width * opt.loadingWidthRatio;
-      const barWidthDiffHalf = width * (1 - opt.loadingWidthRatio) / 2;
+      const barWidthDiffHalf = (width - barWidth) / 2;
       const barHeightHalf = opt.barHULoading * heightUnit / 2;
       const topY = height / 2 - barHeightHalf;
       const btmY = height / 2 + barHeightHalf;
@@ -209,6 +204,7 @@ const Audio = function(src) {
 
     let azraf;
     const analyze = () => {
+      return;
       if (state === 'load')
         { preload(1); window.setTimeout(analyze, 400); return; }
       if (state !== 'analyze' || azraf) return;
@@ -260,6 +256,7 @@ const Audio = function(src) {
     };
 
     const complete = () => {
+      return;
       if (state === 'complete') return;
       if (state !== 'analyze') prepWave();
       state = 'complete';
@@ -376,7 +373,7 @@ const Audio = function(src) {
   };
 
   const parseAudio = (encoded) => {
-    const copy = encoded.slice(0);  // firefox bug: empties ArrayBuffer after ac
+    const copy = encoded.slice(0);  // ff bug: empty arraybuffer after ac decode
 
     // decode audio data for waveform visual
     const ac = new AudioContext();
