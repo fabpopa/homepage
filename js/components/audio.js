@@ -4,7 +4,7 @@ const Audio = function(src) {
     peakCountMin: 3,        // count of peaks to display at a minimum
     heightUnitMin: 4,       // pixels height min for the height unit
     heightUnitMax: 16,      // pixels height max for the height unit
-    barHULoading: .4,       // height unit multiple for bar when loading
+    barHULoading: 2,       // height unit multiple for bar when loading
     barHUWave: 1,           // height unit multiple for bar when part of wave
     waveHU: 5,              // height unit multiple for full waveform
     peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
@@ -19,10 +19,12 @@ const Audio = function(src) {
   const cei = (x) => Math.ceil(x);
   const rou = (x) => Math.round(x);
   const sin = (x) => Math.sin(x);
+  const cos = (x) => Math.cos(x);
   const tan = (x) => Math.tan(x);
   const min = (x, y) => Math.min(x, y);
   const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
+  const easeInOutSine = (t, b, c, d) => -c / 2 * (cos(PI * t / d) - 1) + b;
   const easeOutExp = (t, b, c, d) =>
     t == d ? b + c : c * (-pow(2, -10 * t / d) + 1) + b;
 
@@ -81,36 +83,30 @@ const Audio = function(src) {
     };
 
     // make balloon-like shape that morphs from loading bar to audio waveform
-    const shape = (() => {
-      let p; // array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
-
-      // ctl params are bezier handle lengths for ends, points, and corners
-      const path = (eCtl, pCtl, cCtl) => {
-        if (!eCtl || !pCtl || !cCtl) return;
-        let i, v = curve(p[0].x, p[0].y); // start at left end
-        v.C(p[0].x, p[0].y - eCtl, p[1].x - cCtl, p[1].y, p[1].x, p[1].y);
-        for (i = 2; i <= peakCount; i++)
-          v.C(p[i-1].x + pCtl, p[i-1].y, p[i].x - pCtl, p[i].y, p[i].x, p[i].y);
-        i = peakCount + 1; // right end
-        v.C(p[i-1].x + cCtl, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
-        i += 1; // right bottom corner
-        v.C(p[i-1].x, p[i-1].y + eCtl, p[i].x + cCtl, p[i].y, p[i].x, p[i].y);
-        for (i = peakCount + 3; i < p.length; i++)
-          v.C(p[i-1].x - pCtl, p[i-1].y, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
-        i = p.length - 1; // left bottom corner
-        v.C(p[i].x - cCtl, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
-        return v.close();
-      };
-
-      return { setPoints: (points) => p = points, getPath: path };
-    })();
+    // p is array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
+    // ctl params are bezier handle lengths for ends, corners, and peaks
+    const shape = (p, eCtl, cCtl, pCtl) => {
+      if (!p || isNaN(eCtl + cCtl + pCtl)) return;
+      let i, v = curve(p[0].x, p[0].y); // start at left end
+      v.C(p[0].x, p[0].y - eCtl, p[1].x - cCtl, p[1].y, p[1].x, p[1].y);
+      for (i = 2; i <= peakCount; i++)
+        v.C(p[i-1].x + pCtl, p[i-1].y, p[i].x - pCtl, p[i].y, p[i].x, p[i].y);
+      i = peakCount + 1; // right end
+      v.C(p[i-1].x + cCtl, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
+      i += 1; // right bottom corner
+      v.C(p[i-1].x, p[i-1].y + eCtl, p[i].x + cCtl, p[i].y, p[i].x, p[i].y);
+      for (i = peakCount + 3; i < p.length; i++)
+        v.C(p[i-1].x - pCtl, p[i-1].y, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
+      i = p.length - 1; // left bottom corner
+      v.C(p[i].x - cCtl, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
+      return v.close();
+    };
 
     // tweening helper that keeps running something each frame until it's done
     const tween = () => {
-      let act, done, raf, lastTime;
+      let act, done, raf, lastTime, dt;
 
       const stop = () => {
-        window.cancelAnimationFrame(raf);
         act = raf = lastTime = null;
         if (done) { done(); done = null; }
       };
@@ -118,14 +114,16 @@ const Audio = function(src) {
       const step = (time) => {
         if (!time) { raf = window.requestAnimationFrame(step); return; }
         if (!lastTime) lastTime = time;
-        if (act(time - lastTime)) { stop(); return; }
+        dt += time - lastTime;
+        lastTime = time;
+        if (act(dt)) { stop(); return; }
         raf = window.requestAnimationFrame(step);
       };
 
       // param fn(dt) returns true when complete and false otherwise
       // eg. tween(fn) will call fn(dt) every frame until it returns true
       // eg. tween(fn, cb) is like tween(fn) and calls cb() when complete
-      return (fn, cb) => { act = fn; done = cb; if (!raf) step(); };
+      return (fn, cb) => { act = fn; done = cb; dt = 0; if (!raf) step(); };
     };
 
     const init = () => {
@@ -169,36 +167,62 @@ const Audio = function(src) {
     };
 
     let preload = (() => {
-      let barWidth, barWidthDiffHalf, barHHalf, barCtl, barStraightPart;
-      let lastProgress = -1;
+      let barWidth, barX, barY, barHHalf, barCtl, barStraightPart;
+      let p, pL, pN, pD; // points current, last, next, diff
+      let tw = tween(), twDur = 800, lastProgress = -1;
 
-      const sh = (barStraightPart) => {
-        const sh = curve(barWidthDiffHalf, height / 2);
-        sh.c(0, -barCtl, barHHalf - barCtl, -barHHalf, barHHalf, -barHHalf);
-        sh.l(barStraightPart, 0);
-        sh.c(barCtl, 0, barHHalf, barHHalf - barCtl, barHHalf, barHHalf);
-        sh.c(0, barCtl, -barHHalf + barCtl, barHHalf, -barHHalf, barHHalf);
-        sh.l(-barStraightPart, 0);
-        sh.c(-barCtl, 0, -barHHalf, -barHHalf + barCtl, -barHHalf, -barHHalf);
-        return sh.close();
+      const pts = (barStraightPart) => {
+        const peakSpace = barStraightPart / (peakCount - 1), p = [];
+        p.push({ x: barX, y: barY });
+        for (let i = 0; i < peakCount; i++)
+          p.push({ x: barX + barHHalf + i * peakSpace, y: barY - barHHalf });
+        p.push({ x: barX + 2 * barHHalf + barStraightPart, y: barY });
+        for (let i = peakCount - 1; i >= 0; i--)
+          p.push({ x: barX + barHHalf + i * peakSpace, y: barY + barHHalf });
+        return p;
       };
 
       const initAndReveal = () => {
         barWidth = width * opt.loadingWidthRatio;
-        barWidthDiffHalf = (width - barWidth) / 2;
+        barX = (width - barWidth) / 2;
+        barY = height / 2;
         barHHalf = opt.barHULoading * heightUnit / 2;
         barCtl = barHHalf * 4 / 3 * tan(PI / 8); // circle quarter arc
         barStraightPart = barWidth - 2 * barHHalf;
-        setAttr(shape, { 'd': sh(barStraightPart) });
+        setAttr(clip, { 'd': shape(pts(barStraightPart), barCtl, barCtl, 0) });
+        p = pts(0);
         svg.style['opacity'] = 1;
         svg.style['transform'] = 'scale(1, 1)';
       };
 
+      const move = (progress) => {
+        pL = JSON.parse(JSON.stringify(p)); // deep copy latest points
+        pN = pts(barStraightPart * progress);
+        pD = new Array(pL.length);
+        pN.forEach((n, i) => pD[i] = { x: n.x - pL[i].x, y: n.y - pL[i].y });
+        return (dt) => {
+          if (dt > twDur) dt = twDur;
+          p = new Array(pN.length);
+          pD.forEach((diff, i) => p[i] = {
+            x: easeInOutSine(dt, pL[i].x, diff.x, twDur),
+            y: easeInOutSine(dt, pL[i].y, diff.y, twDur)
+          });
+          setAttr(bar, { 'd': shape(p, barCtl, barCtl, 0) });
+          if (dt == twDur) return true;
+          return false;
+        };
+      };
+
       return (progress) => {
         if (progress <= lastProgress) return;
+        console.log(progress);
         if (state === 'init') { initAndReveal(); state = 'load'; }
         if (state !== 'load') return;
-        setAttr(bar, { 'd': sh(barStraightPart * progress) });
+
+        let done = () => {};
+        if (progress === 1) done = () => { console.log('done') }
+        tw(move(progress), done);
+
         lastProgress = progress;
         if (progress === 1) state = 'analyze';
       };
