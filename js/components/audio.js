@@ -4,7 +4,7 @@ const Audio = function(src) {
     peakCountMin: 3,        // count of peaks to display at a minimum
     heightUnitMin: 4,       // pixels height min for the height unit
     heightUnitMax: 16,      // pixels height max for the height unit
-    barHULoading: .4,        // height unit multiple for bar when loading
+    barHULoading: .4,       // height unit multiple for bar when loading
     barHUWave: 1,           // height unit multiple for bar when part of wave
     waveHU: 5,              // height unit multiple for full waveform
     peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
@@ -61,8 +61,7 @@ const Audio = function(src) {
   // draw audio component in different states
   const draw = (() => {
     let state = 'none'; // none → init → load → analyze → complete
-    let svg, bar, shape, replay; // DOM elements
-    let p; // array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
+    let svg, bar, clip, replay; // DOM elements
 
     // set multiple attributes on an element
     const setAttr = (elem, attr) =>
@@ -81,21 +80,69 @@ const Audio = function(src) {
       return { C, c, L, l, close };
     };
 
+    // make balloon-like shape that morphs from loading bar to audio waveform
+    const shape = (() => {
+      let p; // array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
+
+      // ctl params are bezier handle lengths for ends, points, and corners
+      const path = (eCtl, pCtl, cCtl) => {
+        if (!eCtl || !pCtl || !cCtl) return;
+        let i, v = curve(p[0].x, p[0].y); // start at left end
+        v.C(p[0].x, p[0].y - eCtl, p[1].x - cCtl, p[1].y, p[1].x, p[1].y);
+        for (i = 2; i <= peakCount; i++)
+          v.C(p[i-1].x + pCtl, p[i-1].y, p[i].x - pCtl, p[i].y, p[i].x, p[i].y);
+        i = peakCount + 1; // right end
+        v.C(p[i-1].x + cCtl, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
+        i += 1; // right bottom corner
+        v.C(p[i-1].x, p[i-1].y + eCtl, p[i].x + cCtl, p[i].y, p[i].x, p[i].y);
+        for (i = peakCount + 3; i < p.length; i++)
+          v.C(p[i-1].x - pCtl, p[i-1].y, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
+        i = p.length - 1; // left bottom corner
+        v.C(p[i].x - cCtl, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
+        return v.close();
+      };
+
+      return { setPoints: (points) => p = points, getPath: path };
+    })();
+
+    // tweening helper that keeps running something each frame until it's done
+    const tween = () => {
+      let act, done, raf, lastTime;
+
+      const stop = () => {
+        window.cancelAnimationFrame(raf);
+        act = raf = lastTime = null;
+        if (done) { done(); done = null; }
+      };
+
+      const step = (time) => {
+        if (!time) { raf = window.requestAnimationFrame(step); return; }
+        if (!lastTime) lastTime = time;
+        if (act(time - lastTime)) { stop(); return; }
+        raf = window.requestAnimationFrame(step);
+      };
+
+      // param fn(dt) returns true when complete and false otherwise
+      // eg. tween(fn) will call fn(dt) every frame until it returns true
+      // eg. tween(fn, cb) is like tween(fn) and calls cb() when complete
+      return (fn, cb) => { act = fn; done = cb; if (!raf) step(); };
+    };
+
     const init = () => {
       if (state !== 'none') return;
       const svgNS = 'http://www.w3.org/2000/svg';
       const svgEl = (el) => document.createElementNS(svgNS, el);
       svg = svgEl('svg');
       const defs = svgEl('defs');
-      const clip = svgEl('clipPath');
-      clip.id = `clip-${+Date.now()}${rou(rnd() * pow(10, 5))}`;
-      shape = svgEl('path');
+      const clipPath = svgEl('clipPath');
+      clipPath.id = `clip-${+Date.now()}${rou(rnd() * pow(10, 5))}`;
+      clip = svgEl('path');
       const g = svgEl('g');
-      setAttr(g, { 'clip-path': `url(#${clip.id})` });
+      setAttr(g, { 'clip-path': `url(#${clipPath.id})` });
       const bg = svgEl('rect');
       bar = svgEl('path');
-      defs.appendChild(clip);
-      clip.appendChild(shape);
+      defs.appendChild(clipPath);
+      clipPath.appendChild(clip);
       g.appendChild(bg);
       g.appendChild(bar);
       svg.appendChild(defs);
@@ -156,24 +203,6 @@ const Audio = function(src) {
         if (progress === 1) state = 'analyze';
       };
     })();
-
-    // ctl params are bezier handle lengths for ends, points, and corners
-    const makeShape = (p, eCtl, pCtl, cCtl) => {
-      if (!eCtl || !pCtl || !cCtl) return;
-      let i, cv = curve(p[0].x, p[0].y);
-      cv.C(p[0].x, p[0].y - eCtl, p[1].x - cCtl, p[1].y, p[1].x, p[1].y);
-      for (i = 2; i <= peakCount; i++)
-        cv.C(p[i-1].x + pCtl, p[i-1].y, p[i].x - pCtl, p[i].y, p[i].x, p[i].y);
-      i = peakCount + 1;  // right end
-      cv.C(p[i-1].x + cCtl, p[i-1].y, p[i].x, p[i].y - eCtl, p[i].x, p[i].y);
-      i += 1; // first bottom point after right end
-      cv.C(p[i-1].x, p[i-1].y + eCtl, p[i].x + cCtl, p[i].y, p[i].x, p[i].y);
-      for (i = peakCount + 3; i < p.length; i++)
-        cv.C(p[i-1].x - pCtl, p[i-1].y, p[i].x + pCtl, p[i].y, p[i].x, p[i].y);
-      i = p.length - 1;
-      cv.C(p[i].x - cCtl, p[i].y, p[0].x, p[0].y + eCtl, p[0].x, p[0].y);
-      return cv.close();
-    };
 
     const prepWave = () => {
       // blow up progress bar layer
