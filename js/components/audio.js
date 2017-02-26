@@ -69,6 +69,7 @@ const Audio = function(src) {
   const draw = (() => {
     let state = 'none'; // none → init → load → analyze → complete
     let svg, bar, clip, replay; // DOM elements
+    let pt; // array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
 
     // set multiple attributes on an element
     const setAttr = (elem, attr) =>
@@ -88,10 +89,10 @@ const Audio = function(src) {
     };
 
     // make balloon-like shape that morphs from loading bar to audio waveform
-    // p is array of (2 * peakCount + 2) {x, y} point coords (left, t, r, b)
-    // ctl params are bezier handle lengths for ends, corners, and peaks
-    const shape = (p, eCtl, cCtl, pCtl) => {
-      if (!p || isNaN(eCtl + cCtl + pCtl)) return;
+    // ctl params are bezier handle lengths for the 2 ends, 4 corners, and peaks
+    const shape = (eCtl, cCtl, pCtl, p) => {
+      if (isNaN(eCtl + cCtl + pCtl)) return;
+      if (!p) p = pt;
       let i, v = curve(p[0].x, p[0].y); // start at left end
       v.C(p[0].x, p[0].y - eCtl, p[1].x - cCtl, p[1].y, p[1].x, p[1].y);
       for (i = 2; i <= peakCount; i++)
@@ -107,7 +108,7 @@ const Audio = function(src) {
       return v.close();
     };
 
-    // tweening helper that keeps running something each frame until it's done
+    // tweening helper, keeps running something each frame until some completion
     const tween = () => {
       let act, done, raf, lastTime, dt, frame, frameJankLimit = 50;
 
@@ -124,15 +125,15 @@ const Audio = function(src) {
         if (!lastTime) lastTime = time;
         frame = time - lastTime
         lastTime = time;
-        if (frame > frameJankLimit) { stop(); act(false); return; } // high-jank
+        if (frame > frameJankLimit) { stop(); act(false); return; } // high jank
         dt += frame;
         if (act(dt)) stop(done);
       };
 
-      // param fn(dt) returns true when complete and false otherwise
-      // fn(false) called to signal a high-jank situation and retry
+      // param fn(dt) must return true when complete and false otherwise
       // eg. tween(fn) will call fn(dt) every frame until it returns true
       // eg. tween(fn, cb) is like tween(fn) and calls cb() when complete
+      // note fn(false) will be called to signal a high-jank situation and retry
       return (fn, cb) => { act = fn; done = cb; dt = 0; if (!raf) step(); };
     };
 
@@ -173,23 +174,33 @@ const Audio = function(src) {
 
       el.appendChild(svg);
       el.appendChild(replay);
+      pt = new Array(2 * peakCount + 2);
+      for (let i = 0; i < pt.length; i++) pt[i] = { x: null, y: null };
       state = 'init';
     };
 
     let preload = (() => {
       let barWidth, barX, barY, barHHalf, barCtl, barStraightPart;
-      let p, pL, pN, pD; // points current, last, next, diff
+      let pL, pN, pD; // points last, next, diff
       let tw = tween(), twDur = 500, lastProgress = -1;
 
+      // updates pN to new points
       const pts = (barStraightPart) => {
-        const peakSpace = barStraightPart / (peakCount - 1), p = [];
-        p.push({ x: barX, y: barY });
-        for (let i = 0; i < peakCount; i++)
-          p.push({ x: barX + barHHalf + i * peakSpace, y: barY - barHHalf });
-        p.push({ x: barX + 2 * barHHalf + barStraightPart, y: barY });
-        for (let i = peakCount - 1; i >= 0; i--)
-          p.push({ x: barX + barHHalf + i * peakSpace, y: barY + barHHalf });
-        return p;
+        let peakSpace = barStraightPart / (peakCount - 1), i;
+        pN[0].x = barX;
+        pN[0].y = barY;
+        for (i = 1; i <= peakCount; i++) {
+          pN[i].x = barX + barHHalf + (i - 1) * peakSpace;
+          pN[i].y = barY - barHHalf;
+        }
+        pN[i].x = barX + 2 * barHHalf + barStraightPart;
+        pN[i].y = barY;
+        for (i += 1; i < pN.length; i++) {
+          pN[i].x = barX + barHHalf + barStraightPart;
+          pN[i].y = barY + barHHalf;
+          barStraightPart -= peakSpace;
+        }
+        return pN;
       };
 
       const initAndReveal = () => {
@@ -199,32 +210,42 @@ const Audio = function(src) {
         barHHalf = opt.barHULoading * heightUnit / 2;
         barCtl = barHHalf * 4 / 3 * tan(PI / 8); // circle quarter arc
         barStraightPart = barWidth - 2 * barHHalf;
-        setAttr(clip, { 'd': shape(pts(barStraightPart), barCtl, barCtl, 0) });
-        p = pts(0);
+        pN = new Array(pt.length);
+        for (let i = 0; i < pt.length; i++) pN[i] = { x: null, y: null };
+        pD = new Array(pt.length);
+        for (let i = 0; i < pt.length; i++) pD[i] = { x: null, y: null };
+        setAttr(clip, { 'd': shape(barCtl, barCtl, 0, pts(barStraightPart)) });
+        pts(0);
+        pN.forEach((p, i) => { pt[i].x = p.x; pt[i].y = p.y; });
         svg.style['opacity'] = 1;
         svg.style['transform'] = 'scale(1, 1)';
       };
 
-      const move = (progress) => {
+      const move = (progress, done) => {
         console.log(`progress call ${progress}`);
-        pL = JSON.parse(JSON.stringify(p)); // deep copy latest points
-        pN = pts(barStraightPart * progress);
-        pD = new Array(pL.length);
-        pN.forEach((n, i) => pD[i] = { x: n.x - pL[i].x, y: n.y - pL[i].y });
+        pL = new Array(pt.length); // deep copy latest points
+        pts(barStraightPart * progress); // update pN
+        for (let i = 0; i < pt.length; i++) {
+          pL[i] = { x: pt[i].x, y: pt[i].y };
+          pD[i].x = pN[i].x - pL[i].x;
+          pD[i].y = pN[i].y - pL[i].y;
+        }
+
         let count = 0;
-        return (dt) => {
-          if (dt === false) { console.log('retry'); tw(move(progress)); return; }
+        const act = (dt) => {
+          if (dt === false) { console.log('retry'); move(progress, done); return; }
           if (dt > twDur) dt = twDur;
-          p = new Array(pN.length);
-          pD.forEach((diff, i) => p[i] = {
-            x: easeInOutExp(dt, pL[i].x, diff.x, twDur),
-            y: easeInOutExp(dt, pL[i].y, diff.y, twDur)
-          });
-          setAttr(bar, { 'd': shape(p, barCtl, barCtl, 0) });
+          for (let i = 0; i < pt.length; i++) {
+            pt[i].x = easeInOutExp(dt, pL[i].x, pD[i].x, twDur);
+            pt[i].y = easeInOutExp(dt, pL[i].y, pD[i].y, twDur);
+          }
+          setAttr(bar, { 'd': shape(barCtl, barCtl, 0) });
           console.log(`count ${++count} last x ${easeInOutExp(dt, pL[30].x, pD[30].x, twDur)} dt ${dt}`);
           if (dt == twDur) return true;
           return false;
         };
+
+        tw(act, done);
       };
 
       return (progress) => {
@@ -232,13 +253,8 @@ const Audio = function(src) {
         console.log(`original progress call ${progress}`);
         if (state === 'init') { initAndReveal(); state = 'load'; }
         if (state !== 'load') return;
-
-        let done = () => {};
-        if (progress === 1) done = () => { console.log('done') }
-        tw(move(progress), done);
-
         lastProgress = progress;
-        if (progress === 1) state = 'analyze';
+        move(progress, (progress === 1) ? () => { state = 'analyze'; } : null);
       };
     })();
 
