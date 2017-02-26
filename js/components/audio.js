@@ -248,7 +248,7 @@ const Audio = function(src) {
       };
 
       return (progress, cb) => {
-        if (progress <= lastProgress) return;
+        if (progress < lastProgress) return;
         if (state === 'init') { initAndReveal(); state = 'load'; }
         if (state !== 'load') return;
         lastProgress = progress;
@@ -272,32 +272,35 @@ const Audio = function(src) {
       if (state !== 'analyze') return;
       prepWave();
 
-      let pL = new Array(pt.length); // deep copy current points
-      pt.forEach((p, i) => { pL[i].x = p.x; pL[i].y = p.y; });
-      let diff = new Array(pt.length / 2 + 1).fill(0);
-      let amplitude = opt.barHULoading * heightUnit / 2;
-      let t = 0, cycle = 1400, val, i, pair;
-      const render = (dt) => {
-        val = amplitude * sin(t / cycle * 2 * PI);
+      const pL = new Array(pt.length); // deep copy current points
+      for (let i = 0; i < pt.length; i++) pL[i] = { x: pt[i].x, y: pt[i].y };
+      const barHeight = opt.barHULoading * heightUnit;
+      const barHHalf = barHeight / 2;
+      const barCtl = barHHalf * 4 / 3 * tan(PI / 8);
+      const startX = pL[0].x;
+      const barWidth = pL[pt.length / 2] - startX;
+      const amplitude = barHHalf;
+      const period = 50; // pixels corresponding to 2*PI sine period
+      const velocity = 30; // pixels per second
+      const cycle = period / velocity * 1000; // msec to complete a sine period
+      let t = 0, entry = 0, periodAndPhase;
+
+      const act = (dt) => {
+        if (dt === false) { tw(act); return; }
+        for (let i = 0; i <= pt.length / 2; i++)
+          if (pL[i].x <= startX + entry) {
+            periodAndPhase = t / cycle + (pL[i].x - startX) / period;
+            pt[i].y = pL[i].y + amplitude * sin(periodAndPhase * 2 * PI);
+            if (i == 0 || i == pt.length / 2) continue;
+            pt[pt.length - i].y = pt[i].y + barHeight;
+          }
+        setAttr(clip, { 'd': shape(barCtl, barCtl, 0) });
+        if (entry < barWidth) entry += dt * velocity / 1000;
         t = (t + dt) % cycle;
-        for (i = 0; i < diff.length; i++) {
-          diff[i] = (diff[i] * 2 + (i == 0 ? val : diff[i-1])) / 3;
-          p[i].y = points[i].y + diff[i];
-          pair = (points.length - i) % points.length;
-          p[pair].y = points[pair].y + diff[i];
-        }
-        paintPoints(opt.barHULoading);
+        return false; // runs indefinitely until another act fn is fed into tw
       };
 
-      let lastTime;
-      const anim = (t) => {
-        if (!t) { azraf = window.requestAnimationFrame(anim); return; }
-        if (!lastTime) lastTime = t;
-        render(t - lastTime);
-        lastTime = t;
-        azraf = window.requestAnimationFrame(anim);
-      };
-      anim();
+      tw(act);
     };
 
     const interact = () => {
