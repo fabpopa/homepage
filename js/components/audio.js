@@ -4,7 +4,7 @@ const Audio = function(src) {
     peakCountMin: 3,        // count of peaks to display at a minimum
     heightUnitMin: 4,       // pixels height min for the height unit
     heightUnitMax: 16,      // pixels height max for the height unit
-    barHULoading: 2,       // height unit multiple for bar when loading
+    barHULoading: .4,       // height unit multiple for bar when loading
     barHUWave: 1,           // height unit multiple for bar when part of wave
     waveHU: 5,              // height unit multiple for full waveform
     peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
@@ -222,7 +222,6 @@ const Audio = function(src) {
       };
 
       const move = (progress, done) => {
-        console.log(`progress call ${progress}`);
         pL = new Array(pt.length); // deep copy latest points
         pts(barStraightPart * progress); // update pN
         for (let i = 0; i < pt.length; i++) {
@@ -231,16 +230,14 @@ const Audio = function(src) {
           pD[i].y = pN[i].y - pL[i].y;
         }
 
-        let count = 0;
         const act = (dt) => {
-          if (dt === false) { console.log('retry'); move(progress, done); return; }
+          if (dt === false) { move(progress, done); return; }
           if (dt > twDur) dt = twDur;
           for (let i = 0; i < pt.length; i++) {
             pt[i].x = easeInOutExp(dt, pL[i].x, pD[i].x, twDur);
             pt[i].y = easeInOutExp(dt, pL[i].y, pD[i].y, twDur);
           }
           setAttr(bar, { 'd': shape(barCtl, barCtl, 0) });
-          console.log(`count ${++count} last x ${easeInOutExp(dt, pL[30].x, pD[30].x, twDur)} dt ${dt}`);
           if (dt == twDur) return true;
           return false;
         };
@@ -250,7 +247,6 @@ const Audio = function(src) {
 
       return (progress) => {
         if (progress <= lastProgress) return;
-        console.log(`original progress call ${progress}`);
         if (state === 'init') { initAndReveal(); state = 'load'; }
         if (state !== 'load') return;
         lastProgress = progress;
