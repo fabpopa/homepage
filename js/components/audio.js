@@ -24,9 +24,14 @@ const Audio = function(src) {
   const min = (x, y) => Math.min(x, y);
   const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
-  const easeInOutSine = (t, b, c, d) => -c / 2 * (cos(PI * t / d) - 1) + b;
   const easeOutExp = (t, b, c, d) =>
     t == d ? b + c : c * (-pow(2, -10 * t / d) + 1) + b;
+  const easeInOutExp = (t, b, c, d) => {
+    if (t == 0) return b;
+    if (t == d) return b + c;
+    if ((t /= d / 2) < 1) return c / 2 * pow(2, 10 * (t - 1)) + b;
+    return c / 2 * (-pow(2, -10 * --t) + 2) + b;
+  };
 
   // HTMLElement to return
   const el = document.createElement('div');
@@ -104,23 +109,28 @@ const Audio = function(src) {
 
     // tweening helper that keeps running something each frame until it's done
     const tween = () => {
-      let act, done, raf, lastTime, dt;
+      let act, done, raf, lastTime, dt, frame, frameJankLimit = 50;
 
-      const stop = () => {
-        act = raf = lastTime = null;
-        if (done) { done(); done = null; }
+      const stop = (done) => {
+        window.cancelAnimationFrame(raf);
+        raf = null;
+        lastTime = null;
+        if (done) done();
       };
 
       const step = (time) => {
-        if (!time) { raf = window.requestAnimationFrame(step); return; }
-        if (!lastTime) lastTime = time;
-        dt += time - lastTime;
-        lastTime = time;
-        if (act(dt)) { stop(); return; }
         raf = window.requestAnimationFrame(step);
+        if (!time) return;
+        if (!lastTime) lastTime = time;
+        frame = time - lastTime
+        lastTime = time;
+        if (frame > frameJankLimit) { stop(); act(false); return; } // high-jank
+        dt += frame;
+        if (act(dt)) stop(done);
       };
 
       // param fn(dt) returns true when complete and false otherwise
+      // fn(false) called to signal a high-jank situation and retry
       // eg. tween(fn) will call fn(dt) every frame until it returns true
       // eg. tween(fn, cb) is like tween(fn) and calls cb() when complete
       return (fn, cb) => { act = fn; done = cb; dt = 0; if (!raf) step(); };
@@ -169,7 +179,7 @@ const Audio = function(src) {
     let preload = (() => {
       let barWidth, barX, barY, barHHalf, barCtl, barStraightPart;
       let p, pL, pN, pD; // points current, last, next, diff
-      let tw = tween(), twDur = 800, lastProgress = -1;
+      let tw = tween(), twDur = 500, lastProgress = -1;
 
       const pts = (barStraightPart) => {
         const peakSpace = barStraightPart / (peakCount - 1), p = [];
@@ -196,18 +206,22 @@ const Audio = function(src) {
       };
 
       const move = (progress) => {
+        console.log(`progress call ${progress}`);
         pL = JSON.parse(JSON.stringify(p)); // deep copy latest points
         pN = pts(barStraightPart * progress);
         pD = new Array(pL.length);
         pN.forEach((n, i) => pD[i] = { x: n.x - pL[i].x, y: n.y - pL[i].y });
+        let count = 0;
         return (dt) => {
+          if (dt === false) { console.log('retry'); tw(move(progress)); return; }
           if (dt > twDur) dt = twDur;
           p = new Array(pN.length);
           pD.forEach((diff, i) => p[i] = {
-            x: easeInOutSine(dt, pL[i].x, diff.x, twDur),
-            y: easeInOutSine(dt, pL[i].y, diff.y, twDur)
+            x: easeInOutExp(dt, pL[i].x, diff.x, twDur),
+            y: easeInOutExp(dt, pL[i].y, diff.y, twDur)
           });
           setAttr(bar, { 'd': shape(p, barCtl, barCtl, 0) });
+          console.log(`count ${++count} last x ${easeInOutExp(dt, pL[30].x, pD[30].x, twDur)} dt ${dt}`);
           if (dt == twDur) return true;
           return false;
         };
@@ -215,7 +229,7 @@ const Audio = function(src) {
 
       return (progress) => {
         if (progress <= lastProgress) return;
-        console.log(progress);
+        console.log(`original progress call ${progress}`);
         if (state === 'init') { initAndReveal(); state = 'load'; }
         if (state !== 'load') return;
 
