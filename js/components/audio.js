@@ -19,7 +19,6 @@ const Audio = function(src) {
   const cei = (x) => Math.ceil(x);
   const rou = (x) => Math.round(x);
   const sin = (x) => Math.sin(x);
-  const cos = (x) => Math.cos(x);
   const tan = (x) => Math.tan(x);
   const min = (x, y) => Math.min(x, y);
   const pow = (x, y) => Math.pow(x, y);
@@ -309,17 +308,35 @@ const Audio = function(src) {
       svg.style['cursor'] = 'pointer';
       replay.style['cursor'] = 'pointer';
       svg.style['transition'] = 'transform .1s';
+      bar.style['transition'] = 'transform .1s';
       svg.addEventListener('mousedown', () => {
         svg.style['transform'] = 'translateY(2px) scale(.99, .99)';
+        if (audio.currentTime === 0 || audio.ended) {
+          bar.style['transform'] = `translateX(-100%)`;
+          window.setTimeout(() => { audio.play(); }, 500);
+          return;
+        }
+        if (audio.paused) { audio.play(); return; }
+        audio.pause();
       });
       svg.addEventListener('mouseup', () => {
         svg.style['transform'] = 'translateY(0) scale(1, 1)';
       });
       replay.addEventListener('mousedown', () => {
         svg.style['transform'] = 'perspective(1000px) rotateY(-3deg)';
+        audio.currentTime = 0;
       });
       replay.addEventListener('mouseup', () => {
         svg.style['transform'] = 'perspective(0) rotateY(0)';
+      });
+
+      let raf, pos;
+      audio.addEventListener('timeupdate', () => {
+        if (!raf) raf = requestAnimationFrame(() => {
+          pos = width * (1 - audio.currentTime / audio.duration);
+          bar.style['transform'] = `translateX(-${pos}px)`;
+          raf = null;
+        });
       });
     };
 
