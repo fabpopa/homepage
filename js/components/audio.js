@@ -9,8 +9,8 @@ const Audio = function(src) {
     waveHU: 5,              // height unit multiple for full waveform
     peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
     loadingWidthRatio: .5,  // width ratio of bar when loading to full waveform
-    bgColor: '#efe8e8',
-    barColor: 'lightblue'
+    bgColor: '#f8f2f2',
+    barColor: '#add8e6'
   };
 
   // convenience math functions
@@ -308,9 +308,12 @@ const Audio = function(src) {
       svg.style['cursor'] = 'pointer';
       replay.style['cursor'] = 'pointer';
       svg.style['transition'] = 'transform .1s';
-      bar.style['transition'] = 'transform .1s';
+      bar.style['transition'] = 'transform .3s cubic-bezier(.19, 1, .22, 1)';
       svg.addEventListener('mousedown', () => {
         svg.style['transform'] = 'translateY(2px) scale(.99, .99)';
+      });
+      svg.addEventListener('mouseup', () => {
+        svg.style['transform'] = 'translateY(0) scale(1, 1)';
         if (audio.currentTime === 0 || audio.ended) {
           bar.style['transform'] = `translateX(-100%)`;
           window.setTimeout(() => { audio.play(); }, 500);
@@ -319,12 +322,9 @@ const Audio = function(src) {
         if (audio.paused) { audio.play(); return; }
         audio.pause();
       });
-      svg.addEventListener('mouseup', () => {
-        svg.style['transform'] = 'translateY(0) scale(1, 1)';
-      });
       replay.addEventListener('mousedown', () => {
-        svg.style['transform'] = 'perspective(1000px) rotateY(-3deg)';
-        audio.currentTime = 0;
+        svg.style['transform'] = 'perspective(1000px) rotateY(-4deg)';
+        if (audio.currentTime !== 0) audio.currentTime = 0;
       });
       replay.addEventListener('mouseup', () => {
         svg.style['transform'] = 'perspective(0) rotateY(0)';
