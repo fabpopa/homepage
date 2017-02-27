@@ -270,6 +270,7 @@ const Audio = function(src) {
     const analyze = () => {
       if (state === 'load') { preload(1, analyze); return; }
       if (state !== 'analyze') return;
+      state = 'analyze';
       prepWave();
 
       const pL = new Array(pt.length); // deep copy current points
@@ -280,28 +281,28 @@ const Audio = function(src) {
       const startX = pL[0].x;
       const endX = pL[pt.length / 2].x;
       const barWidth = endX - startX;
-      const amplitude = barHHalf / 2;
+      const amplitude = barHeight / 4;
       const period = 50; // pixels corresponding to 2*PI sine period
       const velocity = 50; // pixels per second
       const cycle = period / velocity * 1000; // msec to complete a sine period
       let entry = 0, entryDur = 800, periodAndPhase;
 
-      const wave = (dt) => {
-        if (dt === false) { tw(wave); return; }
+      const act = (dt) => {
+        if (dt === false) { tw(act); return; }
         if (entry < endX) entry = easeInOutExp(dt, startX, barWidth, entryDur);
         dt %= cycle;
         for (let i = 0; i <= pt.length / 2; i++)
           if (pL[i].x <= entry) {
-            periodAndPhase = dt / cycle + (pL[i].x - startX) / period;
+            periodAndPhase = -PI / 4 + dt / cycle + (pL[i].x - startX) / period;
             pt[i].y = pL[i].y + amplitude * sin(periodAndPhase * 2 * PI);
             if (i == 0 || i == pt.length / 2) continue;
             pt[pt.length - i].y = pt[i].y + barHeight;
           }
         setAttr(clip, { 'd': shape(barCtl, barCtl, 0) });
-        return false;
+        return false; // runs indefinitely until superseded by another act fn
       };
 
-      tw(wave);
+      tw(act);
     };
 
     const interact = () => {
@@ -323,7 +324,6 @@ const Audio = function(src) {
     };
 
     const complete = () => {
-      return;
       if (state === 'complete') return;
       if (state !== 'analyze') prepWave();
       state = 'complete';
@@ -333,47 +333,43 @@ const Audio = function(src) {
         for (let i = 0; i < pt.length; i++)
           { pt[i].x = width / 2; pt[i].y = height / 2; }
 
-      // final wave points
-      const pk = data.peaks;
-      const pkWidth = peakWidth;
       const peakH = (height - opt.barHUWave * heightUnit) / 2;
-      const points = [];
-      points.push({ x: 0, y: height / 2 });
+      const barCtl = opt.barHUWave * heightUnit / 2 * 4 / 3 * tan(PI / 8);
+      const pL = new Array(pt.length);
+      const pN = new Array(pt.length);
+      const pD = new Array(pt.length);
+
+      // final waveform points
+      pN[0] = { x: 0, y: height / 2 };
       for (let i = 0; i < peakCount; i++)
-        points.push({ x: (i + .5) * pkWidth, y: (1 - pk[i]) * peakH });
-      points.push({ x: width, y: height / 2 });
+        pN[i + 1] = { x: (i + .5) * peakWidth, y: (1 - data.peaks[i]) * peakH };
+      pN[pt.length / 2] = { x: width, y: height / 2 };
       for (let i = peakCount - 1; i >= 0; i--)
-        points.push({ x: (i + .5) * pkWidth, y: height - (1 - pk[i]) * peakH });
+        pN[pt.length - i - 1] = {
+          x: (i + .5) * peakWidth,
+          y: height - (1 - data.peaks[i]) * peakH
+        };
 
-      const start = JSON.parse(JSON.stringify(p)); // deep copy
-      const diff = new Array(points.length);
-      for (let i = 0; i < points.length; i++)
-        diff[i] = { x: points[i].x - p[i].x, y: points[i].y - p[i].y };
+      // current and diff points
+      for (let i = 0; i < pt.length; i++) {
+        pL[i] = { x: pt[i].x, y: pt[i].y };
+        pD[i] = { x: pN[i].x - pL[i].x, y: pN[i].y - pL[i].y };
+      }
 
-      let craf, t = 0, duration = 300, i;
-      const render = (dt) => {
-        t += dt;
-        if (t >= duration) { t = duration; window.cancelAnimationFrame(craf); }
-
-        for (i = 0; i < points.length; i++) {
-          p[i].x = easeOutExp(t, start[i].x, diff[i].x, duration);
-          p[i].y = easeOutExp(t, start[i].y, diff[i].y, duration);
+      const twDur = 300;
+      const act = (dt) => {
+        if (dt === false) { complete(); return; }
+        if (dt > twDur) dt = twDur;
+        for (let i = 0; i < pt.length; i++) {
+          pt[i].x = easeInOutExp(dt, pL[i].x, pD[i].x, twDur);
+          pt[i].y = easeInOutExp(dt, pL[i].y, pD[i].y, twDur);
         }
-
-        if (azraf) window.cancelAnimationFrame(azraf);
-        paintPoints(opt.barHUWave * .7);
-        if (t == duration) interact();
+        setAttr(clip, { 'd': shape(barCtl, 0, opt.peakCurveHandle) });
+        if (dt == twDur) return true;
+        return false;
       };
 
-      let lastTime;
-      const anim = (t) => {
-        if (!t) { craf = window.requestAnimationFrame(anim); return; }
-        if (!lastTime) lastTime = t;
-        craf = window.requestAnimationFrame(anim);
-        render(t - lastTime);
-        lastTime = t;
-      };
-      // anim();
+      tw(act, interact);
     };
 
     return { init, preload, analyze, complete };
