@@ -278,29 +278,30 @@ const Audio = function(src) {
       const barHHalf = barHeight / 2;
       const barCtl = barHHalf * 4 / 3 * tan(PI / 8);
       const startX = pL[0].x;
-      const barWidth = pL[pt.length / 2] - startX;
-      const amplitude = barHHalf;
+      const endX = pL[pt.length / 2].x;
+      const barWidth = endX - startX;
+      const amplitude = barHHalf / 2;
       const period = 50; // pixels corresponding to 2*PI sine period
-      const velocity = 30; // pixels per second
+      const velocity = 50; // pixels per second
       const cycle = period / velocity * 1000; // msec to complete a sine period
-      let t = 0, entry = 0, periodAndPhase;
+      let entry = 0, entryDur = 800, periodAndPhase;
 
-      const act = (dt) => {
-        if (dt === false) { tw(act); return; }
+      const wave = (dt) => {
+        if (dt === false) { tw(wave); return; }
+        if (entry < endX) entry = easeInOutExp(dt, startX, barWidth, entryDur);
+        dt %= cycle;
         for (let i = 0; i <= pt.length / 2; i++)
-          if (pL[i].x <= startX + entry) {
-            periodAndPhase = t / cycle + (pL[i].x - startX) / period;
+          if (pL[i].x <= entry) {
+            periodAndPhase = dt / cycle + (pL[i].x - startX) / period;
             pt[i].y = pL[i].y + amplitude * sin(periodAndPhase * 2 * PI);
             if (i == 0 || i == pt.length / 2) continue;
             pt[pt.length - i].y = pt[i].y + barHeight;
           }
         setAttr(clip, { 'd': shape(barCtl, barCtl, 0) });
-        if (entry < barWidth) entry += dt * velocity / 1000;
-        t = (t + dt) % cycle;
-        return false; // runs indefinitely until another act fn is fed into tw
+        return false;
       };
 
-      tw(act);
+      tw(wave);
     };
 
     const interact = () => {
@@ -435,7 +436,7 @@ const Audio = function(src) {
       window.URL.revokeObjectURL(workerBlobURL);
       readyToPlay();
     };
-
+    draw.analyze();
     const ch = new Array(data.pcm.numberOfChannels);
     for (let i = 0; i < ch.length; i++) ch[i] = data.pcm.getChannelData(i);
     const workerData = { ch, length: data.pcm.length, bucketCount: peakCount };
@@ -471,7 +472,6 @@ const Audio = function(src) {
     xhr.onload = () => {
       if (xhr.status >= 400) { error(`HTTP error ${xhr.status}`); return; }
       parseAudio(xhr.response);
-      draw.analyze();
     };
     xhr.onerror = () => { error('Error fetching audio media'); };
     xhr.send();
