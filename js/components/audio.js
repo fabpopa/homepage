@@ -324,8 +324,8 @@ const Audio = function(src) {
     };
 
     const complete = () => {
-      if (state === 'complete') return;
-      if (state !== 'analyze') prepWave();
+      if (state === 'none') return;
+      if (state !== 'analyze' && state !== 'complete') prepWave();
       state = 'complete';
 
       // if complete is the first thing called after init, set point start
