@@ -5,7 +5,7 @@
 <meta name="viewport" content="initial-scale=1">
 
 <script>
-  // JS available, hide page elements before DOM
+  // JS available, hide page elements before DOM to control the reveal
   window.site = {};
   window.site.hideAll = document.createElement('style');
   window.site.hideAll.innerHTML = 'body > * { display: none; }';
@@ -70,26 +70,25 @@
       })();
 
       var start = function() {
+        // features available, remove nofeatures message
+        document.body.removeChild(document.querySelector('#nofeatures'));
+
         // global object to control loading animation
         window.site.loading = (function() {
-          var onhide;
-          var nof = document.querySelector('#nofeatures');
-          var ldr = document.createElement('div');
+          var done, ldr;
+          ldr = document.createElement('div');
           ldr.id = 'loading';
 
           var cleanup = function() {
-            if (!onhide) return;
-            [ldr, nof, window.site.hideAll].forEach(function(el) {
-              if (document.head.contains(el)) document.head.removeChild(el);
-              if (document.body.contains(el)) document.body.removeChild(el);
-            });
-            onhide();
-            onhide = null;
+            document.head.removeChild(window.site.hideAll);
+            document.body.removeChild(ldr);
+            done();
           };
 
+          // stops and restarts animation and tries to clean up at end of cycle
           ldr.addEventListener('animationend', function() {
-            cleanup();
-            ldr.style.animation = 'none';
+            if (done) cleanup(); // stop animation at end of cycle if done set
+            ldr.style.animation = 'none'; // restart animation
             window.setTimeout(function() { ldr.style.animation = ''; });
           });
 
@@ -98,34 +97,35 @@
               if (!document.body.contains(ldr)) document.body.appendChild(ldr);
             },
             hide: function(cb) {
-              if (cb) { onhide = cb; } else { onhide = function() {}; }
-              if (!document.body.contains(ldr)) cleanup();  // not animating
+              if (typeof cb != 'function') cb = function() {};
+              if (document.body.contains(ldr)) { done = cb; return; }
+              cb();
             }
           };
         })();
 
-        // only display loading animation if startup takes noticeable time
+        // only display loading animation if scripting takes noticeable time
         window.site.raceLoad = window.setTimeout(window.site.loading.show, 500);
 
-        // if still in loading state after substantial time, fall back
+        // show the fallback if still loading after long amount of time
         window.setTimeout(window.site.loading.hide, 10000);
 
-        // start site proper
+        // start scripting
         var el = document.createElement('script');
         el.src = 'script.js';
         document.head.appendChild(el);
       };
 
-      if (featuresOk) { start(); }
-      else { document.head.removeChild(window.site.hideAll); }
+      if (featuresOk) { start(); return; }
+      document.head.removeChild(window.site.hideAll);
     };
 
     // wait for DOM
     var state = document.readyState;
-    if (state === 'interactive' || state === 'complete') { js(); }
-    else { document.addEventListener('readystatechange', function h() {
+    if (state === 'interactive' || state === 'complete') { js(); return; }
+    document.addEventListener('readystatechange', function h() {
       document.removeEventListener('readystatechange', h);
       js();
-    }); }
+    });
   })();
 </script>
