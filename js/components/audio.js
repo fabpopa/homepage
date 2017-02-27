@@ -1,3 +1,4 @@
+// audio player component with waveform, progress, and playback control
 const Audio = function(src) {
   const opt = {
     peakWidth: 17,          // pixels width for a peak on the sound curve
@@ -63,6 +64,12 @@ const Audio = function(src) {
   const data = { pcm: null, peaks: null };
   let width, height, heightUnit, peakCount, peakWidth;
   let audio;
+
+  // event dispatchers
+  const dispatch = (e) => el.dispatchEvent(e);
+  const event = (type) => dispatch(new Event(type));
+  const error = (m) =>
+    dispatch(new ErrorEvent('error', { message: `${m} (audio component)` }));
 
   // draw audio component in different states
   const draw = (() => {
@@ -392,13 +399,6 @@ const Audio = function(src) {
     return { init, preload, analyze, complete };
   })();
 
-  // event dispatchers
-  const dispatch = (e) => { el.dispatchEvent(e); };
-  const event = (type) => { dispatch(new Event(type)); };
-  const error = (m) => {
-    dispatch(new ErrorEvent('error', { message: `${m} (audio component)` }));
-  };
-
   // playable checkpoint, requires computed peaks and audio playback element
   let readyToPlay = (c => () => { c -= 1; if (!c) draw.complete(); })(2);
 
@@ -462,7 +462,7 @@ const Audio = function(src) {
     // decode audio data for waveform visual
     const ac = new AudioContext();
     const decodeOk = (pcm) => { data.pcm = pcm; map(); };
-    const decodeErr = () => { error('Error decoding media'); };
+    const decodeErr = () => error('Error decoding media');
     ac.decodeAudioData(encoded, decodeOk, decodeErr);
 
     // create media element for playback
@@ -470,9 +470,9 @@ const Audio = function(src) {
     const audioBlob = new Blob([copy], { type: `audio/${audioExt}` });
     const audioBlobURL = window.URL.createObjectURL(audioBlob);
     audio = document.createElement('audio');
-    audio.onload = () => { readyToPlay(); };
+    audio.onload = () => readyToPlay();
     audio.onsuspend = audio.onload; // may fire when fetching from cache
-    audio.onerror = () => { error('Error passing data to audio element'); };
+    audio.onerror = () => error('Error passing data to audio element');
     audio.src = audioBlobURL;
   };
 
@@ -481,12 +481,12 @@ const Audio = function(src) {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', src);
     xhr.responseType = 'arraybuffer';
-    xhr.onprogress = (e) => { draw.preload(e.loaded / e.total); };
+    xhr.onprogress = (e) => draw.preload(e.loaded / e.total);
     xhr.onload = () => {
       if (xhr.status >= 400) { error(`HTTP error ${xhr.status}`); return; }
       parseAudio(xhr.response);
     };
-    xhr.onerror = () => { error('Error fetching audio media'); };
+    xhr.onerror = () => error('Error fetching audio media');
     xhr.send();
   };
 
