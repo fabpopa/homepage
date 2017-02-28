@@ -12,7 +12,7 @@
   document.head.appendChild(window.site.hideAll);
 </script>
 
-<style>
+<style id="loadingstyle">
   #loading {
     display: block;
     position: absolute;
@@ -80,6 +80,7 @@
           var cleanup = function() {
             document.head.removeChild(window.site.hideAll);
             document.body.removeChild(ldr);
+            document.head.removeChild(document.querySelector('#loadingstyle'));
             done();
           };
 

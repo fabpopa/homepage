@@ -1,8 +1,21 @@
-// creates cells animation component
-// requires width and height in pixels
-const Cells = function(width, height) {
-  if (typeof width !== 'number' || typeof height !== 'number')
-    throw new Error('Cells requires number params');
+// red blood cell animation component
+const Cells = function() {
+  const opt = {
+    sizeMin: 20,    // pixels, even number
+    sizeMax: 50,    // pixels, even number
+    angMin: -120,   // degrees
+    angMax: -60,    // degrees
+    flipTMin: 2,    // seconds
+    flipTMax: 5,    // seconds
+    jigMin: 3,      // pixels
+    jigMax: 3,      // pixels
+    jigTMin: 2,     // seconds
+    jigTMax: 2,     // seconds
+    buffer: 8,      // pixels
+    velocity: 40,   // pixels per second, can't be 0
+    padMax: .3,     // multiple of height
+    padTime: 14     // seconds, tweak based on velocity
+  };
 
   // convenience math functions
   const rnd = () => Math.random();
@@ -15,32 +28,16 @@ const Cells = function(width, height) {
   const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
 
-  // animation options
-  const opt = {
-    sizeMin: flr(height / 8),   // pixels, even number
-    sizeMax: flr(height / 3),   // pixels, even number
-    angMin: -120,               // degrees
-    angMax: -60,                // degrees
-    flipTMin: 2,                // seconds
-    flipTMax: 5,                // seconds
-    jigMin: 3,                  // pixels
-    jigMax: 3,                  // pixels
-    jigTMin: 2,                 // seconds
-    jigTMax: 2,                 // seconds
-    buffer: flr(height / 14),   // pixels
-    velocity: 40,               // pixels per second, can't be 0
-    padMax: flr(height / 3.3),  // pixels
-    padTime: 14                 // seconds, tweak based on velocity
-  };
-
   // HTMLElement to return
   const el = document.createElement('div');
   el.setAttribute('component', 'cells');
-  el.style['width'] = `${width}px`;
-  el.style['height'] = `${height}px`;
+  el.style['width'] = '100%';
+  el.style['height'] = '100%';
 
-  // stylesheet element to append to document.head
-  const style = (() => {
+  // component state
+  let width, height, style, cells, sleepTil = 0;
+
+  const initStyle = () => {
     const c = '[component=cells]';
     const css = `
       ${c} { position: relative; width: 100%; height: 100%; overflow: hidden; }
@@ -66,10 +63,10 @@ const Cells = function(width, height) {
           100% { transform: translate(1em, 1.32em) scale(.9, 0); } }
     `;
 
-    const el = document.createElement('style');
-    el.innerHTML = css;
-    return el;
-  })();
+    style = document.createElement('style');
+    style.innerHTML = css;
+    document.head.appendChild(style);
+  };
 
   const makeCellEl = (cells) => {
     const cell = document.createElement('div');
@@ -98,62 +95,6 @@ const Cells = function(width, height) {
     cells.appendChild(cell);
     return cell;
   };
-
-  // line at x = 0 to insert cells where they don't overlap
-  const entryLine = (() => {
-    const pixels = new Array(height);
-    let i;
-    return {
-      reset: () => {
-        for (i = 0; i < pixels.length; i++) pixels[i] = true;
-      },
-      mark: (from, to) => {
-        if (from < 0) from = 0;
-        if (to > pixels.length - 1) to = pixels.length - 1;
-        // console.log(from, to);
-        for (i = from; i <= to; i++) pixels[i] = false;
-      },
-      window: () => {
-        // return largest continuous block of empty pixels
-        let space = { start: 0, end: 0, size: 0 };
-        for (i = 0, j = 1; j <= pixels.length; j++)
-          if (j == pixels.length || pixels[j - 1] != pixels[j])
-            if (pixels[j - 1]) {
-              if (j - i > space.size) {
-                space.start = i;
-                space.end = j - 1;
-                space.size = j - i;
-              }
-            } else i = j;
-        // console.log('window: ', space);
-        return space;
-      }
-    };
-  })();
-
-  // sin wave of side padding to create a nice organic shape for cell stream
-  const sinPad = ((size, cycle) => {
-    let lastTime, progress, value;
-    return (time) => {
-      if (!lastTime) { lastTime = time; progress = 0; }
-      progress = (progress + time - lastTime) % cycle;
-      value = rou(size * abs(sin(progress / cycle * 2 * PI)));
-      lastTime = time;
-      return value;
-    };
-  })(opt.padMax, opt.padTime * 1000);
-
-  // circular buffer for last launched cell indexes
-  const lastLaunched = (() => {
-    const maxCount = cei(height / (opt.sizeMin + 2 * opt.jigMin + opt.buffer));
-    const buffer = new Array(maxCount);
-    let i = 0;
-    buffer.add = (item) => { buffer[i] = item; i = (i + 1) % buffer.length; };
-    return buffer;
-  })();
-
-  // avoid work on a frame when possible
-  let sleepTil = 0;
 
   // all the element styling to facilitate animation
   const launch = (cell, time, lastNow) => {
@@ -194,10 +135,51 @@ const Cells = function(width, height) {
     });
   };
 
-  // cell elements created in advance, attached to DOM and never removed
-  const cells = (() => {
-    // allocate objects for theoretical max number of cells
-    const poolCount = flr(width * height / pow(opt.sizeMin, 2));
+  const initCells = () => {
+    // line at x = 0 to insert cells where they don't overlap
+    const entryLine = (() => {
+      const pixels = new Array(height);
+      return {
+        reset: () => {
+          for (let i = 0; i < pixels.length; i++) pixels[i] = true;
+        },
+        mark: (from, to) => {
+          if (from < 0) from = 0;
+          if (to > pixels.length - 1) to = pixels.length - 1;
+          for (let i = from; i <= to; i++) pixels[i] = false;
+        },
+        window: () => {
+          // return largest continuous block of empty pixels
+          let space = { start: 0, end: 0, size: 0 };
+          for (let i = 0, j = 1; j <= pixels.length; j++)
+            if (j == pixels.length || pixels[j - 1] != pixels[j])
+              if (pixels[j - 1]) {
+                if (j - i > space.size) {
+                  space.start = i;
+                  space.end = j - 1;
+                  space.size = j - i;
+                }
+              } else { i = j; }
+          return space;
+        }
+      };
+    })();
+
+    // sin wave of side padding to create an organic shape for stream of cells
+    const sinPad = ((size, cycle) => {
+      let lastTime, progress, value;
+      return (time) => {
+        if (!lastTime) { lastTime = time; progress = 0; }
+        progress = (progress + time - lastTime) % cycle;
+        value = rou(size * abs(sin(progress / cycle * 2 * PI)));
+        lastTime = time;
+        return value;
+      };
+    })(height * opt.padMax, opt.padTime * 1000);
+
+    // allocate for theoretical max number of cells on canvas
+    const minCellSize = opt.sizeMin + 2 * opt.jigMin + opt.buffer;
+    const poolCount = flr(width * height / pow(minCellSize, 2));
     const pool = new Array(poolCount);
 
     // populate cell pool
@@ -215,6 +197,14 @@ const Cells = function(width, height) {
       travelTime: null,  // seconds to travel from -100% to width across canvas
       el: makeCellEl(el) // DOM element
     };
+
+    // circular buffer for last launched cell indexes
+    const lastLaunched = (() => {
+      const buffer = new Array(cei(height / minCellSize));
+      let i = 0;
+      buffer.add = (item) => { buffer[i] = item; i = (i + 1) % buffer.length; };
+      return buffer;
+    })();
 
     const active = (i) => typeof i == 'number' && pool[i].y !== null;
 
@@ -267,49 +257,57 @@ const Cells = function(width, height) {
       lastLaunched.add(c.i);
     };
 
-    return addIfSpace;
-  })();
-
-  // attach stylesheet
-  document.head.appendChild(style);
-
-  let raf, lastNow, time = 0;
-
-  const anim = (now) => {
-    time += now - lastNow;
-    lastNow = now;
-    cells(time, now);
-    raf = window.requestAnimationFrame(anim);
+    cells = addIfSpace;
   };
 
-  const go = (cb) => {
-    if (!lastNow) window.requestAnimationFrame((now) => {
-      lastNow = now;
-      raf = window.requestAnimationFrame((now) => { if (cb) cb(); anim(now); });
-    });
+  let raf, lastTime, totalTime = 0;
+
+  const anim = (time) => {
+    raf = window.requestAnimationFrame(anim);
+    if (!lastTime) lastTime = time;
+    totalTime += time - lastTime;
+    lastTime = time;
+    cells(totalTime, time);
   };
 
   el.pause = () => {
     window.cancelAnimationFrame(raf);
-    lastNow = null;
+    lastTime = null;
     el.classList.add('paused');
   };
 
   el.unpause = () => {
-    if (lastNow) return;
-    go(() => { el.classList.remove('paused'); });
+    if (lastTime) return;
+    const restart = (time) => { anim(time); el.classList.remove('paused'); };
+    raf = window.requestAnimationFrame(restart);
   };
 
-  // some browsers pause animation on visibility change silently, be explicit
+  // pause animation on visibility change as some browsers do automatically
   let v = () => { if (document.hidden) { el.pause(); } else { el.unpause(); } };
   document.addEventListener('visibilitychange', v);
 
   el.cleanup = () => {
     el.pause();
-    document.head.removeChild(style);
+    if (document.head.contains(style)) document.head.removeChild(style);
     document.removeEventListener('visibilitychange', v);
   };
 
-  go();
+  // set global dimensions and start animation
+  const dimension = () => {
+    const comp = window.getComputedStyle(el);
+    width = parseInt(comp['width'], 10);
+    height = parseInt(comp['height'], 10);
+    initStyle();
+    initCells();
+    el.unpause();
+  };
+
+  // wait for el to be appended to parent node to get dimensions and start
+  const checkParent = () => {
+    if (el.parentNode) { dimension(); return; }
+    window.requestAnimationFrame(checkParent);
+  };
+
+  checkParent();
   return el;
 };
