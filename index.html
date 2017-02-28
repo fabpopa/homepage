@@ -78,10 +78,12 @@
           ldr.id = 'loading';
 
           var cleanup = function() {
-            document.head.removeChild(window.site.hideAll);
-            document.body.removeChild(ldr);
-            document.head.removeChild(document.querySelector('#loadingstyle'));
-            done();
+            [window.site.hideAll, ldr, document.querySelector('#loadingstyle')]
+            .forEach(el => {
+              if (document.head.contains(el)) document.head.removeChild(el);
+              if (document.body.contains(el)) document.body.removeChild(el);
+            });
+            if (done) done();
           };
 
           // stops and restarts animation and tries to clean up at end of cycle
@@ -98,6 +100,7 @@
             hide: function(cb) {
               if (typeof cb != 'function') cb = function() {};
               if (document.body.contains(ldr)) { done = cb; return; }
+              cleanup();
               cb();
             }
           };

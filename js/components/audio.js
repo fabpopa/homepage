@@ -169,7 +169,7 @@ const Audio = function(src) {
       setAttr(bg, { 'fill': opt.bgColor });
       setAttr(bar, { 'fill': opt.barColor });
       svg.style['opacity'] = 0;
-      svg.style['transform'] = 'scale(.8, .8)';
+      svg.style['transform'] = 'scale(.5, .5)';
       svg.style['transition'] = 'opacity .4s, transform .3s';
 
       replay = document.createElement('div');
@@ -315,15 +315,18 @@ const Audio = function(src) {
       svg.style['cursor'] = 'pointer';
       replay.style['cursor'] = 'pointer';
       svg.style['transition'] = 'transform .1s';
-      bar.style['transition'] = 'transform .3s cubic-bezier(.19, 1, .22, 1)';
+      bar.style['transition'] = 'transform .1s cubic-bezier(.19, 1, .22, 1)';
       svg.addEventListener('mousedown', () => {
-        svg.style['transform'] = 'translateY(2px) scale(.99, .99)';
+        svg.style['transform'] = 'translateY(1px) scale(.99, .99)';
       });
       svg.addEventListener('mouseup', () => {
         svg.style['transform'] = 'translateY(0) scale(1, 1)';
         if (audio.currentTime === 0 || audio.ended) {
           bar.style['transform'] = `translateX(-100%)`;
-          window.setTimeout(() => { audio.play(); }, 500);
+          window.setTimeout(() => {
+            audio.play();
+            bar.style['transition'] = '';
+          }, 300);
           return;
         }
         if (audio.paused) { audio.play(); return; }
