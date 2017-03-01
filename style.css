@@ -116,11 +116,11 @@ body {
 }
 
 #introduction li a:hover {
-  color: #66d;
+  color: #222;
 }
 
 #introduction li a:active {
-  color: #88d;
+  color: #222;
 }
 
 #works {
