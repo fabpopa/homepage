@@ -58,7 +58,7 @@
 }
 
 body {
-  font: 300 24px/100% Lato;
+  font: 400 24px/100% Lato;
   color: #222;
 }
 
@@ -77,11 +77,12 @@ body {
 }
 
 #introduction h1 {
-  font: 700 30px/100% Lato;
+  font: 600 30px/100% Lato;
 }
 
 #introduction p {
-  margin-top: 12px;
+  margin-top: 11px;
+  font-weight: 300;
 }
 
 #introduction #cells {
