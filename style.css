@@ -145,10 +145,10 @@ body {
 }
 
 #works li a {
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 6px;
   background-color: #faf2f2;
-  font: 400 16px/100% Lato;
+  font: 400 17px/100% Lato;
   text-decoration: none;
   color: #222;
 }
@@ -159,10 +159,10 @@ body {
 
 #works li a [component="icon"] {
   position: relative;
-  top: 2px;
-  width: 28px;
+  top: 2.3px;
+  width: 32px;
   height: 1em;
-  margin-right: 4px;
+  margin-right: 10px;
 }
 
 #exhibit {

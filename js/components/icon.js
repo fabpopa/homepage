@@ -22,16 +22,27 @@ const Icon = function(type) {
     const L = (x, y) => d += ` L ${x},${y}`;
     const l = (x, y) => d += ` l ${x},${y}`;
     const close = () => d += ` Z`;
-    return { C, c, L, l, close };
+    const open = () => d;
+    return { C, c, L, l, close, open };
   };
 
   // song icon
   const song = () => {
     const start = () => {
-      const rect = svgEl('rect');
-      setAtt(rect, { 'x': '0', 'y': '0', 'width': width, 'height': height });
-      setAtt(rect, { 'fill': '#000' });
-      svg.appendChild(rect);
+      // vertical values for waveform points
+      const y = [0, 0, -1, 1, -2, 2, -3, 3, -1, 1, -2, 1, 0, 0, 0];
+      const max = y.map(i => Math.abs(i)).reduce((a, v) => Math.max(a, v));
+      const uW = width / (y.length - 1);
+      const uH = height / 2.3 / max;
+      const ctl = 0; // bezier handle length for peak roundness
+      let lastX = 0, lastY = height / 2 + y[0] * uH, nextX, nextY;
+      const c = curve(lastX, lastY);
+      for (let i = 1; i < y.length; i++) c.L(i * uW, height / 2 + y[i] * uH);
+      const path = svgEl('path');
+      setAtt(path, { 'fill': 'none', 'stroke': '#222', 'stroke-width': '1.3' });
+      setAtt(path, { 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+      setAtt(path, { 'd': c.open() });
+      svg.appendChild(path);
     };
 
     const cleanup = () => { };
