@@ -116,13 +116,17 @@ window.site.go = (attachStyle) => {
         works[type].forEach(item => {
           const el = document.createElement('li');
           const a = document.createElement('a');
+          const icon = new Icon(type);
+          const title = document.createElement('span')
           const hash = `#${type}/${item.id}`
+          title.innerHTML = item.title;
           a.href = hash;
           a.id = `${type}-${item.id}`;
-          a.innerHTML = item.title;
           a.data = item;
           a.data.type = type;
           a.onclick = (e) => { e.preventDefault(); exhibit.show(item, hash); };
+          a.appendChild(icon);
+          a.appendChild(title);
           el.appendChild(a);
           list.appendChild(el);
         });
@@ -174,7 +178,7 @@ window.site.go = (attachStyle) => {
   const style = () => preload.stylesheet('style.css', at => window.site.go(at));
 
   // preload js
-  const components = ['cells', 'audio'];
+  const components = ['cells', 'audio', 'icon'];
   const scripts = ['preload', 'director', 'display'];
   const js = [...scripts, ...components.map(s => `components/${s}`)];
   const readyToStyle = (c => () => { c -= 1; if (!c) style(); })(js.length);
