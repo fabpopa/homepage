@@ -96,7 +96,7 @@ window.site.go = (attachStyle) => {
       const hide = () => {
         document.querySelector('#cells').dispatchEvent(new Event('unpause'));
         if (document.body.contains(sheet)) document.body.removeChild(sheet);
-        media.removeChild(media.querySelector('[component]'));
+        media.removeChild(media.firstChild);
         window.location.hash = '';
       };
 

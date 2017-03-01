@@ -1,5 +1,17 @@
 @font-face {
   font-family: Lato;
+  font-weight: 100;
+  src: url(fonts/lato-hairline.woff);
+}
+
+@font-face {
+  font-family: Lato;
+  font-weight: 200;
+  src: url(fonts/lato-thin.woff);
+}
+
+@font-face {
+  font-family: Lato;
   font-weight: 300;
   src: url(fonts/lato-light.woff);
 }
@@ -16,13 +28,37 @@
   src: url(fonts/lato-medium.woff);
 }
 
+@font-face {
+  font-family: Lato;
+  font-weight: 600;
+  src: url(fonts/lato-semibold.woff);
+}
+
+@font-face {
+  font-family: Lato;
+  font-weight: 700;
+  src: url(fonts/lato-bold.woff);
+}
+
+@font-face {
+  font-family: Lato;
+  font-weight: 800;
+  src: url(fonts/lato-heavy.woff);
+}
+
+@font-face {
+  font-family: Lato;
+  font-weight: 900;
+  src: url(fonts/lato-black.woff);
+}
+
 * {
   margin: 0;
   padding: 0;
 }
 
 body {
-  font: 300 18px/100% Lato;
+  font: 300 24px/100% Lato;
   color: #222;
 }
 
@@ -35,19 +71,17 @@ body {
 
 #introduction > div {
   position: absolute;
-  bottom: 20%;
+  bottom: 10%;
   width: 100%;
   text-align: center;
 }
 
 #introduction h1 {
-  font: 400 22px/100% Lato;
-  color: #222;
+  font: 700 30px/100% Lato;
 }
 
 #introduction p {
-  margin-top: 8px;
-  color: #999;
+  margin-top: 12px;
 }
 
 #introduction #cells {
@@ -61,6 +95,7 @@ body {
 
 #introduction ul {
   margin-top: 40px;
+  font: 400 18px/100% Lato;
   list-style-type: none;
   text-align: center;
 }
@@ -72,16 +107,20 @@ body {
 
 #introduction li a {
   text-decoration: none;
-  color: #999;
+  color: #33d;
   outline: none;
 }
 
+#introduction li a:visited {
+  color: #33d;
+}
+
 #introduction li a:hover {
-  color: #222;
+  color: #66d;
 }
 
 #introduction li a:active {
-  color: #bbb;
+  color: #88d;
 }
 
 #works {
@@ -105,8 +144,7 @@ body {
   padding: 4px 10px;
   border-radius: 8px;
   background-color: #fbfbfb;
-  font-size: 14px;
-  font-weight: 400;
+  font: 400 16px/100% Lato;
   text-decoration: none;
   color: #999;
 }
@@ -140,7 +178,7 @@ body {
   background: transparent;
   font: inherit;
   font-size: 40px;
-  color: #999;
+  color: #a8a2a2;
   cursor: pointer;
   outline: none;
 }
@@ -150,7 +188,7 @@ body {
 }
 
 #exhibit .close:active {
-  color: #bbb;
+  color: #c8c2c2;
 }
 
 #exhibit .content {
