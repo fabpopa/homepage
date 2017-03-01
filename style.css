@@ -1,3 +1,5 @@
+/* Lato 2.015 subset (en, de, ro, es) with flattened 'g' ss04 alternate */
+
 @font-face {
   font-family: Lato;
   font-weight: 100;
@@ -143,16 +145,16 @@ body {
 }
 
 #works li a {
-  padding: 6px 14px 7px;
+  padding: 6px 14px;
   border-radius: 6px;
-  background-color: #f8f2f2;
+  background-color: #faf2f2;
   font: 400 16px/100% Lato;
   text-decoration: none;
   color: #222;
 }
 
 #works li a:hover {
-  background-color: #f2ecec;
+  background-color: #f4ecec;
 }
 
 #works li a [component="icon"] {
