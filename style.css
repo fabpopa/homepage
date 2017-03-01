@@ -81,7 +81,7 @@ body {
 }
 
 #introduction p {
-  margin-top: 11px;
+  margin-top: 12px;
   font-weight: 300;
 }
 
@@ -109,6 +109,7 @@ body {
 #introduction li a {
   text-decoration: none;
   color: #33d;
+  transition: color .1s;
   outline: none;
 }
 
@@ -142,22 +143,24 @@ body {
 }
 
 #works li a {
-  padding: 4px 10px;
-  border-radius: 8px;
-  background-color: #fbfbfb;
+  padding: 6px 14px 7px;
+  border-radius: 6px;
+  background-color: #f8f2f2;
   font: 400 16px/100% Lato;
   text-decoration: none;
-  color: #999;
-}
-
-#works li a:hover {
-  background-color: #f7f7f7;
   color: #222;
 }
 
-#works li a:active {
-  background-color: #fcfcfc;
-  color: #bbb;
+#works li a:hover {
+  background-color: #f2ecec;
+}
+
+#works li a [component="icon"] {
+  position: relative;
+  top: 2px;
+  width: 28px;
+  height: 1em;
+  margin-right: 4px;
 }
 
 #exhibit {
