@@ -55,7 +55,7 @@ const Audio = function(src) {
 
   // detect features
   const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const features = AudioContext && !!Audio && !!Worker && !!Blob;
+  const features = AudioContext && !!Audio && !!Worker && !!MutationObserver;
 
   // fall back to audio element if web audio api unavailable
   if (!features) { fallBack(); return el; }
@@ -63,7 +63,7 @@ const Audio = function(src) {
   // component state
   const data = { pcm: null, peaks: null };
   let width, height, heightUnit, peakCount, peakWidth;
-  let audio;
+  let parentObsv, audio;
 
   // event dispatchers
   const dispatch = (e) => el.dispatchEvent(e);
@@ -493,6 +493,13 @@ const Audio = function(src) {
     xhr.send();
   };
 
+  // detect element removal from DOM
+  const parentChange = (mutations) => {
+    if (el.parentNode) return;
+    parentObsv.disconnect();
+    if (audio) audio.pause();
+  };
+
   // set global dimensions
   const dimension = () => {
     const style = window.getComputedStyle(el);
@@ -504,6 +511,8 @@ const Audio = function(src) {
     let ok = !!width && !!height;
     ok = ok && heightUnit >= opt.heightUnitMin && peakCount >= opt.peakCountMin;
     if (!ok) { fallBack(); error('Error sizing'); return; }
+    parentObsv = new MutationObserver(parentChange);
+    parentObsv.observe(el.parentNode, { childList: true });
     draw.init();
     fetchData();
   };
