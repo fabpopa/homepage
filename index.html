@@ -1,33 +1,131 @@
-<!DOCTYPE html>
+<!doctype html>
 <title>Fabian Popa</title>
 <meta charset="utf-8">
-<meta name="description" content="Hi, I'm Fabian. I try to make nice and purposeful things.">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="viewport" content="initial-scale=1, user-scalable=no">
-<link rel="apple-touch-icon" href="img/touchicon.png">
-<link rel="icon" type="image/png" href="img/touchicon.png" sizes="200x200">
-<link rel="stylesheet" href="style.css">
-<script src="script.js" defer></script>
+<meta name="description" content="Technology, biology, and other adventures.">
+<meta name="viewport" content="initial-scale=1">
 
-<div id="background"></div>
-<div id="avatar"><img alt="avatar" data-preload="/img/avatar.jpg" src=""></div>
-<div id="intro"><span class="m">Hi, </span><strong>I'm Fabian</strong>.<span class="l"> I try to make nice things.</span></div>
-<div id="social">
-  <a class="icon github" href="https://github.com/fabpopa" aria-label="GitHub">&#xf233;</a>
-  <a class="icon twitter" href="https://twitter.com/fabpopa" aria-label="Twitter">&#xf243;</a>
-  <a class="icon facebook" href="https://facebook.com/fabpopa" aria-label="Facebook">&#xf231;</a>
-</div>
-<h1 id="greeting">Good day.</h1>
-<div id="resume">Résumé available in the developer console.</div>
+<script>
+  // JS available, hide page elements before DOM to control the reveal
+  window.site = {};
+  window.site.hideAll = document.createElement('style');
+  window.site.hideAll.innerHTML = 'body > * { display: none; }';
+  document.head.appendChild(window.site.hideAll);
+</script>
 
-<div id="oldbrowser">
-  <strong>Hi, I'm Fabian.</strong>
-  <p>
-    There's more to this website, but it will not <span class="nobr">display well in your current browser.</span><br>
-    <a href="http://whatbrowser.org/">Please update to a newer browser.</a>
-  </p>
-  <p>
-    Thanks for stopping by!
-  </p>
+<style id="loadingstyle">
+  #loading {
+    display: block;
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0 auto;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #F27474;
+    opacity: 0;
+    animation: 1.8s ease-in-out pulse;
+  }
+
+  @keyframes pulse { 0% { opacity: 0 } 50% { opacity: 1 } 100% { opacity: 0 } }
+</style>
+
+<div id="introduction">
+  <h1>Fabian Popa</h1>
+  <p>Technology, biology, and other adventures.</p>
+  <ul>
+    <li><a href="https://github.com/fabpopa">GitHub</a></li>
+    <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+    <li><a href="résumé.pdf">Résumé</a></li>
+  </ul>
 </div>
+
+<div id="nofeatures">
+  <p>There is more to this website, but it will not display well in your
+  current browser.</p>
+  <p><a href="http://whatbrowser.org">Please update to a newer browser</a></p>
+  <p>Thank you for stopping by ☺</p>
+</div>
+
+<script>
+  (function() {
+    // ES5 startup
+    var js = function() {
+      var featuresOk = (function() {
+        try {
+          return !!document.querySelectorAll &&
+            !!MutationObserver &&
+            !!window.requestAnimationFrame &&
+            !!window.performance.now &&
+            !!document.createElement('canvas').getContext &&
+            document.body.style.flexBasis !== undefined &&
+            (new XMLHttpRequest()).onload !== undefined &&
+            !eval('let a = b => b;');
+        } catch (e) { return false; }
+      })();
+
+      var start = function() {
+        // features available, remove nofeatures message
+        document.body.removeChild(document.querySelector('#nofeatures'));
+
+        // global object to control loading animation
+        window.site.loading = (function() {
+          var done, ldr;
+          ldr = document.createElement('div');
+          ldr.id = 'loading';
+
+          var cleanup = function() {
+            [window.site.hideAll, ldr, document.querySelector('#loadingstyle')]
+            .forEach(el => {
+              if (document.head.contains(el)) document.head.removeChild(el);
+              if (document.body.contains(el)) document.body.removeChild(el);
+            });
+            if (done) done();
+          };
+
+          // stops and restarts animation and tries to clean up at end of cycle
+          ldr.addEventListener('animationend', function() {
+            if (done) cleanup(); // stop animation at end of cycle if done set
+            ldr.style.animation = 'none'; // restart animation
+            window.setTimeout(function() { ldr.style.animation = ''; });
+          });
+
+          return {
+            show: function() {
+              if (!document.body.contains(ldr)) document.body.appendChild(ldr);
+            },
+            hide: function(cb) {
+              if (typeof cb != 'function') cb = function() {};
+              if (document.body.contains(ldr)) { done = cb; return; }
+              cleanup();
+              cb();
+            }
+          };
+        })();
+
+        // only display loading animation if scripting takes noticeable time
+        window.site.raceLoad = window.setTimeout(window.site.loading.show, 500);
+
+        // show the fallback if still loading after long amount of time
+        window.setTimeout(window.site.loading.hide, 10000);
+
+        // start scripting
+        var el = document.createElement('script');
+        el.src = 'script.js';
+        document.head.appendChild(el);
+      };
+
+      if (featuresOk) { start(); return; }
+      document.head.removeChild(window.site.hideAll);
+    };
+
+    // wait for DOM
+    var state = document.readyState;
+    if (state === 'interactive' || state === 'complete') { js(); return; }
+    document.addEventListener('readystatechange', function h() {
+      document.removeEventListener('readystatechange', h);
+      js();
+    });
+  })();
+</script>

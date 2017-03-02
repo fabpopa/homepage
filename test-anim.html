@@ -1,0 +1,105 @@
+<!doctype html>
+
+<style>
+body { background: black; }
+
+.cells {
+  margin-top: 20px;
+  width: 100%;
+  height: 100px;
+  background: white;
+}
+
+.cell { position: absolute; width: 4em; height: 4em; }
+.cell .jiggleX { animation: 1s ease-in-out infinite alternate jiggleX; }
+.cell .jiggleY { animation: .6s ease-in-out infinite alternate jiggleY; }
+.cell .jiggleY > * { position: absolute; border-radius: 50%; }
+
+.cell .outside {
+  width: 4em;
+  height: 4em;
+  background: #f27474;
+  animation: 2s linear infinite outside;
+}
+
+.cell .inside {
+  width: 2em;
+  height: 2em;
+  background: #d23a3a;
+  animation: 2s linear infinite inside;
+}
+
+@keyframes jiggleX {
+  0% { transform: translateX(-1em); }
+  100% { transform: translateX(1em); }
+}
+
+@keyframes jiggleY {
+  0% { transform: translateY(-1em); }
+  100% { transform: translateY(1em); }
+}
+
+@keyframes outside {
+  0%, 100% { transform: scaleY(.2); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes inside {
+  0% { transform: translate(1em, .68em) scale(.96, 0); }
+  50% { transform: translate(1em, 1em) scale(1, 1); }
+  100% { transform: translate(1em, 1.32em) scale(.9, 0); }
+}
+</style>
+
+<!-- <div class="cells">
+  <div class="cell" style="padding:2px;transform:translateX(10px);">
+    <div class="jiggleX" style="font-size:2px">
+      <div class="jiggleY">
+        <div class="outside" style="font-size:30px"></div>
+        <div class="inside" style="font-size:30px"></div>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+<script>
+const go = () => {
+  const elWithClass = (tag, cls) => {
+    const el = document.createElement(tag);
+    el.className = cls;
+    return el;
+  }
+
+  const cells = elWithClass('div', 'cells');
+  document.body.appendChild(cells);
+
+  const addCell = () => {
+    const size = (14 + Math.round(Math.random() * 30)) / 4;
+    const position = Math.round(Math.random() * 500);
+    const angle = -120 + Math.round(Math.random() * 60);
+    const jiggle = 1 + Math.round(Math.random() * 2);
+
+    const cell = elWithClass('div', 'cell');
+    const jiggleX = elWithClass('div', 'jiggleX');
+    const jiggleY = elWithClass('div', 'jiggleY');
+    const outside = elWithClass('div', 'outside');
+    const inside = elWithClass('div', 'inside');
+    jiggleY.appendChild(outside);
+    jiggleY.appendChild(inside);
+    jiggleX.appendChild(jiggleY);
+    cell.appendChild(jiggleX);
+
+    cell.style['font-size'] = `${size}px`;
+    cell.style['padding'] = `${jiggle}px`;
+    cell.style['transform'] = `translateX(${position}px) rotate(${angle}deg)`;
+    jiggleX.style['font-size'] = `${jiggle}px`;
+    outside.style['font-size'] = `${size}px`;
+    inside.style['font-size'] = `${size}px`;
+    cells.appendChild(cell);
+  };
+
+  document.body.addEventListener('click', addCell);
+};
+
+document.addEventListener('DOMContentLoaded', go);
+</script>
