@@ -44,26 +44,28 @@ const Cells = function() {
       ${c}.paused *, ${c} .paused * { animation-play-state: paused !important; }
       ${c} .cell.paused { opacity: 0; }
       ${c} .cell { position: absolute; width: 4em; height: 4em;
-                   transform: translateX(-100%); }
+                   transform: translate3d(-100%, 0, 0); }
       ${c} .cell * { width: 100%; height: 100%; }
+      ${c} .cell, ${c} .cell * { will-change: opacity, transform; }
       ${c} .jiggleY > * { position: absolute; border-radius: 50%; }
       ${c} .outside { width: 4em; height: 4em; background: #f27474; }
       ${c} .inside { width: 2em; height: 2em; background: #d23a3a; }
-      @keyframes move { from { transform: translateX(-100%); opacity: 0; }
-                        8% { opacity: 0; }
-                        30%, 70% { opacity: 1; }
-                        92% { opacity: 0; }
-                        to { transform: translateX(${width}px); opacity: 0; } }
-      @keyframes jiggleX { from { transform: translateX(-1em); }
-                           to { transform: translateX(1em); } }
-      @keyframes jiggleY { from { transform: translateY(-1em); }
-                           to { transform: translateY(1em); } }
+      @keyframes move {
+        from { transform: translate3d(-100%, 0, 0); opacity: 0; }
+        8% { opacity: 0; }
+        30%, 70% { opacity: 1; }
+        92% { opacity: 0; }
+        to { transform: translate3d(${width}px, 0, 0); opacity: 0; } }
+      @keyframes jiggleX { from { transform: translate3d(-1em, 0, 0); }
+                           to { transform: translate3d(1em, 0, 0); } }
+      @keyframes jiggleY { from { transform: translate3d(0, -1em, 0); }
+                           to { transform: translate3d(0, 1em, 0); } }
       @keyframes outside { 0%, 100% { transform: scaleY(.2); }
                            50% { transform: scaleY(1); } }
       @keyframes inside
-        { 0% { transform: translate(1em, .68em) scale(.96, 0); }
-          50% { transform: translate(1em, 1em) scale(1, 1); }
-          100% { transform: translate(1em, 1.32em) scale(.9, 0); } }
+        { 0% { transform: translate3d(1em, .68em, 0) scale(.96, 0); }
+          50% { transform: translate3d(1em, 1em, 0) scale(1, 1); }
+          100% { transform: translate3d(1em, 1.32em, 0) scale(.9, 0); } }
     `;
 
     style = document.createElement('style');
@@ -248,8 +250,8 @@ const Cells = function() {
   };
 
   let raf, lastTime, dt;
-  let vTrans = 8000, vStep = opt.velocity * 3 / vTrans, vEnd = opt.velocity;
-  let bTrans = 8000, bStep = opt.buffer / bTrans, bEnd = opt.buffer;
+  let vTrans = 5000, vStep = opt.velocity * 3 / vTrans, vEnd = opt.velocity;
+  let bTrans = 5000, bStep = opt.buffer / bTrans, bEnd = opt.buffer;
 
   const anim = (time) => {
     if (!lastTime) lastTime = time;

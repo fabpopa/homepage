@@ -143,7 +143,13 @@ window.site.go = (attachStyle) => {
 
   // prepare reveal
   direct.addStep((cb) => {
-    cb();
+    const d = new Display(cb);
+    const qsa = (s) => document.querySelectorAll(s).forEach(el => d.hide(el));
+    qsa('#introduction h1');
+    qsa('#introduction p');
+    qsa('#introduction ul li');
+    qsa('#works ul li');
+    d.run();
   });
 
   // hide loading
@@ -152,18 +158,47 @@ window.site.go = (attachStyle) => {
     window.site.loading.hide(cb);
   });
 
-  // reveal
+  // start cells
   direct.addStep((cb) => {
     attachStyle();
     document.querySelector('#cells').dispatchEvent(new Event('makecells'));
+    cb();
+  });
 
-    // if it's a direct link to a works item, open it
+  // open direct links to work items
+  direct.addStep((cb) => {
     if (!!window.location.hash) window.requestAnimationFrame(() => {
       const id = window.location.hash.replace('#', '').replace('/','-');
       document.querySelector(`#${id}`).dispatchEvent(new Event('click'));
     });
-
     cb();
+  });
+
+  // reveal
+  direct.addStep((cb) => {
+    const delay = 3.2;
+    const qs = (s) => document.querySelector(s);
+    const qsa = (s) => document.querySelectorAll(s);
+    const name = qs('#introduction h1');
+    const message = qs('#introduction p');
+    const socials = qsa('#introduction ul li');
+    const works = qsa('#works ul li');
+
+    const up = { 0: { 'opacity': 0, 'transform': 'translate3d(0, 12px, 0)' },
+                 100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
+    const down = { 0: { 'opacity': 0, 'transform': 'translate3d(0, -12px, 0)' },
+                   100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
+    const grow = { 0: { 'opacity': 0, 'transform': 'scale(.95, 1)' },
+                   100: { 'opacity': 1, 'transform': 'scale(1, 1)' } };
+
+    const d = new Display(cb);
+    d.animate(name, `1.5s ease-out ${delay}s`, up);
+    d.animate(message, `1.5s ease-out ${delay + .5}s`, up);
+    const timeSocials = (i) => `1.2s ease-out ${delay + 2 + i * .1}s`;
+    socials.forEach((el, i) => d.animate(el, timeSocials(i), down));
+    const timeWorks = (i) => `.5s ease-out ${delay + 3.2 + i * .1}s`;
+    works.forEach((el, i) => d.animate(el, timeWorks(i), grow));
+    d.run();
   });
 
   direct.start();
