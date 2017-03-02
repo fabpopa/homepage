@@ -215,7 +215,7 @@ const Audio = function(src) {
         barWidth = width * opt.loadingWidthRatio;
         barX = (width - barWidth) / 2;
         barY = height / 2;
-        barHHalf = opt.barHULoading * heightUnit / 2;
+        barHHalf = 2; //TODO: set to opt.barHULoading
         barCtl = barHHalf * 4 / 3 * tan(PI / 8); // circle quarter arc
         barStraightPart = barWidth - 2 * barHHalf;
         pN = new Array(pt.length);
@@ -281,13 +281,13 @@ const Audio = function(src) {
 
       const pL = new Array(pt.length); // deep copy current points
       for (let i = 0; i < pt.length; i++) pL[i] = { x: pt[i].x, y: pt[i].y };
-      const barHeight = opt.barHULoading * heightUnit;
+      const barHeight = 4; // TODO: set to opt.barHULoading
       const barHHalf = barHeight / 2;
       const barCtl = barHHalf * 4 / 3 * tan(PI / 8);
       const startX = pL[0].x;
       const endX = pL[pt.length / 2].x;
       const barWidth = endX - startX;
-      const amplitude = barHeight / 4;
+      const amplitude = barHeight / 3;
       const period = 50; // pixels corresponding to 2*PI sine period
       const velocity = 50; // pixels per second
       const cycle = period / velocity * 1000; // msec to complete a sine period
@@ -299,7 +299,7 @@ const Audio = function(src) {
         dt %= cycle;
         for (let i = 0; i <= pt.length / 2; i++)
           if (pL[i].x <= entry) {
-            periodAndPhase = -PI / 4 + dt / cycle + (pL[i].x - startX) / period;
+            periodAndPhase = -PI / 5 + dt / cycle + (pL[i].x - startX) / period;
             pt[i].y = pL[i].y + amplitude * sin(periodAndPhase * 2 * PI);
             if (i == 0 || i == pt.length / 2) continue;
             pt[pt.length - i].y = pt[i].y + barHeight;
@@ -361,7 +361,7 @@ const Audio = function(src) {
           { pt[i].x = width / 2; pt[i].y = height / 2; }
 
       const peakH = (height - opt.barHUWave * heightUnit) / 2;
-      const barCtl = opt.barHUWave * heightUnit / 2 * 4 / 3 * tan(PI / 8);
+      const barCtl = opt.barHUWave * heightUnit / 3 * 4 / 3 * tan(PI / 8);
       const pL = new Array(pt.length);
       const pN = new Array(pt.length);
       const pD = new Array(pt.length);
@@ -391,7 +391,7 @@ const Audio = function(src) {
           pt[i].x = easeInOutExp(dt, pL[i].x, pD[i].x, twDur);
           pt[i].y = easeInOutExp(dt, pL[i].y, pD[i].y, twDur);
         }
-        setAttr(clip, { 'd': shape(barCtl, 0, opt.peakCurveHandle) });
+        setAttr(clip, { 'd': shape(barCtl, barCtl, opt.peakCurveHandle) });
         if (dt == twDur) return true;
         return false;
       };
