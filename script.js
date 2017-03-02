@@ -26,7 +26,6 @@ window.site.go = (attachStyle) => {
     };
 
     const makeCells = () => {
-      return;
       if (cells) removeCells();
       wrap.style['background'] = '';
       cells = new Cells();

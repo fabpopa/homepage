@@ -1,20 +1,20 @@
 // red blood cell animation component
 const Cells = function() {
   const opt = {
-    sizeMin: 20,    // pixels, even number
-    sizeMax: 50,    // pixels, even number
+    sizeMin: 40,    // pixels, even number
+    sizeMax: 56,    // pixels, even number
     angMin: -120,   // degrees
     angMax: -60,    // degrees
     flipTMin: 2,    // seconds
-    flipTMax: 5,    // seconds
-    jigMin: 3,      // pixels
-    jigMax: 3,      // pixels
-    jigTMin: 2,     // seconds
-    jigTMax: 2,     // seconds
-    buffer: 8,      // pixels
+    flipTMax: 4,    // seconds
+    jigMin: .5,     // pixels
+    jigMax: 2,      // pixels
+    jigTMin: .8,    // seconds
+    jigTMax: 1.4,   // seconds
+    buffer: 18,     // pixels
     velocity: 40,   // pixels per second, can't be 0
-    padMax: .3,     // multiple of height
-    padTime: 14     // seconds, tweak based on velocity
+    padMax: .33,    // multiple of height
+    padTime: 10     // seconds, tweak based on velocity
   };
 
   // convenience math functions
@@ -35,7 +35,7 @@ const Cells = function() {
   el.style['height'] = '100%';
 
   // component state
-  let width, height, style, cells, sleepTil = 0;
+  let width, height, style, cells;
 
   const initStyle = () => {
     const c = '[component=cells]';
@@ -49,7 +49,9 @@ const Cells = function() {
       ${c} .outside { width: 4em; height: 4em; background: #f27474; }
       ${c} .inside { width: 2em; height: 2em; background: #d23a3a; }
       @keyframes move { from { transform: translateX(-100%); opacity: 0; }
-                        20%, 80% { opacity: 1 }
+                        8% { opacity: 0; }
+                        30%, 70% { opacity: 1; }
+                        92% { opacity: 0; }
                         to { transform: translateX(${width}px); opacity: 0; } }
       @keyframes jiggleX { from { transform: translateX(-1em); }
                            to { transform: translateX(1em); } }
@@ -68,7 +70,7 @@ const Cells = function() {
     document.head.appendChild(style);
   };
 
-  const makeCellEl = (cells) => {
+  const makeCellEl = () => {
     const cell = document.createElement('div');
     const angle = document.createElement('div');
     const jiggleX = document.createElement('div');
@@ -92,7 +94,7 @@ const Cells = function() {
     cell['outside'] = outside;
     cell['inside'] = inside;
     cell.classList.add('paused');
-    cells.appendChild(cell);
+    el.appendChild(cell);
     return cell;
   };
 
@@ -105,10 +107,9 @@ const Cells = function() {
     cell.el.style['padding'] = `${cell.jiggle}px`;
     cell.el.jiggleX.style['font-size'] = `${cell.jiggle}px`;
     cell.el.style['top'] = `${cell.y - flr(cell.size / 2) - cell.jiggle}px`;
-    cell.launchedAt = null;
 
     // at least one frame between animation end and element reuse
-    window.requestAnimationFrame((now) => {
+    window.requestAnimationFrame(() => {
       cell.el.classList.remove('paused');
       cell.el.addEventListener('animationend', function h() {
         cell.el.removeEventListener('animationend', h);
@@ -120,9 +121,6 @@ const Cells = function() {
         cell.el.jiggleY.style['animation'] = '';
         cell.y = null;
       });
-      cell.launchedAt = time + now - lastNow;
-      sleepTil = cell.launchedAt;
-      sleepTil += (cell.size / 2 + cell.jiggle) / opt.velocity * 1000;
       cell.el.outside.style['animation'] =
         `${cell.flipTime}s linear infinite outside`;
       cell.el.inside.style['animation'] =
@@ -167,15 +165,12 @@ const Cells = function() {
 
     // sin wave of side padding to create an organic shape for stream of cells
     const sinPad = ((size, cycle) => {
-      let lastTime, progress, value;
-      return (time) => {
-        if (!lastTime) { lastTime = time; progress = 0; }
-        progress = (progress + time - lastTime) % cycle;
-        value = rou(size * abs(sin(progress / cycle * 2 * PI)));
-        lastTime = time;
-        return value;
+      let time = 0;
+      return (dt) => {
+        time = (time + dt) % cycle;
+        return rou(size * abs(sin(time / cycle * 2 * PI)));
       };
-    })(height * opt.padMax, opt.padTime * 1000);
+    })(opt.padMax * height, opt.padTime * 1000);
 
     // allocate for theoretical max number of cells on canvas
     const minCellSize = opt.sizeMin + 2 * opt.jigMin + opt.buffer;
@@ -192,55 +187,50 @@ const Cells = function() {
       jigglePhX: null,   // time phase shift within 0-jiggleTime seconds
       jigglePhY: null,   // time phase shift within 0-jiggleTime seconds
       y: null,           // pixels, vertical center of cell
-      launchedAt: null,  // ms returned from performance.now()
       travelDist: null,  // pixels to travel from -100% to width across canvas
       travelTime: null,  // seconds to travel from -100% to width across canvas
-      el: makeCellEl(el) // DOM element
+      el: makeCellEl()   // DOM element
     };
 
     // circular buffer for last launched cell indexes
-    const lastLaunched = (() => {
-      const buffer = new Array(cei(height / minCellSize));
+    const lastLaunched = ((size) => {
+      const buffer = new Array(size);
       let i = 0;
       buffer.add = (item) => { buffer[i] = item; i = (i + 1) % buffer.length; };
       return buffer;
-    })();
+    })(cei(height / minCellSize));
 
     const active = (i) => typeof i == 'number' && pool[i].y !== null;
 
     // cache, hot object
     const c = {
       pad: null, space: null, cell: null, i: null, li: null,
-      occupied: null, half: null, traveled: null
+      leftEdge: null, occupied: null, half: null
     };
 
-    const addIfSpace = (time, now) => {
-      c.pad = sinPad(time);         // advance sin pad
-      if (time < sleepTil) return;  // sleep for half of last cell
-      if (rnd() % .3 > .02) return; // increase spread by random rejection
+    cells = (dt) => {
+      c.pad = sinPad(dt);           // advance sin pad
+      if (rnd() % .3 > .1) return; // increase spread by random rejection
 
       entryLine.reset();
+      c.leftEdge = el.getBoundingClientRect().left + opt.buffer * 2;
       for (c.li = 0; c.li < lastLaunched.length; c.li++) {
         c.i = lastLaunched[c.li];
+        if (!active(c.i)) continue;
         c.cell = pool[c.i];
-        if (!active(c.i) || !c.cell.launchedAt) continue;
-        c.occupied = c.cell.size + c.cell.jiggle * 2 + opt.buffer * 2;
+        if (c.cell.el.getBoundingClientRect().left > c.leftEdge) continue;
+        c.occupied = c.cell.size + c.cell.jiggle * 2 + opt.buffer;
         c.half = flr(c.occupied / 2);
-        c.traveled = c.cell.travelDist;
-        c.traveled *= (time - c.cell.launchedAt) / (c.cell.travelTime * 1000);
-        if (c.traveled > c.occupied - opt.buffer) continue; // cell past entry
         entryLine.mark(c.cell.y - c.half, c.cell.y + c.half);
       }
       entryLine.mark(0, c.pad);
       entryLine.mark(height - c.pad - 1, height - 1);
-
       c.space = entryLine.window();
       if (c.space.size < opt.sizeMin + opt.jigMin * 2) return;
 
       for (c.i = 0; c.i < pool.length; c.i++) if (!active(c.i)) break;
       if (c.i === pool.length) return;
       c.cell = pool[c.i];
-
       c.cell.angle = opt.angMin + rou(rnd() * abs(opt.angMax - opt.angMin));
       c.cell.flipTime = opt.flipTMin + rnd() * (opt.flipTMax - opt.flipTMin);
       c.cell.jiggle = opt.jigMin + rou(rnd() * (opt.jigMax - opt.jigMin));
@@ -253,21 +243,23 @@ const Cells = function() {
       c.cell.travelDist = width + c.cell.size + 2 * c.cell.jiggle;
       c.cell.travelTime = c.cell.travelDist / opt.velocity;
 
-      launch(c.cell, time, now);
+      launch(c.cell);
       lastLaunched.add(c.i);
     };
-
-    cells = addIfSpace;
   };
 
-  let raf, lastTime, totalTime = 0;
+  let raf, lastTime, dt;
+  let vTrans = 8000, vStep = opt.velocity * 3 / vTrans, vEnd = opt.velocity;
+  let bTrans = 8000, bStep = opt.buffer / bTrans, bEnd = opt.buffer;
 
   const anim = (time) => {
-    raf = window.requestAnimationFrame(anim);
     if (!lastTime) lastTime = time;
-    totalTime += time - lastTime;
+    dt = time - lastTime;
+    if (vTrans >= 0) { opt.velocity = vEnd + vTrans * vStep; vTrans -= dt; }
+    if (bTrans >= 0) { opt.buffer = bEnd - bTrans * bStep; bTrans -= dt; }
+    cells(dt);
     lastTime = time;
-    cells(totalTime, time);
+    raf = window.requestAnimationFrame(anim);
   };
 
   el.pause = () => {
