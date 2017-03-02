@@ -178,7 +178,7 @@ body {
 }
 
 #exhibit h2 {
-  font: 600 28px/100% Lato;
+  font: 600 24px/100% Lato;
 }
 
 #exhibit p {
@@ -187,7 +187,7 @@ body {
 }
 
 #exhibit .media {
-  margin-top: 64px;
+  margin-top: 48px;
   max-width: 800px;
   width: 100%;
   height: 88px;
@@ -201,8 +201,7 @@ body {
   height: 60px;
   border: 0;
   background: transparent;
-  font: inherit;
-  font-size: 40px;
+  font: 300 40px/100% Lato;
   color: #a8a2a2;
   cursor: pointer;
   outline: none;
