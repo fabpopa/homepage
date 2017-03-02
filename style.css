@@ -59,31 +59,31 @@
   padding: 0;
 }
 
+:root {
+  height: 100%;
+}
+
 body {
+  display: flex;
+  min-height: 100%;
+  flex-flow: column nowrap;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
   font: 400 24px/100% Lato;
   color: #222;
 }
 
 #introduction {
-  position: relative;
-  margin: 0 auto;
-  width: 50vw;
-  height: 65vh;
-}
-
-#introduction > div {
-  position: absolute;
-  bottom: 10%;
-  width: 100%;
   text-align: center;
 }
 
 #introduction h1 {
-  font: 600 30px/100% Lato;
+  font: 600 28px/100% Lato;
 }
 
 #introduction p {
-  margin-top: 12px;
+  margin-top: 10px;
   font-weight: 300;
 }
 
@@ -100,11 +100,10 @@ body {
   margin-top: 40px;
   font: 400 18px/100% Lato;
   list-style-type: none;
-  text-align: center;
 }
 
 #introduction li {
-  display: inline;
+  display: inline-block;
   padding: 0 8px;
 }
 
@@ -120,14 +119,15 @@ body {
 }
 
 #introduction li a:hover {
-  color: #222;
+  color: #000;
 }
 
 #introduction li a:active {
-  color: #222;
+  color: #000;
 }
 
 #works {
+  display: none;
   padding-bottom: 80px;
 }
 
@@ -159,7 +159,7 @@ body {
 
 #works li a [component="icon"] {
   position: relative;
-  top: 2.3px;
+  top: 2.5px;
   width: 32px;
   height: 1em;
   margin-right: 10px;
