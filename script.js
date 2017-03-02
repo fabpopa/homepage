@@ -61,18 +61,15 @@ window.site.go = (attachStyle) => {
       sheet.id = 'exhibit';
       const close = document.createElement('button');
       close.className = 'close';
-      close.innerHTML = '&times;'
-      const content = document.createElement('div');
-      content.className = 'content';
-      const title = document.createElement('h3');
+      close.innerHTML = '&times;';
+      const title = document.createElement('h2');
       const description = document.createElement('p');
       const media = document.createElement('div');
       media.className = 'media';
+      sheet.appendChild(title);
+      sheet.appendChild(description);
+      sheet.appendChild(media);
       sheet.appendChild(close);
-      sheet.appendChild(content);
-      content.appendChild(title);
-      content.appendChild(description);
-      content.appendChild(media);
 
       const component = (work) => {
         const srcPrefix = 'works/';

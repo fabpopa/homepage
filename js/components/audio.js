@@ -11,7 +11,7 @@ const Audio = function(src) {
     peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
     loadingWidthRatio: .5,  // width ratio of bar when loading to full waveform
     bgColor: '#f8f2f2',
-    barColor: '#add8e6'
+    barColor: '#222'
   };
 
   // convenience math functions

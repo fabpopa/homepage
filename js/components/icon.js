@@ -29,7 +29,7 @@ const Icon = function(type) {
   // song icon
   const song = () => {
     const start = () => {
-      // vertical values for waveform points
+      // vertical relative values for waveform points
       const y = [0, 0, -1, 1, -2, 2, -3, 3, -1, 1, -1.5, 1, 0, 0];
       const max = y.map(i => Math.abs(i)).reduce((a, v) => Math.max(a, v));
       const uW = width / (y.length - 1);

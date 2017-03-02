@@ -83,7 +83,7 @@ body {
 }
 
 #introduction p {
-  margin-top: 10px;
+  margin-top: 8px;
   font-weight: 300;
 }
 
@@ -166,17 +166,38 @@ body {
 
 #exhibit {
   position: fixed;
+  display: flex;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+  flex-flow: column nowrap;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
   background-color: #fff;
+}
+
+#exhibit h2 {
+  font: 600 28px/100% Lato;
+}
+
+#exhibit p {
+  margin-top: 8px;
+  font-weight: 300;
+}
+
+#exhibit .media {
+  margin-top: 64px;
+  max-width: 800px;
+  width: 100%;
+  height: 80px;
 }
 
 #exhibit .close {
   position: absolute;
-  top: 40px;
-  right: 40px;
+  top: 10px;
+  right: 10px;
   width: 60px;
   height: 60px;
   border: 0;
@@ -194,19 +215,4 @@ body {
 
 #exhibit .close:active {
   color: #c8c2c2;
-}
-
-#exhibit .content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 60vw;
-  text-align: center;
-}
-
-#exhibit .media {
-  width: 100%;
-  height: 60px;
-  margin: 20px auto 0;
 }
