@@ -175,6 +175,7 @@ body {
   align-items: center;
   align-content: center;
   background-color: #fff;
+  text-align: center;
 }
 
 #exhibit h2 {
@@ -183,7 +184,7 @@ body {
 
 #exhibit p {
   margin-top: 8px;
-  font-weight: 300;
+  font: 300 24px/100% Lato;
 }
 
 #exhibit .media {
@@ -213,4 +214,56 @@ body {
 
 #exhibit .close:active {
   color: #c8c2c2;
+}
+
+@media screen and (max-width: 570px) {
+  #introduction h1 {
+    font: 600 18px/100% Lato;
+  }
+
+  #introduction p {
+    font: 300 16px/100% Lato;
+    margin-top: 6px;
+  }
+
+  #introduction #cells {
+    margin-top: 28px;
+    width: 100vw;
+  }
+
+  #introduction ul {
+    margin-top: 28px;
+    font: 400 16px/100% Lato;
+  }
+
+  #introduction li {
+    padding: 0 6px;
+  }
+
+  #works {
+    margin: 44px 0 0;
+  }
+
+  #works li a {
+    font: 400 16px/100% Lato;
+  }
+
+  #exhibit {
+    box-sizing: border-box;
+    padding: 0 20px;
+  }
+
+  #exhibit h2 {
+    font: 600 16px/100% Lato;
+  }
+
+  #exhibit p {
+    margin-top: 6px;
+    font: 300 16px/100% Lato;
+  }
+
+  #exhibit .media {
+    margin-top: 28px;
+    height: 88px;
+  }
 }
