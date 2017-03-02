@@ -5,8 +5,8 @@ const Display = function(cb) {
 
   // e.g. style(el, { 'opacity': .5, 'color': 'cyan' })
   this.style = (el, styles) => { tasks.push({ el, styles }); };
-  this.hide = (el) => { style(el, { opacity: 0 }); };
-  this.show = (el) => { style(el, { opacity: 1 }); };
+  this.hide = (el) => { this.style(el, { opacity: 0 }); };
+  this.show = (el) => { this.style(el, { opacity: 1 }); };
 
   // animate([element], [animation], [keyframes])
   // [animation] is a CSS animation shorthand e.g. '2s linear 1s', no 'infinite'
