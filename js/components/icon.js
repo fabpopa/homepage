@@ -58,6 +58,7 @@ const Icon = function(type) {
     const style = window.getComputedStyle(svg);
     width = parseInt(style['width'], 10);
     height = parseInt(style['height'], 10);
+    if (!width || !height) window.requestAnimationFrame(dimension);
     setAtt(svg, { 'width': width, 'height': height });
     const cleanup = (ob) => { ob.disconnect(); icon.cleanup(); };
     const ob = new MutationObserver(() => { cleanup(ob); });
