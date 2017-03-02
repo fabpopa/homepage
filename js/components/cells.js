@@ -42,6 +42,7 @@ const Cells = function() {
     const css = `
       ${c} { position: relative; width: 100%; height: 100%; overflow: hidden; }
       ${c}.paused *, ${c} .paused * { animation-play-state: paused !important; }
+      ${c} .cell.paused { opacity: 0; }
       ${c} .cell { position: absolute; width: 4em; height: 4em;
                    transform: translateX(-100%); }
       ${c} .cell * { width: 100%; height: 100%; }
@@ -205,13 +206,11 @@ const Cells = function() {
     // cache, hot object
     const c = {
       pad: null, space: null, cell: null, i: null, li: null,
-      leftEdge: null, occupied: null, half: null
+      leftEdge: null, occup: null, half: null
     };
 
     cells = (dt) => {
-      c.pad = sinPad(dt);           // advance sin pad
-      if (rnd() % .3 > .1) return; // increase spread by random rejection
-
+      c.pad = sinPad(dt); // advance sin pad
       entryLine.reset();
       c.leftEdge = el.getBoundingClientRect().left + opt.buffer * 2;
       for (c.li = 0; c.li < lastLaunched.length; c.li++) {
@@ -219,8 +218,8 @@ const Cells = function() {
         if (!active(c.i)) continue;
         c.cell = pool[c.i];
         if (c.cell.el.getBoundingClientRect().left > c.leftEdge) continue;
-        c.occupied = c.cell.size + c.cell.jiggle * 2 + opt.buffer;
-        c.half = flr(c.occupied / 2);
+        c.occup = c.cell.size + c.cell.jiggle * 2 + (.5 + rnd()) * opt.buffer;
+        c.half = flr(c.occup / 2);
         entryLine.mark(c.cell.y - c.half, c.cell.y + c.half);
       }
       entryLine.mark(0, c.pad);
