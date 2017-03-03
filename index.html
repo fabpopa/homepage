@@ -54,13 +54,13 @@
     var js = function() {
       var featuresOk = (function() {
         try {
+          new Function('(a = 0) => a');
           return !!document.querySelectorAll &&
             !!MutationObserver &&
             !!window.requestAnimationFrame &&
             !!window.performance.now &&
             document.body.style.flexBasis !== undefined &&
-            (new XMLHttpRequest()).onload !== undefined &&
-            !eval('let a = b => b;');
+            (new XMLHttpRequest()).onload !== undefined;
         } catch (e) { return false; }
       })();
 
