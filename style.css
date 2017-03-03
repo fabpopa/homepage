@@ -216,6 +216,27 @@ body {
   color: #c8c2c2;
 }
 
+@media screen and (max-width: 850px) {
+  #exhibit {
+    box-sizing: border-box;
+    padding: 0 20px;
+  }
+
+  #exhibit h2 {
+    font: 600 16px/100% Lato;
+  }
+
+  #exhibit p {
+    margin-top: 6px;
+    font: 300 16px/100% Lato;
+  }
+
+  #exhibit .media {
+    margin-top: 28px;
+    height: 88px;
+  }
+}
+
 @media screen and (max-width: 570px) {
   #introduction h1 {
     font: 600 18px/100% Lato;
@@ -246,24 +267,5 @@ body {
 
   #works li a {
     font: 400 16px/100% Lato;
-  }
-
-  #exhibit {
-    box-sizing: border-box;
-    padding: 0 20px;
-  }
-
-  #exhibit h2 {
-    font: 600 16px/100% Lato;
-  }
-
-  #exhibit p {
-    margin-top: 6px;
-    font: 300 16px/100% Lato;
-  }
-
-  #exhibit .media {
-    margin-top: 28px;
-    height: 88px;
   }
 }
