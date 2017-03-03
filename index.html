@@ -52,15 +52,17 @@
   (function() {
     // ES5 startup
     var js = function() {
-      var featuresOk = function() {
+      var featuresOk = (function() {
         try {
-          new Function("(a = 0) => a");
-          return true;
-        }
-        catch (err) {
-          return false;
-        }
-      }();
+          new Function('(a = 0) => a');
+          return !!document.querySelectorAll &&
+            !!MutationObserver &&
+            !!window.requestAnimationFrame &&
+            !!window.performance.now &&
+            document.body.style.flexBasis !== undefined &&
+            (new XMLHttpRequest()).onload !== undefined;
+        } catch (e) { return false; }
+      })();
 
       var start = function() {
         // features available, remove nofeatures message
