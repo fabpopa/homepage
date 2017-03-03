@@ -169,7 +169,7 @@ const Audio = function(src) {
       setAttr(bg, { 'fill': opt.bgColor });
       setAttr(bar, { 'fill': opt.barColor });
       svg.style['opacity'] = 0;
-      svg.style['transform'] = 'scale(.5, .5)';
+      svg.style['transform'] = 'scale3d(.5, .5, 1)';
       svg.style['transition'] = 'opacity .4s, transform .3s';
 
       replay = document.createElement('div');
@@ -226,7 +226,7 @@ const Audio = function(src) {
         pts(0);
         pN.forEach((p, i) => { pt[i].x = p.x; pt[i].y = p.y; });
         svg.style['opacity'] = 1;
-        svg.style['transform'] = 'scale(1, 1)';
+        svg.style['transform'] = 'scale3d(1, 1, 1)';
       };
 
       const move = (progress, done) => {
@@ -317,12 +317,12 @@ const Audio = function(src) {
       svg.style['transition'] = 'transform .1s';
       bar.style['transition'] = 'transform .1s cubic-bezier(.19, 1, .22, 1)';
       svg.addEventListener('mousedown', () => {
-        svg.style['transform'] = 'translateY(1px) scale(.99, .99)';
+        svg.style['transform'] = 'translate3d(0, 1px, 0) scale3d(.99, .99, 1)';
       });
       svg.addEventListener('mouseup', () => {
-        svg.style['transform'] = 'translateY(0) scale(1, 1)';
+        svg.style['transform'] = 'translate3d(0, 0, 0) scale3d(1, 1, 1)';
         if (audio.currentTime === 0 || audio.ended) {
-          bar.style['transform'] = `translateX(-100%)`;
+          bar.style['transform'] = `translate3d(-100%, 0, 0)`;
           window.setTimeout(() => {
             audio.play();
             bar.style['transition'] = '';
@@ -333,18 +333,18 @@ const Audio = function(src) {
         audio.pause();
       });
       replay.addEventListener('mousedown', () => {
-        svg.style['transform'] = 'perspective(1000px) rotateY(-4deg)';
+        svg.style['transform'] = 'perspective(1000px) rotate3d(0, 1, 0, -4deg)';
         if (audio.currentTime !== 0) audio.currentTime = 0;
       });
       replay.addEventListener('mouseup', () => {
-        svg.style['transform'] = 'perspective(0) rotateY(0)';
+        svg.style['transform'] = 'perspective(0) rotate3d(0, 0, 0, 0)';
       });
 
       let raf, pos;
       audio.addEventListener('timeupdate', () => {
         if (!raf) raf = requestAnimationFrame(() => {
           pos = width * (1 - audio.currentTime / audio.duration);
-          bar.style['transform'] = `translateX(-${pos}px)`;
+          bar.style['transform'] = `translate3d(-${pos}px, 0, 0)`;
           raf = null;
         });
       });
