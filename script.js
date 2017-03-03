@@ -9,12 +9,20 @@
 window.site.go = (attachStyle) => {
   const direct = new Director();
 
+  // DOM selector, returns single element, array of elements, or null
+  const $ = (q, asArray) => {
+    const elements = document.querySelectorAll(q);
+    if (elements.length === 0) return null;
+    if (elements.length === 1 && !asArray) return elements[0];
+    return Array.prototype.slice.call(elements);
+  };
+
   // make cells
   direct.addStep((cb) => {
     let cells;
     const wrap = document.createElement('div');
     wrap.id = 'cells';
-    const location = document.querySelector('#introduction p');
+    const location = $('#introduction p');
     location.insertAdjacentElement('afterend', wrap);
 
     const removeCells = () => {
@@ -84,13 +92,13 @@ window.site.go = (attachStyle) => {
         title.innerHTML = work.title;
         description.innerHTML = work.description;
         media.appendChild(component(work));
-        document.querySelector('#cells').dispatchEvent(new Event('pause'));
+        $('#cells').dispatchEvent(new Event('pause'));
         if (!document.body.contains(sheet)) document.body.appendChild(sheet);
         window.location.hash = hash;
       };
 
       const hide = () => {
-        document.querySelector('#cells').dispatchEvent(new Event('unpause'));
+        $('#cells').dispatchEvent(new Event('unpause'));
         if (document.body.contains(sheet)) document.body.removeChild(sheet);
         media.removeChild(media.firstChild);
         window.location.hash = '';
@@ -128,8 +136,7 @@ window.site.go = (attachStyle) => {
         });
       });
 
-      const intro = document.querySelector('#introduction');
-      intro.insertAdjacentElement('afterend', wrap);
+      $('#introduction').insertAdjacentElement('afterend', wrap);
     };
 
     // fetch index of works
@@ -144,12 +151,11 @@ window.site.go = (attachStyle) => {
   // prepare reveal
   direct.addStep((cb) => {
     const d = new Display(cb);
-    const qsa = (s) =>
-      [].slice.call(document.querySelectorAll(s)).forEach(el => d.hide(el));
-    qsa('#introduction h1');
-    qsa('#introduction p');
-    qsa('#introduction ul li');
-    qsa('#works ul li');
+    const hide = (s) => $(s, true).forEach(el => d.hide(el));
+    hide('#introduction h1');
+    hide('#introduction p');
+    hide('#introduction ul li');
+    hide('#works ul li');
     d.run();
   });
 
@@ -162,7 +168,7 @@ window.site.go = (attachStyle) => {
   // start cells
   direct.addStep((cb) => {
     attachStyle();
-    document.querySelector('#cells').dispatchEvent(new Event('makecells'));
+    $('#cells').dispatchEvent(new Event('makecells'));
     cb();
   });
 
@@ -170,7 +176,7 @@ window.site.go = (attachStyle) => {
   direct.addStep((cb) => {
     if (!!window.location.hash) window.requestAnimationFrame(() => {
       const id = window.location.hash.replace('#', '').replace('/','-');
-      document.querySelector(`#${id}`).dispatchEvent(new Event('click'));
+      $(`#${id}`).dispatchEvent(new Event('click'));
     });
     cb();
   });
@@ -178,12 +184,10 @@ window.site.go = (attachStyle) => {
   // reveal
   direct.addStep((cb) => {
     const delay = 4;
-    const qs = (s) => document.querySelector(s);
-    const qsa = (s) => [].slice.call(document.querySelectorAll(s));
-    const name = qs('#introduction h1');
-    const message = qs('#introduction p');
-    const socials = qsa('#introduction ul li');
-    const works = qsa('#works ul li');
+    const name = $('#introduction h1');
+    const message = $('#introduction p');
+    const socials = $('#introduction ul li', true);
+    const works = $('#works ul li', true);
 
     const up = { 0: { 'opacity': 0, 'transform': 'translate3d(0, 12px, 0)' },
                  100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
