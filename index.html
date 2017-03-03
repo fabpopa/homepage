@@ -58,7 +58,6 @@
             !!MutationObserver &&
             !!window.requestAnimationFrame &&
             !!window.performance.now &&
-            !!document.createElement('canvas').getContext &&
             document.body.style.flexBasis !== undefined &&
             (new XMLHttpRequest()).onload !== undefined &&
             !eval('let a = b => b;');
@@ -123,8 +122,8 @@
     // wait for DOM
     var state = document.readyState;
     if (state === 'interactive' || state === 'complete') { js(); return; }
-    document.addEventListener('readystatechange', function h() {
-      document.removeEventListener('readystatechange', h);
+    document.addEventListener('DOMContentLoaded', function h() {
+      document.removeEventListener('DOMContentLoaded', h);
       js();
     });
   })();
