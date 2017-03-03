@@ -255,12 +255,13 @@ body {
   }
 
   #introduction #cells {
-    margin-top: 20px;
+    margin-top: 24px;
     width: 100vw;
+    height: 144px;
   }
 
   #introduction ul {
-    margin-top: 36px;
+    margin-top: 48px;
     font: 400 16px/100% Lato;
   }
 

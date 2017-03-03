@@ -259,7 +259,7 @@ const Cells = function() {
   let vT, vB, vC, vD;
   let bT, bB, bC, bD;
   const initIntro = () => {
-    vT = 0; vB = opt.velocity * 4.4; vC = opt.velocity - vB; vD = 4000;
+    vT = 0; vB = opt.velocity * 4; vC = opt.velocity - vB; vD = 4000;
     bT = 0; bB = 6; bC = opt.buffer - bB; bD = 2000;
   };
 
