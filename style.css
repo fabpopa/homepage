@@ -89,14 +89,14 @@ body {
 
 #introduction #cells {
   position: relative;
-  margin-top: 56px;
+  margin-top: 32px;
   width: 720px;
-  height: 150px;
+  height: 160px;
   border-radius: 4px;
 }
 
 #introduction ul {
-  margin-top: 56px;
+  margin-top: 72px;
   font: 400 18px/100% Lato;
   list-style-type: none;
 }
@@ -126,7 +126,7 @@ body {
 }
 
 #works {
-  margin: 48px 0 0;
+  margin: 24px 0 0;
   max-width: 1000px;
 }
 

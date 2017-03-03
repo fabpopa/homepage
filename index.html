@@ -56,11 +56,11 @@
         try {
           new Function('(a = 0) => a');
           return !!document.querySelectorAll &&
-            !!MutationObserver &&
             !!window.requestAnimationFrame &&
             !!window.performance.now &&
+            (new XMLHttpRequest()).onload !== undefined &&
             document.body.style.flexBasis !== undefined &&
-            (new XMLHttpRequest()).onload !== undefined;
+            !!MutationObserver;
         } catch (e) { return false; }
       })();
 
