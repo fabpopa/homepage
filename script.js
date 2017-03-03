@@ -176,7 +176,7 @@ window.site.go = (attachStyle) => {
 
   // reveal
   direct.addStep((cb) => {
-    const delay = 3.2;
+    const delay = 4;
     const qs = (s) => document.querySelector(s);
     const qsa = (s) => document.querySelectorAll(s);
     const name = qs('#introduction h1');
@@ -188,8 +188,8 @@ window.site.go = (attachStyle) => {
                  100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
     const down = { 0: { 'opacity': 0, 'transform': 'translate3d(0, -12px, 0)' },
                    100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
-    const grow = { 0: { 'opacity': 0, 'transform': 'scale(.95, 1)' },
-                   100: { 'opacity': 1, 'transform': 'scale(1, 1)' } };
+    const grow = { 0: { 'opacity': 0, 'transform': 'scale3d(.95, 1, 1)' },
+                   100: { 'opacity': 1, 'transform': 'scale3d(1, 1, 1)' } };
 
     const d = new Display(cb);
     d.animate(name, `1.5s ease-out ${delay}s`, up);

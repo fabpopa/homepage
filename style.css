@@ -126,7 +126,7 @@ body {
 }
 
 #works {
-  margin: 56px 0 0;
+  margin: 48px 0 0;
   max-width: 1000px;
 }
 
@@ -149,10 +149,16 @@ body {
   font: 400 17px/100% Lato;
   text-decoration: none;
   color: #222;
+  transition: transform .1s cubic-bezier(.19, 1, .22, 1);
+  will-change: transform;
 }
 
 #works li a:hover {
   background-color: #f4ecec;
+}
+
+#works li a:active {
+  transform: translate3d(0, 1px, 0) scale3d(.98, 1, 1);
 }
 
 #works li a [component="icon"] {
@@ -253,7 +259,7 @@ body {
   }
 
   #introduction ul {
-    margin-top: 28px;
+    margin-top: 36px;
     font: 400 16px/100% Lato;
   }
 
@@ -262,7 +268,7 @@ body {
   }
 
   #works {
-    margin: 44px 0 0;
+    margin: 28px 0 0;
   }
 
   #works li a {

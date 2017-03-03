@@ -337,7 +337,7 @@ const Audio = function(src) {
         if (audio.currentTime !== 0) audio.currentTime = 0;
       });
       replay.addEventListener('mouseup', () => {
-        svg.style['transform'] = 'perspective(0) rotate3d(0, 0, 0, 0)';
+        svg.style['transform'] = 'perspective(1000px) rotate3d(0, 1, 0, 0)';
       });
 
       let raf, pos;
@@ -498,6 +498,7 @@ const Audio = function(src) {
     const style = window.getComputedStyle(el);
     width = parseInt(style['width'], 10);
     height = parseInt(style['height'], 10);
+    if (!width || !height) { window.requestAnimationFrame(dimension); return; }
     heightUnit = min(flr(height / opt.waveHU), opt.heightUnitMax);
     peakCount = rou(width / opt.peakWidth);
     peakWidth = width / peakCount;

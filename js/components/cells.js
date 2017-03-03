@@ -1,8 +1,8 @@
 // red blood cell animation component
 const Cells = function() {
   const opt = {
-    sizeMin: 40,    // pixels, even number
-    sizeMax: 56,    // pixels, even number
+    sizeMin: .24,   // multiple of height
+    sizeMax: .34,   // multiple of height
     angMin: -120,   // degrees
     angMax: -60,    // degrees
     flipTMin: 2,    // seconds
@@ -11,9 +11,9 @@ const Cells = function() {
     jigMax: 2,      // pixels
     jigTMin: .8,    // seconds
     jigTMax: 1.4,   // seconds
-    buffer: 18,     // pixels
+    buffer: 12,     // pixels
     velocity: 40,   // pixels per second, can't be 0
-    padMax: .33,    // multiple of height
+    padMax: .21,    // multiple of height
     padTime: 10     // seconds, tweak based on velocity
   };
 
@@ -60,12 +60,12 @@ const Cells = function() {
                            to { transform: translate3d(1em, 0, 0); } }
       @keyframes jiggleY { from { transform: translate3d(0, -1em, 0); }
                            to { transform: translate3d(0, 1em, 0); } }
-      @keyframes outside { 0%, 100% { transform: scaleY(.2); }
-                           50% { transform: scaleY(1); } }
+      @keyframes outside { 0%, 100% { transform: scale3d(1, .2, 1); }
+                           50% { transform: scale3d(1, 1, 1); } }
       @keyframes inside
-        { 0% { transform: translate3d(1em, .68em, 0) scale(.96, 0); }
-          50% { transform: translate3d(1em, 1em, 0) scale(1, 1); }
-          100% { transform: translate3d(1em, 1.32em, 0) scale(.9, 0); } }
+        { 0% { transform: translate3d(1em, .68em, 0) scale3d(.96, 0, 1); }
+          50% { transform: translate3d(1em, 1em, 0) scale3d(1, 1, 1); }
+          100% { transform: translate3d(1em, 1.32em, 0) scale3d(.9, 0, 1); } }
     `;
 
     style = document.createElement('style');
@@ -102,38 +102,36 @@ const Cells = function() {
   };
 
   // all the element styling to facilitate animation
-  const launch = (cell, time, lastNow) => {
+  const launch = (cell) => {
     cell.el.style['font-size'] = `${cell.size / 4}px`;
     cell.el.outside.style['font-size'] = `${cell.size / 4}px`;
     cell.el.inside.style['font-size'] = `${cell.size / 4}px`;
     cell.el.angle.style['transform'] = `rotate(${cell.angle}deg)`;
     cell.el.style['padding'] = `${cell.jiggle}px`;
     cell.el.jiggleX.style['font-size'] = `${cell.jiggle}px`;
-    cell.el.style['top'] = `${cell.y - flr(cell.size / 2) - cell.jiggle}px`;
+    cell.el.style['top'] = `${cell.y - cell.size / 2 - cell.jiggle}px`;
 
-    // at least one frame between animation end and element reuse
-    window.requestAnimationFrame(() => {
-      cell.el.classList.remove('paused');
-      cell.el.addEventListener('animationend', function h() {
-        cell.el.removeEventListener('animationend', h);
-        cell.el.classList.add('paused');
-        cell.el.style['animation'] = '';
-        cell.el.outside.style['animation'] = '';
-        cell.el.inside.style['animation'] = '';
-        cell.el.jiggleX.style['animation'] = '';
-        cell.el.jiggleY.style['animation'] = '';
-        cell.y = null;
-      });
-      cell.el.outside.style['animation'] =
-        `${cell.flipTime}s linear infinite outside`;
-      cell.el.inside.style['animation'] =
-        `${cell.flipTime}s linear infinite inside`;
-      cell.el.jiggleX.style['animation'] =
-        `${cell.jiggleTime}s ease-in-out infinite alternate jiggleX`;
-      cell.el.jiggleY.style['animation'] =
-        `${cell.jiggleTime}s ease-in-out infinite alternate jiggleY`;
-      cell.el.style['animation'] = `${cell.travelTime}s linear move`;
+    cell.el.addEventListener('animationend', function h() {
+      cell.el.removeEventListener('animationend', h);
+      cell.el.classList.add('paused');
+      cell.el.style['animation'] = '';
+      cell.el.outside.style['animation'] = '';
+      cell.el.inside.style['animation'] = '';
+      cell.el.jiggleX.style['animation'] = '';
+      cell.el.jiggleY.style['animation'] = '';
+      window.requestAnimationFrame(() => cell.y = null); // frame between reuse
     });
+
+    cell.el.classList.remove('paused');
+    cell.el.outside.style['animation'] =
+      `${cell.flipTime}s linear infinite outside`;
+    cell.el.inside.style['animation'] =
+      `${cell.flipTime}s linear infinite inside`;
+    cell.el.jiggleX.style['animation'] =
+      `${cell.jiggleTime}s ease-in-out infinite alternate jiggleX`;
+    cell.el.jiggleY.style['animation'] =
+      `${cell.jiggleTime}s ease-in-out infinite alternate jiggleY`;
+    cell.el.style['animation'] = `${cell.travelTime}s linear move`;
   };
 
   const initCells = () => {
@@ -145,6 +143,8 @@ const Cells = function() {
           for (let i = 0; i < pixels.length; i++) pixels[i] = true;
         },
         mark: (from, to) => {
+          from = Math.round(from);
+          to = Math.round(to);
           if (from < 0) from = 0;
           if (to > pixels.length - 1) to = pixels.length - 1;
           for (let i = from; i <= to; i++) pixels[i] = false;
@@ -160,7 +160,7 @@ const Cells = function() {
                   space.end = j - 1;
                   space.size = j - i;
                 }
-              } else { i = j; }
+              } else i = j;
           return space;
         }
       };
@@ -176,7 +176,7 @@ const Cells = function() {
     })(opt.padMax * height, opt.padTime * 1000);
 
     // allocate for theoretical max number of cells on canvas
-    const minCellSize = opt.sizeMin + 2 * opt.jigMin + opt.buffer;
+    const minCellSize = opt.sizeMin * height + 2 * opt.jigMin + opt.buffer;
     const poolCount = flr(width * height / pow(minCellSize, 2));
     const pool = new Array(poolCount);
 
@@ -212,35 +212,41 @@ const Cells = function() {
     };
 
     cells = (dt) => {
-      c.pad = sinPad(dt); // advance sin pad
+      c.pad = sinPad(dt);     // advance sin pad
+      if (rnd() > .3) return; // increase cell spread
+
       entryLine.reset();
-      c.leftEdge = el.getBoundingClientRect().left + opt.buffer * 2;
+      c.leftEdge = el.getBoundingClientRect().left + opt.buffer;
+      c.leftEdge += opt.buffer; // increase cell spread
       for (c.li = 0; c.li < lastLaunched.length; c.li++) {
         c.i = lastLaunched[c.li];
         if (!active(c.i)) continue;
         c.cell = pool[c.i];
         if (c.cell.el.getBoundingClientRect().left > c.leftEdge) continue;
-        c.occup = c.cell.size + c.cell.jiggle * 2 + (.5 + rnd()) * opt.buffer;
-        c.half = flr(c.occup / 2);
+        c.occup = c.cell.size + c.cell.jiggle * 2 + opt.buffer;
+        c.half = c.occup / 2;
         entryLine.mark(c.cell.y - c.half, c.cell.y + c.half);
       }
+
       entryLine.mark(0, c.pad);
       entryLine.mark(height - c.pad - 1, height - 1);
       c.space = entryLine.window();
-      if (c.space.size < opt.sizeMin + opt.jigMin * 2) return;
+      if (c.space.size < minCellSize) return;
 
       for (c.i = 0; c.i < pool.length; c.i++) if (!active(c.i)) break;
       if (c.i === pool.length) return;
+
       c.cell = pool[c.i];
       c.cell.angle = opt.angMin + rou(rnd() * abs(opt.angMax - opt.angMin));
       c.cell.flipTime = opt.flipTMin + rnd() * (opt.flipTMax - opt.flipTMin);
-      c.cell.jiggle = opt.jigMin + rou(rnd() * (opt.jigMax - opt.jigMin));
+      c.cell.jiggle = opt.jigMin + rnd() * (opt.jigMax - opt.jigMin);
       c.cell.jiggleTime = opt.jigTMin + rnd() * (opt.jigTMax - opt.jigTMin);
       c.cell.jigglePhX = rnd() * c.cell.jiggleTime;
       c.cell.jigglePhY = rnd() * c.cell.jiggleTime;
-      c.cell.y = rou(c.space.start + c.space.size / 2);
-      c.cell.size = flr(rnd() * (min(opt.sizeMax, c.space.size) - opt.sizeMin));
-      c.cell.size += opt.sizeMin;
+      c.cell.size = min(opt.sizeMax, c.space.size / height) - opt.sizeMin;
+      c.cell.size = (opt.sizeMin + rnd() * c.cell.size) * height;
+      c.cell.y = c.space.start + rnd() * (c.space.size - c.cell.size);
+      c.cell.y += c.cell.size / 2;
       c.cell.travelDist = width + c.cell.size + 2 * c.cell.jiggle;
       c.cell.travelTime = c.cell.travelDist / opt.velocity;
 
@@ -250,9 +256,12 @@ const Cells = function() {
   };
 
   const tw = (t, b, c, d) => b + t / d * c;
-  let vT = 0, vB = opt.velocity * 4, vC = opt.velocity * -3, vD = 5000;
-  let bT = 0, bB = 12, bC = opt.buffer - bB, bD = 5000;
-  let sT = 0, sB = 20, sC = opt.sizeMin - sB, sD = 5000;
+  let vT, vB, vC, vD;
+  let bT, bB, bC, bD;
+  const initIntro = () => {
+    vT = 0; vB = opt.velocity * 4; vC = opt.velocity - vB; vD = 4000;
+    bT = 0; bB = 6; bC = opt.buffer - bB; bD = 2000;
+  };
 
   let raf, lastTime, dt;
   const anim = (time) => {
@@ -260,7 +269,6 @@ const Cells = function() {
     dt = time - lastTime;
     if (vT <= vD) { opt.velocity = tw(vT, vB, vC, vD); vT += dt; }
     if (bT <= bD) { opt.buffer = tw(bT, bB, bC, bD); bT += dt; }
-    if (sT <= sD) { opt.sizeMin = tw(sT, sB, sC, sD); sT += dt; }
     cells(dt);
     lastTime = time;
     raf = window.requestAnimationFrame(anim);
@@ -293,8 +301,10 @@ const Cells = function() {
     const comp = window.getComputedStyle(el);
     width = parseInt(comp['width'], 10);
     height = parseInt(comp['height'], 10);
+    if (!width || !height) { window.requestAnimationFrame(dimension); return; }
     initStyle();
     initCells();
+    initIntro();
     el.unpause();
   };
 
