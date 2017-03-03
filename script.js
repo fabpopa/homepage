@@ -144,7 +144,8 @@ window.site.go = (attachStyle) => {
   // prepare reveal
   direct.addStep((cb) => {
     const d = new Display(cb);
-    const qsa = (s) => document.querySelectorAll(s).forEach(el => d.hide(el));
+    const qsa = (s) =>
+      [].slice.call(document.querySelectorAll(s)).forEach(el => d.hide(el));
     qsa('#introduction h1');
     qsa('#introduction p');
     qsa('#introduction ul li');
@@ -178,7 +179,7 @@ window.site.go = (attachStyle) => {
   direct.addStep((cb) => {
     const delay = 4;
     const qs = (s) => document.querySelector(s);
-    const qsa = (s) => document.querySelectorAll(s);
+    const qsa = (s) => [].slice.call(document.querySelectorAll(s));
     const name = qs('#introduction h1');
     const message = qs('#introduction p');
     const socials = qsa('#introduction ul li');
