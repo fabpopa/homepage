@@ -229,16 +229,17 @@ body {
   }
 
   #exhibit h2 {
-    font: 600 16px/100% Lato;
+    font: 600 16px/18px Lato;
   }
 
   #exhibit p {
-    margin-top: 6px;
-    font: 300 16px/100% Lato;
+    margin-top: 2px;
+    width: 80%;
+    font: 300 16px/18px Lato;
   }
 
   #exhibit .media {
-    margin-top: 28px;
+    margin-top: 20px;
     height: 88px;
   }
 }
@@ -254,7 +255,7 @@ body {
   }
 
   #introduction #cells {
-    margin-top: 28px;
+    margin-top: 20px;
     width: 100vw;
   }
 
@@ -268,7 +269,7 @@ body {
   }
 
   #works {
-    margin: 28px 0 0;
+    margin: 16px 0 0;
   }
 
   #works li a {
