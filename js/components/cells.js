@@ -249,15 +249,18 @@ const Cells = function() {
     };
   };
 
-  let raf, lastTime, dt;
-  let vTrans = 5000, vStep = opt.velocity * 3 / vTrans, vEnd = opt.velocity;
-  let bTrans = 5000, bStep = opt.buffer / bTrans, bEnd = opt.buffer;
+  const tw = (t, b, c, d) => b + t / d * c;
+  let vT = 0, vB = opt.velocity * 4, vC = opt.velocity * -3, vD = 5000;
+  let bT = 0, bB = 12, bC = opt.buffer - bB, bD = 5000;
+  let sT = 0, sB = 20, sC = opt.sizeMin - sB, sD = 5000;
 
+  let raf, lastTime, dt;
   const anim = (time) => {
     if (!lastTime) lastTime = time;
     dt = time - lastTime;
-    if (vTrans >= 0) { opt.velocity = vEnd + vTrans * vStep; vTrans -= dt; }
-    if (bTrans >= 0) { opt.buffer = bEnd - bTrans * bStep; bTrans -= dt; }
+    if (vT <= vD) { opt.velocity = tw(vT, vB, vC, vD); vT += dt; }
+    if (bT <= bD) { opt.buffer = tw(bT, bB, bC, bD); bT += dt; }
+    if (sT <= sD) { opt.sizeMin = tw(sT, sB, sC, sD); sT += dt; }
     cells(dt);
     lastTime = time;
     raf = window.requestAnimationFrame(anim);
