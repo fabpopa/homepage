@@ -5,11 +5,7 @@
 <meta name="viewport" content="initial-scale=1">
 
 <script>
-  // JS available, hide page elements before DOM to control the reveal
-  window.site = {};
-  window.site.hideAll = document.createElement('style');
-  window.site.hideAll.innerHTML = 'body > * { display: none; }';
-  document.head.appendChild(window.site.hideAll);
+
 </script>
 
 <style id="loadingstyle">
@@ -52,78 +48,26 @@
   (function() {
     // ES5 startup
     var js = function() {
-      var featuresOk = (function() {
-        try {
-          return !!document.querySelectorAll &&
-            !!MutationObserver &&
-            !!window.requestAnimationFrame &&
-            !!window.performance.now &&
-            document.body.style.flexBasis !== undefined &&
-            (new XMLHttpRequest()).onload !== undefined &&
-            !eval('let a = b => b;');
-        } catch (e) { return false; }
-      })();
+      var s = '';
 
-      var start = function() {
-        // features available, remove nofeatures message
-        document.body.removeChild(document.querySelector('#nofeatures'));
+      try {
+        s += 'document.querySelectorAll: ' + !!document.querySelectorAll + '<br>';
+        s += 'MutationObserver: ' + !!MutationObserver + '<br>';
+        s += 'requestAnimationFrame: ' + !!window.requestAnimationFrame + '<br>';
+        s += 'performance.now: ' + !!window.performance.now + '<br>';
+        s += 'onload: ' + ((new XMLHttpRequest()).onload !== undefined) + '<br>';
+        s += 'eval: ' + !eval('let a = b => b;') + '<br>';
+      } catch (e) {
+        s += e;
+      }
 
-        // global object to control loading animation
-        window.site.loading = (function() {
-          var done, ldr;
-          ldr = document.createElement('div');
-          ldr.id = 'loading';
-
-          var cleanup = function() {
-            [window.site.hideAll, ldr, document.querySelector('#loadingstyle')]
-            .forEach(el => {
-              if (document.head.contains(el)) document.head.removeChild(el);
-              if (document.body.contains(el)) document.body.removeChild(el);
-            });
-            if (done) done();
-          };
-
-          // stops and restarts animation and tries to clean up at end of cycle
-          ldr.addEventListener('animationend', function() {
-            if (done) cleanup(); // stop animation at end of cycle if done set
-            ldr.style.animation = 'none'; // restart animation
-            window.setTimeout(function() { ldr.style.animation = ''; });
-          });
-
-          return {
-            show: function() {
-              if (!document.body.contains(ldr)) document.body.appendChild(ldr);
-            },
-            hide: function(cb) {
-              if (typeof cb != 'function') cb = function() {};
-              if (document.body.contains(ldr)) { done = cb; return; }
-              cleanup();
-              cb();
-            }
-          };
-        })();
-
-        // only display loading animation if scripting takes noticeable time
-        window.site.raceLoad = window.setTimeout(window.site.loading.show, 500);
-
-        // show the fallback if still loading after long amount of time
-        window.setTimeout(window.site.loading.hide, 10000);
-
-        // start scripting
-        var el = document.createElement('script');
-        el.src = 'script.js';
-        document.head.appendChild(el);
-      };
-
-      if (featuresOk) { start(); return; }
-      document.head.removeChild(window.site.hideAll);
+      document.body.innerHTML = s;
     };
 
     // wait for DOM
     var state = document.readyState;
-    if (state === 'interactive' || state === 'complete') { js(); return; }
-    document.addEventListener('readystatechange', function h() {
-      document.removeEventListener('readystatechange', h);
+    document.addEventListener('DOMContentLoaded', function h() {
+      document.removeEventListener('DOMContentLoaded', h);
       js();
     });
   })();
