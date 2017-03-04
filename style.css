@@ -96,7 +96,7 @@ body {
 }
 
 #introduction ul {
-  margin-top: 72px;
+  margin-top: 64px;
   font: 400 18px/100% Lato;
   list-style-type: none;
 }
@@ -149,16 +149,10 @@ body {
   font: 400 17px/100% Lato;
   text-decoration: none;
   color: #222;
-  transition: transform .1s cubic-bezier(.19, 1, .22, 1);
-  will-change: transform;
 }
 
 #works li a:hover {
   background-color: #f4ecec;
-}
-
-#works li a:active {
-  transform: translate3d(0, 1px, 0) scale3d(.98, 1, 1);
 }
 
 #works li a [component="icon"] {

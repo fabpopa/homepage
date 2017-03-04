@@ -193,16 +193,16 @@ window.site.go = (attachStyle) => {
                  100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
     const down = { 0: { 'opacity': 0, 'transform': 'translate3d(0, -12px, 0)' },
                    100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
-    const grow = { 0: { 'opacity': 0, 'transform': 'scale3d(.99, 1, 1)' },
-                   100: { 'opacity': 1, 'transform': 'scale3d(1, 1, 1)' } };
+    const show = { 0: { 'opacity': 0, 'transform': 'translate3d(0, 0, 0)' },
+                   100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
 
     const d = new Display(cb);
     d.animate(name, `1.5s ease-out ${delay}s`, up);
     d.animate(message, `1.5s ease-out ${delay + .5}s`, up);
-    const timeSocials = (i) => `1.2s ease-out ${delay + 2.4 + i * .1}s`;
+    const timeSocials = (i) => `1.2s ease-out ${delay + 1.6 + i * .1}s`;
     socials.forEach((el, i) => d.animate(el, timeSocials(i), down));
-    const timeWorks = (i) => `1.2s ease-out ${delay + 3.4 + i * .1}s`;
-    works.forEach((el, i) => d.animate(el, timeWorks(i), grow));
+    const timeWorks = (i) => `1.2s ease-out ${delay + 2.4 + i * .1}s`;
+    works.forEach((el, i) => d.animate(el, timeWorks(i), show));
     d.run();
   });
 
