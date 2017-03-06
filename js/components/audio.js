@@ -361,7 +361,7 @@ const Audio = function(src) {
           { pt[i].x = width / 2; pt[i].y = height / 2; }
 
       const peakH = (height - opt.barHUWave * heightUnit) / 2;
-      const barCtl = opt.barHUWave * heightUnit / 3 * 4 / 3 * tan(PI / 8);
+      const barCtl = opt.barHUWave * heightUnit / 2.4 * 4 / 3 * tan(PI / 8);
       const pL = new Array(pt.length);
       const pN = new Array(pt.length);
       const pD = new Array(pt.length);

@@ -149,12 +149,12 @@ body {
 }
 
 #exhibit p {
-  margin-top: 8px;
+  margin-top: 4px;
   font: 300 24px/100% Lato;
 }
 
 #exhibit .media {
-  margin-top: 48px;
+  margin-top: 36px;
   max-width: 800px;
   width: 100%;
   height: 88px;
@@ -193,14 +193,14 @@ body {
   }
 
   #exhibit p {
-    margin-top: 2px;
+    margin-top: 0px;
     width: 80%;
     font: 300 16px/18px Lato;
   }
 
   #exhibit .media {
-    margin-top: 20px;
-    height: 88px;
+    margin-top: 16px;
+    height: 72px;
   }
 }
 
