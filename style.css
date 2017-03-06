@@ -2,18 +2,6 @@
 
 @font-face {
   font-family: Lato;
-  font-weight: 100;
-  src: url(fonts/lato-hairline.woff);
-}
-
-@font-face {
-  font-family: Lato;
-  font-weight: 200;
-  src: url(fonts/lato-thin.woff);
-}
-
-@font-face {
-  font-family: Lato;
   font-weight: 300;
   src: url(fonts/lato-light.woff);
 }
@@ -26,32 +14,8 @@
 
 @font-face {
   font-family: Lato;
-  font-weight: 500;
-  src: url(fonts/lato-medium.woff);
-}
-
-@font-face {
-  font-family: Lato;
   font-weight: 600;
   src: url(fonts/lato-semibold.woff);
-}
-
-@font-face {
-  font-family: Lato;
-  font-weight: 700;
-  src: url(fonts/lato-bold.woff);
-}
-
-@font-face {
-  font-family: Lato;
-  font-weight: 800;
-  src: url(fonts/lato-heavy.woff);
-}
-
-@font-face {
-  font-family: Lato;
-  font-weight: 900;
-  src: url(fonts/lato-black.woff);
 }
 
 * {
@@ -75,6 +39,7 @@ body {
 }
 
 #introduction {
+  padding: 10vh 0 0;
   text-align: center;
 }
 
@@ -89,15 +54,15 @@ body {
 
 #introduction #cells {
   position: relative;
-  margin-top: 32px;
+  margin-top: 22px;
   width: 720px;
   height: 160px;
   border-radius: 4px;
 }
 
 #introduction ul {
-  margin-top: 64px;
-  font: 400 18px/100% Lato;
+  margin-top: 38px;
+  font: 400 19px/100% Lato;
   list-style-type: none;
 }
 
@@ -126,7 +91,8 @@ body {
 }
 
 #works {
-  margin: 24px 0 0;
+  margin: 48px 0 0;
+  padding: 0 0 10vh;
   max-width: 1000px;
 }
 
@@ -144,15 +110,15 @@ body {
 #works li a {
   display: inline-block;
   padding: 5px 18px 7px;
-  border-radius: 6px;
-  background-color: #faf2f2;
+  border-radius: 5px;
+  background: #faf2f2;
   font: 400 17px/100% Lato;
   text-decoration: none;
   color: #222;
 }
 
 #works li a:hover {
-  background-color: #f4ecec;
+  background: #f4ecec;
 }
 
 #works li a [component="icon"] {
@@ -174,7 +140,7 @@ body {
   justify-content: center;
   align-items: center;
   align-content: center;
-  background-color: #fff;
+  background: #fff;
   text-align: center;
 }
 
@@ -249,14 +215,14 @@ body {
   }
 
   #introduction #cells {
-    margin-top: 24px;
+    margin-top: 8px;
     width: 100vw;
     height: 144px;
   }
 
   #introduction ul {
-    margin-top: 48px;
-    font: 400 16px/100% Lato;
+    margin-top: 16px;
+    font: 400 15px/100% Lato;
   }
 
   #introduction li {
@@ -264,10 +230,10 @@ body {
   }
 
   #works {
-    margin: 16px 0 0;
+    margin: 28px 0 0;
   }
 
   #works li a {
-    font: 400 16px/100% Lato;
+    font: 400 15px/100% Lato;
   }
 }
