@@ -169,8 +169,6 @@ const Audio = function(src) {
       setAttr(bg, { 'fill': opt.bgColor });
       setAttr(bar, { 'fill': opt.barColor });
       svg.style['opacity'] = 0;
-      svg.style['transform'] = 'scale3d(.5, .5, 1)';
-      svg.style['transition'] = 'opacity .4s, transform .3s';
 
       replay = document.createElement('div');
       replay.style['position'] = 'absolute';
@@ -225,8 +223,7 @@ const Audio = function(src) {
         setAttr(clip, { 'd': shape(barCtl, barCtl, 0, pts(barStraightPart)) });
         pts(0);
         pN.forEach((p, i) => { pt[i].x = p.x; pt[i].y = p.y; });
-        svg.style['opacity'] = 1;
-        svg.style['transform'] = 'scale3d(1, 1, 1)';
+        svg.style['opacity'] = '1';
       };
 
       const move = (progress, done) => {
