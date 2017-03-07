@@ -260,21 +260,40 @@ const Audio = function(src) {
       };
     })();
 
-    const prepWave = () => {
-      // blow up progress bar layer
-      const cv = curve(0, 0);
-      cv.l(width, 0);
-      cv.l(0, height);
-      cv.l(-width, 0);
-      cv.l(0, -height);
-      setAttr(bar, { 'd': cv.close() });
-    };
+    const seek = (() => {
+      let tw = tween(), twDur = 100, current = 1, last, diff;
+      const rect = (pos) => {
+        current = pos;
+        const cv = curve(0, 0);
+        cv.l(width * pos, 0);
+        cv.l(0, height);
+        cv.l(-width * pos, 0);
+        cv.l(0, -height);
+        setAttr(bar, { 'd': cv.close() });
+      };
+
+      return (pos, cb) => {
+        if (typeof pos != 'number') pos = audio.currentTime / audio.duration;
+        if (!cb) { rect(pos); return; }
+        last = current;
+        diff = pos - last;
+        const act = (dt) => {
+          if (dt === false) { act(twDur); cb(); return; }
+          if (dt > twDur) dt = twDur;
+          rect(easeOutExp(dt, last, diff, twDur));
+          if (dt == twDur) return true;
+          return false;
+        };
+
+        tw(act, cb);
+      };
+    })();
 
     const analyze = () => {
       if (state === 'load') { preload(1, analyze); return; }
       if (state !== 'analyze') return;
       state = 'analyze';
-      prepWave();
+      seek(1);
 
       const pL = new Array(pt.length); // deep copy current points
       for (let i = 0; i < pt.length; i++) pL[i] = { x: pt[i].x, y: pt[i].y };
@@ -309,47 +328,44 @@ const Audio = function(src) {
     };
 
     const interact = () => {
+      let tweening = false, willPlay;
       svg.style['cursor'] = 'pointer';
       replay.style['cursor'] = 'pointer';
       svg.style['transition'] = 'transform .1s';
-      bar.style['transition'] = 'transform .1s cubic-bezier(.19, 1, .22, 1)';
+
       svg.addEventListener('mousedown', () => {
         svg.style['transform'] = 'translate3d(0, 1px, 0) scale3d(.99, .99, 1)';
       });
+
       svg.addEventListener('mouseup', () => {
         svg.style['transform'] = 'translate3d(0, 0, 0) scale3d(1, 1, 1)';
         if (audio.currentTime === 0 || audio.ended) {
-          bar.style['transform'] = `translate3d(-100%, 0, 0)`;
-          window.setTimeout(() => {
-            audio.play();
-            bar.style['transition'] = '';
-          }, 300);
+          if (tweening) { window.clearTimeout(willPlay); return; }
+          tweening = true;
+          seek(0, () => tweening = false);
+          willPlay = window.setTimeout(() => audio.play(), 200);
           return;
         }
+
         if (audio.paused) { audio.play(); return; }
         audio.pause();
       });
+
       replay.addEventListener('mousedown', () => {
         svg.style['transform'] = 'perspective(1000px) rotate3d(0, 1, 0, -4deg)';
         if (audio.currentTime !== 0) audio.currentTime = 0;
       });
+
       replay.addEventListener('mouseup', () => {
         svg.style['transform'] = 'perspective(1000px) rotate3d(0, 1, 0, 0)';
       });
 
-      let raf, pos;
-      audio.addEventListener('timeupdate', () => {
-        if (!raf) raf = requestAnimationFrame(() => {
-          pos = width * (1 - audio.currentTime / audio.duration);
-          bar.style['transform'] = `translate3d(-${pos}px, 0, 0)`;
-          raf = null;
-        });
-      });
+      audio.addEventListener('timeupdate', () => { if (!tweening) seek(); });
     };
 
     const complete = () => {
       if (state === 'none') return;
-      if (state !== 'analyze' && state !== 'complete') prepWave();
+      if (state !== 'analyze' && state !== 'complete') seek(1);
       state = 'complete';
 
       // if complete is the first thing called after init, set point start
