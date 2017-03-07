@@ -261,7 +261,7 @@ const Audio = function(src) {
     })();
 
     const seek = (() => {
-      let tw = tween(), twDur = 100, current = 1, last, diff;
+      let tw = tween(), twDur = 100, current = 1, thrt, last, diff;
       const rect = (pos) => {
         current = pos;
         const cv = curve(0, 0);
@@ -274,7 +274,13 @@ const Audio = function(src) {
 
       return (pos, cb) => {
         if (typeof pos != 'number') pos = audio.currentTime / audio.duration;
-        if (!cb) { rect(pos); return; }
+        if (!cb) {
+          if (thrt) return;
+          thrt = window.requestAnimationFrame(() => thrt = null);
+          rect(pos);
+          return;
+        }
+
         last = current;
         diff = pos - last;
         const act = (dt) => {
