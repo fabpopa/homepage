@@ -5,7 +5,7 @@ const Audio = function(src) {
     peakCountMin: 3,        // count of peaks to display at a minimum
     heightUnitMin: 4,       // pixels height min for the height unit
     heightUnitMax: 16,      // pixels height max for the height unit
-    barHULoading: .4,       // height unit multiple for bar when loading
+    barHULoading: .3,       // height unit multiple for bar when loading
     barHUWave: 1,           // height unit multiple for bar when part of wave
     waveHU: 5,              // height unit multiple for full waveform
     peakCurveHandle: 8,     // pixels length of bezier curve handle at peak
@@ -213,7 +213,7 @@ const Audio = function(src) {
         barWidth = width * opt.loadingWidthRatio;
         barX = (width - barWidth) / 2;
         barY = height / 2;
-        barHHalf = 2; //TODO: set to opt.barHULoading
+        barHHalf = flr(opt.barHULoading * heightUnit / 2);
         barCtl = barHHalf * 4 / 3 * tan(PI / 8); // circle quarter arc
         barStraightPart = barWidth - 2 * barHHalf;
         pN = new Array(pt.length);
@@ -303,7 +303,7 @@ const Audio = function(src) {
 
       const pL = new Array(pt.length); // deep copy current points
       for (let i = 0; i < pt.length; i++) pL[i] = { x: pt[i].x, y: pt[i].y };
-      const barHeight = 4; // TODO: set to opt.barHULoading
+      const barHeight = 2 * flr(opt.barHULoading * heightUnit / 2);
       const barHHalf = barHeight / 2;
       const barCtl = barHHalf * 4 / 3 * tan(PI / 8);
       const startX = pL[0].x;
@@ -376,8 +376,10 @@ const Audio = function(src) {
 
       // if complete is the first thing called after init, set point start
       if (pt[0].x === null)
-        for (let i = 0; i < pt.length; i++)
-          { pt[i].x = width / 2; pt[i].y = height / 2; }
+        for (let i = 0; i < pt.length; i++) {
+          pt[i].x = width / 2;
+          pt[i].y = height / 2;
+        }
 
       const peakH = (height - opt.barHUWave * heightUnit) / 2;
       const barCtl = opt.barHUWave * heightUnit / 2.4 * 4 / 3 * tan(PI / 8);
@@ -471,6 +473,7 @@ const Audio = function(src) {
       window.URL.revokeObjectURL(workerBlobURL);
       readyToPlay();
     };
+
     draw.analyze();
     const ch = new Array(data.pcm.numberOfChannels);
     for (let i = 0; i < ch.length; i++) ch[i] = data.pcm.getChannelData(i);
@@ -479,7 +482,7 @@ const Audio = function(src) {
   };
 
   const parseAudio = (encoded) => {
-    const copy = encoded.slice(0);  // ff bug: empty arraybuffer after ac decode
+    const copy = encoded.slice(0); // 'encoded' may be empty after decode
 
     // decode audio data for waveform visual
     const ac = new AudioContext();
@@ -525,7 +528,7 @@ const Audio = function(src) {
     ok = ok && heightUnit >= opt.heightUnitMin && peakCount >= opt.peakCountMin;
     if (!ok) { fallBack(); error('Error sizing'); return; }
     const cleanup = (ob) => { ob.disconnect(); if (audio) audio.pause(); };
-    const ob = new MutationObserver(() => { cleanup(ob); });
+    const ob = new MutationObserver(() => cleanup(ob));
     ob.observe(el.parentNode, { childList: true });
     draw.init();
     fetchData();
