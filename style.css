@@ -40,6 +40,7 @@ body {
 
 #introduction {
   padding: 10vh 0 0;
+  width: 720px;
   text-align: center;
 }
 
@@ -55,7 +56,6 @@ body {
 #introduction #cells {
   position: relative;
   margin-top: 22px;
-  width: 720px;
   height: 160px;
   border-radius: 4px;
 }
@@ -183,6 +183,10 @@ body {
 }
 
 @media screen and (max-width: 850px) {
+  #introduction {
+    width: 100vw;
+  }
+
   #exhibit {
     box-sizing: border-box;
     padding: 0 20px;
@@ -216,7 +220,6 @@ body {
 
   #introduction #cells {
     margin-top: 8px;
-    width: 100vw;
     height: 144px;
   }
 
