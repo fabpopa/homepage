@@ -89,19 +89,58 @@ window.site.go = (attachStyle) => {
         if (!work) return;
         if (!work.title) work.title = '';
         if (!work.description) work.description = '';
-        title.innerHTML = work.title;
-        description.innerHTML = work.description;
-        media.appendChild(component(work));
-        $('#cells').dispatchEvent(new Event('pause'));
-        if (!document.body.contains(sheet)) document.body.appendChild(sheet);
-        window.location.hash = hash;
+        const mainEl = $('#introduction > *, #works > *');
+        const steps = new Director();
+
+        // hide main page elements
+        steps.addStep((cb) => {
+          window.location.hash = hash;
+          const d = new Display(cb);
+          const key = { 0: { 'opacity': '1' }, 100: { 'opacity': '0' } };
+          mainEl.forEach((e, i) => d.animate(e, `.4s ${i * .08}s`, key));
+          d.run();
+        });
+
+        // show exhibit
+        steps.addStep((cb) => {
+          title.innerHTML = work.title;
+          description.innerHTML = work.description;
+          media.appendChild(component(work));
+          $('#cells').dispatchEvent(new Event('pause'));
+          if (!document.body.contains(sheet)) document.body.appendChild(sheet);
+          cb();
+        });
+
+        steps.start();
       };
 
       const hide = () => {
-        $('#cells').dispatchEvent(new Event('unpause'));
-        if (document.body.contains(sheet)) document.body.removeChild(sheet);
-        media.removeChild(media.firstChild);
-        window.location.hash = '';
+        const mainEl = $('#introduction > *, #works > *');
+        const steps = new Director();
+
+        // unpause cells
+        steps.addStep((cb) => {
+          $('#cells').dispatchEvent(new Event('unpause'));
+          cb();
+        });
+
+        // hide exhibit
+        steps.addStep((cb) => {
+          window.location.hash = '';
+          if (document.body.contains(sheet)) document.body.removeChild(sheet);
+          media.removeChild(media.firstChild);
+          cb();
+        });
+
+        // show main page elements
+        steps.addStep((cb) => {
+          const d = new Display(cb);
+          const key = { 0: { 'opacity': '0' }, 100: { 'opacity': '1' } };
+          mainEl.forEach((e, i) => d.animate(e, `.4s ${i * .08}s`, key));
+          d.run();
+        });
+
+        steps.start();
       };
 
       close.onclick = (e) => { e.preventDefault(); hide(); };
@@ -121,8 +160,8 @@ window.site.go = (attachStyle) => {
           const el = document.createElement('li');
           const a = document.createElement('a');
           const icon = new Icon(type);
-          const title = document.createElement('span')
-          const hash = `#${type}/${item.id}`
+          const title = document.createElement('span');
+          const hash = `#${type}/${item.id}`;
           title.innerHTML = item.title;
           a.href = hash;
           a.id = `${type}-${item.id}`;
