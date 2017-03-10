@@ -91,7 +91,7 @@ body {
 }
 
 #works {
-  margin: 48px 0 0;
+  margin: 44px 0 0;
   padding: 0 0 10vh;
   max-width: 1000px;
 }
@@ -109,16 +109,25 @@ body {
 
 #works li a {
   display: inline-block;
-  padding: 5px 18px 7px;
+  padding: 7px 20px 9px;
   border-radius: 5px;
-  background: #faf2f2;
   font: 400 17px/100% Lato;
   text-decoration: none;
   color: #222;
+  transition: all .15s;
+  transform: translate3d(0, 0, 0);
 }
 
 #works li a:hover {
-  background: #f4ecec;
+  background: #fcfcfc;
+  transform: translate3d(0, -1px, 0);
+  box-shadow: 0 1px 1px 1px #eee;
+}
+
+#works li a:active {
+  background: #fcfcfc;
+  transform: translate3d(0, 0, 0);
+  box-shadow: none;
 }
 
 #works li a [component="icon"] {
