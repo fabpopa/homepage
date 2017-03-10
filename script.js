@@ -94,7 +94,6 @@ window.site.go = (attachStyle) => {
 
         // hide main page elements
         steps.addStep((cb) => {
-          window.location.hash = hash;
           const d = new Display(cb);
           const key = { 0: { 'opacity': '1' }, 100: { 'opacity': '0' } };
           mainEl.forEach((e, i) => d.animate(e, `.4s ${i * .08}s`, key));
@@ -108,6 +107,7 @@ window.site.go = (attachStyle) => {
           media.appendChild(component(work));
           $('#cells').dispatchEvent(new Event('pause'));
           if (!document.body.contains(sheet)) document.body.appendChild(sheet);
+          window.location.hash = hash;
           cb();
         });
 
