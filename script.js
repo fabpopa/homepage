@@ -64,6 +64,7 @@ window.site.go = (attachStyle) => {
   direct.addStep((cb) => {
     // media overlay object
     const exhibit = (() => {
+      let clickedEl;
       const sheet = document.createElement('div');
       sheet.id = 'exhibit';
       const close = document.createElement('button');
@@ -85,10 +86,16 @@ window.site.go = (attachStyle) => {
         }
       };
 
-      const show = (work, hash) => {
+      const show = (el, hash) => {
+        if (clickedEl) return;
+        clickedEl = el;
+        clickedEl.classList.add('clicked');
+
+        const work = el.data;
         if (!work) return;
         if (!work.title) work.title = '';
         if (!work.description) work.description = '';
+
         const mainEl = $('#introduction > *, #works > *');
         const steps = new Director();
 
@@ -134,7 +141,8 @@ window.site.go = (attachStyle) => {
 
         // show main page elements
         steps.addStep((cb) => {
-          const d = new Display(cb);
+          clickedEl.classList.remove('clicked');
+          const d = new Display(() => { clickedEl = null; cb(); });
           const key = { 0: { 'opacity': '0' }, 100: { 'opacity': '1' } };
           mainEl.forEach((e, i) => d.animate(e, `.4s ${i * .08}s`, key));
           d.run();
@@ -167,7 +175,7 @@ window.site.go = (attachStyle) => {
           a.id = `${type}-${item.id}`;
           a.data = item;
           a.data.type = type;
-          a.onclick = (e) => { e.preventDefault(); exhibit.show(item, hash); };
+          a.onclick = (e) => { e.preventDefault(); exhibit.show(a, hash); };
           a.appendChild(icon);
           a.appendChild(title);
           el.appendChild(a);
