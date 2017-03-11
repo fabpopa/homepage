@@ -427,9 +427,12 @@ g.Audio = function(src) {
 
   // playable checkpoint, requires computed peaks and audio playback element
   let readyToPlay = (c => () => { c -= 1; if (!c) draw.complete(); })(2);
+  let stopProcessing = false;
 
   // extract peaks from decoded audio data at the set resolution
   const map = () => {
+    if (stopProcessing) return;
+
     const workerJS = `onmessage = (e) => {
       const ch = e.data.ch;
       const length = e.data.length;
@@ -504,8 +507,9 @@ g.Audio = function(src) {
   };
 
   // fetch raw audio media bytes
+  let xhr;
   const fetchData = () => {
-    const xhr = new XMLHttpRequest();
+    xhr = new XMLHttpRequest();
     xhr.open('GET', src);
     xhr.responseType = 'arraybuffer';
     xhr.onprogress = (e) => draw.preload(e.loaded / e.total);
@@ -515,6 +519,13 @@ g.Audio = function(src) {
     };
     xhr.onerror = () => error('Error fetching audio media');
     xhr.send();
+  };
+
+  const cleanup = (ob) => {
+    if (audio) audio.pause();
+    ob.disconnect();
+    if (xhr && xhr.readyState < XMLHttpRequest.DONE) xhr.abort();
+    stopProcessing = true;
   };
 
   // set global dimensions
@@ -529,7 +540,6 @@ g.Audio = function(src) {
     let ok = !!width && !!height;
     ok = ok && heightUnit >= opt.heightUnitMin && peakCount >= opt.peakCountMin;
     if (!ok) { fallBack(); error('Error sizing'); return; }
-    const cleanup = (ob) => { ob.disconnect(); if (audio) audio.pause(); };
     const ob = new MutationObserver(() => cleanup(ob));
     ob.observe(el.parentNode, { childList: true });
     draw.init();
