@@ -1,5 +1,7 @@
+g = g || {};
+
 // SVG icons with encapsulated styling and motion
-const Icon = function(type) {
+g.Icon = function(type) {
   // helpers
   const svgNS = 'http://www.w3.org/2000/svg';
   const svgEl = (el) => document.createElementNS(svgNS, el);

@@ -1,5 +1,7 @@
+g = g || {};
+
 // asset preloader to reliably put things in browser cache
-const preload = (() => {
+g.preload = (() => {
   // confirm browser environment
   try { window.document } catch (e) { return; }
 

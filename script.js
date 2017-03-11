@@ -1,13 +1,13 @@
-// expects window.site.loading to contain a custom object
-// expects window.site.raceLoad to contain an ID returned by setTimeout
-// expects window.preload to contain a custom object after loading preload.js
-// expects window.Display to contain a constructor function after display.js
-// expects window.Director to contain a constructor function after director.js
-// expects window.Cells to contain a constructor after loading component
-// expects window.Audio to contain a constructor after loading component
+// expects g.loading to contain a custom object
+// expects g.raceLoad to contain an ID returned by setTimeout
+// expects g.preload to contain a custom object after loading preload.js
+// expects g.Display to contain a constructor function after display.js
+// expects g.Director to contain a constructor function after director.js
+// expects g.Cells to contain a constructor after loading component
+// expects g.Audio to contain a constructor after loading component
 
-window.site.go = (attachStyle) => {
-  const direct = new Director();
+g.go = (attachStyle) => {
+  const direct = new g.Director();
 
   // DOM selector, returns single element, array of elements, or null
   const $ = (q, asArray) => {
@@ -36,7 +36,7 @@ window.site.go = (attachStyle) => {
     const makeCells = () => {
       if (cells) removeCells();
       wrap.style['background'] = '';
-      cells = new Cells();
+      cells = new g.Cells();
       wrap.appendChild(cells);
     };
 
@@ -82,7 +82,7 @@ window.site.go = (attachStyle) => {
       const component = (work) => {
         const srcPrefix = 'works/';
         switch (work.type) {
-          case 'songs': return new Audio(srcPrefix + work.src);
+          case 'songs': return new g.Audio(srcPrefix + work.src);
         }
       };
 
@@ -97,11 +97,11 @@ window.site.go = (attachStyle) => {
         if (!work.description) work.description = '';
 
         const mainEl = $('#introduction > *, #works > *');
-        const steps = new Director();
+        const steps = new g.Director();
 
         // hide main page elements
         steps.addStep((cb) => {
-          const d = new Display(cb);
+          const d = new g.Display(cb);
           const key = { 0: { 'opacity': '1' }, 100: { 'opacity': '0' } };
           mainEl.forEach((e, i) => d.animate(e, `.4s ${i * .08}s`, key));
           d.run();
@@ -123,7 +123,7 @@ window.site.go = (attachStyle) => {
 
       const hide = () => {
         const mainEl = $('#introduction > *, #works > *');
-        const steps = new Director();
+        const steps = new g.Director();
 
         // unpause cells
         steps.addStep((cb) => {
@@ -142,7 +142,7 @@ window.site.go = (attachStyle) => {
         // show main page elements
         steps.addStep((cb) => {
           clickedEl.classList.remove('clicked');
-          const d = new Display(() => { clickedEl = null; cb(); });
+          const d = new g.Display(() => { clickedEl = null; cb(); });
           const key = { 0: { 'opacity': '0' }, 100: { 'opacity': '1' } };
           mainEl.forEach((e, i) => d.animate(e, `.4s ${i * .08}s`, key));
           d.run();
@@ -167,7 +167,7 @@ window.site.go = (attachStyle) => {
         works[type].forEach(item => {
           const el = document.createElement('li');
           const a = document.createElement('a');
-          const icon = new Icon(type);
+          const icon = new g.Icon(type);
           const title = document.createElement('span');
           const hash = `#${type}/${item.id}`;
           title.innerHTML = item.title;
@@ -197,7 +197,7 @@ window.site.go = (attachStyle) => {
 
   // prepare reveal
   direct.addStep((cb) => {
-    const d = new Display(cb);
+    const d = new g.Display(cb);
     const hide = (s) => $(s, true).forEach(el => d.hide(el));
     hide('#introduction h1');
     hide('#introduction p');
@@ -208,8 +208,8 @@ window.site.go = (attachStyle) => {
 
   // hide loading
   direct.addStep((cb) => {
-    window.clearTimeout(window.site.raceLoad);
-    window.site.loading.hide(cb);
+    window.clearTimeout(g.raceLoad);
+    g.loading.hide(cb);
   });
 
   // start cells
@@ -243,7 +243,7 @@ window.site.go = (attachStyle) => {
     const show = { 0: { 'opacity': 0, 'transform': 'translate3d(0, 0, 0)' },
                    100: { 'opacity': 1, 'transform': 'translate3d(0, 0, 0)' } };
 
-    const d = new Display(cb);
+    const d = new g.Display(cb);
     d.animate(name, `1.5s ease-out ${delay}s`, up);
     d.animate(message, `1.5s ease-out ${delay + .5}s`, up);
     const timeSocials = (i) => `1.2s ease-out ${delay + 1.6 + i * .1}s`;
@@ -258,7 +258,7 @@ window.site.go = (attachStyle) => {
 
 (() => {
   // preload style
-  const style = () => preload.stylesheet('style.css', at => window.site.go(at));
+  const style = () => g.preload.stylesheet('style.css', at => g.go(at));
 
   // preload js
   const components = ['cells', 'audio', 'icon'];

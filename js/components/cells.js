@@ -1,5 +1,7 @@
+g = g || {};
+
 // red blood cell animation component
-const Cells = function() {
+g.Cells = function() {
   const opt = {
     sizeMin: .24,   // multiple of height
     sizeMax: .34,   // multiple of height

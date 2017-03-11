@@ -6,10 +6,10 @@
 
 <script>
   // JS available, hide page elements before DOM to control the reveal
-  window.site = {};
-  window.site.hideAll = document.createElement('style');
-  window.site.hideAll.innerHTML = 'body > * { display: none; }';
-  document.head.appendChild(window.site.hideAll);
+  var g = {};
+  g.hideAll = document.createElement('style');
+  g.hideAll.innerHTML = 'body > * { display: none; }';
+  document.head.appendChild(g.hideAll);
 </script>
 
 <style id="loadingstyle">
@@ -69,13 +69,13 @@
         document.body.removeChild(document.querySelector('#nofeatures'));
 
         // global object to control loading animation
-        window.site.loading = (function() {
+        g.loading = (function() {
           var done, ldr;
           ldr = document.createElement('div');
           ldr.id = 'loading';
 
           var cleanup = function() {
-            [window.site.hideAll, ldr, document.querySelector('#loadingstyle')]
+            [g.hideAll, ldr, document.querySelector('#loadingstyle')]
             .forEach(el => {
               if (document.head.contains(el)) document.head.removeChild(el);
               if (document.body.contains(el)) document.body.removeChild(el);
@@ -104,10 +104,10 @@
         })();
 
         // only display loading animation if scripting takes noticeable time
-        window.site.raceLoad = window.setTimeout(window.site.loading.show, 500);
+        g.raceLoad = window.setTimeout(g.loading.show, 500);
 
         // show the fallback if still loading after long amount of time
-        window.setTimeout(window.site.loading.hide, 10000);
+        window.setTimeout(g.loading.hide, 10000);
 
         // start scripting
         var el = document.createElement('script');
@@ -116,7 +116,7 @@
       };
 
       if (featuresOk) { start(); return; }
-      document.head.removeChild(window.site.hideAll);
+      document.head.removeChild(g.hideAll);
     };
 
     // wait for DOM

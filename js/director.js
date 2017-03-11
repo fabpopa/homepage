@@ -1,7 +1,9 @@
+g = g || {};
+
 // several fn(cb)'s are grouped into a step as tasks
 // tasks in a step run concurrently, steps run in sequence
 // create new Director(cb), call addStep() several times, then start() once
-const Director = function(doneCb) {
+g.Director = function(doneCb) {
   let steps = [];
   let currentStep = -1;
 

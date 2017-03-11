@@ -1,6 +1,8 @@
+g = g || {};
+
 // style and animate several elements together in a single step
 // create new Display(cb), call style(), show(), hide(), animate(), then run()
-const Display = function(cb) {
+g.Display = function(cb) {
   let tasks = [];
 
   // e.g. style(el, { 'opacity': .5, 'color': 'cyan' })

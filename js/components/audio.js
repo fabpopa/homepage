@@ -1,5 +1,7 @@
+g = g || {};
+
 // audio player component with waveform, progress, and playback control
-const Audio = function(src) {
+g.Audio = function(src) {
   const opt = {
     peakWidth: 17,          // pixels width for a peak on the sound curve
     peakCountMin: 3,        // count of peaks to display at a minimum
