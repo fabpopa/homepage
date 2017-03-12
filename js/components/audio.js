@@ -489,11 +489,13 @@ g.Audio = function(src) {
   const parseAudio = (encoded) => {
     const copy = encoded.slice(0); // 'encoded' may be empty after decode
 
+    // init global audio context singleton (contexts limited per window)
+    if (!g.Audio.audioContext) g.Audio.audioContext = new AudioContext();
+
     // decode audio data for waveform visual
-    const ac = new AudioContext();
     const decodeOk = (pcm) => { data.pcm = pcm; map(); };
     const decodeErr = () => error('Error decoding media');
-    ac.decodeAudioData(encoded, decodeOk, decodeErr);
+    g.Audio.audioContext.decodeAudioData(encoded, decodeOk, decodeErr);
 
     // create media element for playback
     const audioExt = /\.(.+)$/.exec(src)[1];

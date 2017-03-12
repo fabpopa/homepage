@@ -97,6 +97,7 @@ g.go = (attachStyle) => {
         if (!work.description) work.description = '';
 
         const mainEl = $('#introduction > *, #works > *');
+        const exhibitEl = [title, description, media];
         const steps = new g.Director();
 
         // hide main page elements
@@ -107,14 +108,25 @@ g.go = (attachStyle) => {
           d.run();
         });
 
-        // show exhibit
+        // show exhibit title and description
         steps.addStep((cb) => {
           title.innerHTML = work.title;
           description.innerHTML = work.description;
-          media.appendChild(component(work));
           $('#cells').dispatchEvent(new Event('pause'));
+          exhibitEl.forEach(e => e.style['opacity'] = 0);
+          close.style['opacity'] = 0;
           if (!document.body.contains(sheet)) document.body.appendChild(sheet);
           window.location.hash = hash;
+          const d = new g.Display(cb);
+          const key = { 0: { 'opacity': '0' }, 100: { 'opacity': '1' } };
+          exhibitEl.forEach((e, i) => d.animate(e, `.4s ${i * .08}s`, key));
+          window.requestAnimationFrame(d.run);
+        });
+
+        // show media and close button
+        steps.addStep((cb) => {
+          media.appendChild(component(work));
+          close.style['opacity'] = 1;
           cb();
         });
 
@@ -123,19 +135,23 @@ g.go = (attachStyle) => {
 
       const hide = () => {
         const mainEl = $('#introduction > *, #works > *');
+        const exhibitEl = [close, title, description, media];
         const steps = new g.Director();
 
-        // unpause cells
+        // unpause cells and hide exhibit title and description
         steps.addStep((cb) => {
           $('#cells').dispatchEvent(new Event('unpause'));
-          cb();
+          const d = new g.Display(cb);
+          const key = { 0: { 'opacity': '1' }, 100: { 'opacity': '0' } };
+          exhibitEl.forEach((e, i) => d.animate(e, `.4s ${i * .08}s`, key));
+          d.run();
         });
 
         // hide exhibit
         steps.addStep((cb) => {
           window.location.hash = '';
           if (document.body.contains(sheet)) document.body.removeChild(sheet);
-          media.removeChild(media.firstChild);
+          if (media.hasChildNodes()) media.removeChild(media.firstChild);
           cb();
         });
 

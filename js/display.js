@@ -20,17 +20,23 @@ g.Display = function(cb) {
   this.animate = (el, animation, keyframes) => {
     if (!animation || !keyframes) throw new Error('animate() args missing');
     tasks.push({ el, animation, keyframes });
+
+    const willChange = new Set();
+    Object.keys(keyframes).forEach(time =>
+      Object.keys(keyframes[time]).forEach(style => willChange.add(style))
+    );
+    if (willChange.size) el.style['will-change'] = [...willChange].join(',');
   };
 
   let apply = (el, styles) => {
-    Object.keys(styles).forEach((s) => { el.style[s] = styles[s]; });
+    Object.keys(styles).forEach(s => el.style[s] = styles[s]);
   };
 
-  let clear = (el, styles) => { styles.forEach((s) => { el.style[s] = ''; }); };
+  let clear = (el, styles) => { styles.forEach(s => el.style[s] = ''); };
 
   this.run = () => {
     let allCb = (c => () => { c -= 1; if (!c && cb) cb(); })(tasks.length);
-    tasks.forEach((task) => {
+    tasks.forEach(task => {
       if (task.styles) { apply(task.el, task.styles); allCb(); return; }
 
       // generate keyframes name, attempt to avoid collisions
@@ -40,13 +46,11 @@ g.Display = function(cb) {
 
       // construct keyframes CSS and will-change
       const keyframes = [];
-      const willChange = new Set();
-      Object.keys(task.keyframes).forEach((time) => {
+      Object.keys(task.keyframes).forEach(time => {
         const styles = [];
-        Object.keys(task.keyframes[time]).forEach((style) => {
-          styles.push(`${style}: ${task.keyframes[time][style]}`);
-          willChange.add(style);
-        });
+        Object.keys(task.keyframes[time]).forEach(style =>
+          styles.push(`${style}: ${task.keyframes[time][style]}`)
+        );
         if (/^\d+$/.test(time)) time += '%';
         keyframes.push(`${time} { ${styles.join('; ')} }`);
       });
@@ -54,7 +58,6 @@ g.Display = function(cb) {
       const animObj = {};
       animObj['animation'] = `${task.animation} ${name}`;
       animObj['animation-direction'] = 'forwards';
-      if (willChange.size) animObj['will-change'] = [...willChange].join(',');
 
       // attach keyframes CSS
       const s = document.createElement('style');
@@ -66,7 +69,7 @@ g.Display = function(cb) {
         task.el.removeEventListener('animationend', h);
 
         // apply styles from end keyframe
-        Object.keys(task.keyframes).forEach((frame) => {
+        Object.keys(task.keyframes).forEach(frame => {
           if (/(to|100)/i.test(frame)) apply(task.el, task.keyframes[frame]);
         });
 
