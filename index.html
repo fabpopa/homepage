@@ -120,8 +120,6 @@
     };
 
     // wait for DOM
-    var state = document.readyState;
-    if (state === 'interactive' || state === 'complete') { js(); return; }
-    document.addEventListener('readystatechange', js, { once: true });
+    window.addEventListener('load', js, { once: true });
   })();
 </script>
