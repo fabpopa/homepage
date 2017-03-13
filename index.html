@@ -122,9 +122,6 @@
     // wait for DOM
     var state = document.readyState;
     if (state === 'interactive' || state === 'complete') { js(); return; }
-    document.addEventListener('readystatechange', function h() {
-      document.removeEventListener('readystatechange', h);
-      js();
-    });
+    document.addEventListener('readystatechange', js, { once: true });
   })();
 </script>
