@@ -317,5 +317,6 @@ g.Cells = function() {
   };
 
   checkParent();
+  el.component = this; // reference instance to avoid garbage collection
   return el;
 };

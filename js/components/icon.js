@@ -75,5 +75,6 @@ g.Icon = function(type) {
   };
 
   checkParent();
+  svg.component = this; // reference instance to avoid garbage collection
   return svg;
 };

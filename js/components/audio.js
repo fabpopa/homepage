@@ -555,5 +555,6 @@ g.Audio = function(src) {
   };
 
   checkParent();
+  el.component = this; // reference instance to avoid garbage collection
   return el;
 };
