@@ -109,7 +109,7 @@ body {
 
 #works li a {
   display: inline-block;
-  padding: 7px 20px 9px;
+  padding: 7px 20px 8px;
   border-radius: 5px;
   font: 400 17px/100% Lato;
   text-decoration: none;
@@ -119,15 +119,15 @@ body {
 }
 
 #works li a:hover {
-  background: #fcfcfc;
+  background: #ff5;
   transform: translate3d(0, -1px, 0);
-  box-shadow: 0 1px 1px 1px #eee;
+  box-shadow: 0 1px #cc5;
 }
 
 #works li a:active,
 #works li a.clicked,
 #works li a.clicked:hover {
-  background: #fcfcfc;
+  background: #ff7;
   transform: translate3d(0, 0, 0);
   box-shadow: none;
 }
