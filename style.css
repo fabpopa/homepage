@@ -127,7 +127,7 @@ body {
 #works li a:active,
 #works li a.clicked,
 #works li a.clicked:hover {
-  background: #ff7;
+  background: #f4f4f4;
   transform: translate3d(0, 0, 0);
   box-shadow: none;
 }
