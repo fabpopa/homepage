@@ -41,7 +41,7 @@ g.Icon = function(type) {
       const c = curve(lastX, lastY);
       for (let i = 1; i < y.length; i++) c.L(i * uW, height / 2 + y[i] * uH);
       const path = svgEl('path');
-      setAtt(path, { 'fill': 'none', 'stroke': '#222', 'stroke-width': '1.4' });
+      setAtt(path, { 'fill': 'none', 'stroke': 'currentColor', 'stroke-width': '1.4' });
       setAtt(path, { 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
       setAtt(path, { 'd': c.open() });
       svg.appendChild(path);
