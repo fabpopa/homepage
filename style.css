@@ -109,27 +109,23 @@ body {
 
 #works li a {
   display: inline-block;
-  padding: 7px 20px 8px;
+  padding: 7px 12px 9px;
   border-radius: 5px;
   font: 400 17px/100% Lato;
   text-decoration: none;
-  color: #222;
-  transition: all .15s;
-  transform: translate3d(0, 0, 0);
+  color: #444;
 }
 
 #works li a:hover {
-  background: #fff055;
-  transform: translate3d(0, -1px, 0);
-  box-shadow: 0 1px #aaa000;
+  background: linear-gradient(90deg, #a6f5fa, #f9fb89);
+  color: #222;
 }
 
 #works li a:active,
 #works li a.clicked,
 #works li a.clicked:hover {
   background: #f4f4f4;
-  transform: translate3d(0, 0, 0);
-  box-shadow: 0 1px #fff;
+  color: #444;
 }
 
 #works li a [component="icon"] {
