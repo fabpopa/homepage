@@ -48,11 +48,6 @@ body {
   font: 600 28px/100% Lato;
 }
 
-#introduction p {
-  margin-top: 8px;
-  font-weight: 300;
-}
-
 #introduction #cells {
   position: relative;
   margin-top: 22px;
@@ -218,11 +213,6 @@ body {
 @media screen and (max-width: 570px) {
   #introduction h1 {
     font: 600 18px/100% Lato;
-  }
-
-  #introduction p {
-    font: 300 16px/100% Lato;
-    margin-top: 6px;
   }
 
   #introduction #cells {

@@ -22,7 +22,7 @@ g.go = (attachStyle) => {
     let cells;
     const wrap = document.createElement('div');
     wrap.id = 'cells';
-    const location = $('#introduction p');
+    const location = $('#introduction h1');
     location.insertAdjacentElement('afterend', wrap);
 
     const removeCells = () => {
@@ -216,7 +216,6 @@ g.go = (attachStyle) => {
     const d = new g.Display(cb);
     const hide = (s) => $(s, true).forEach(el => d.hide(el));
     hide('#introduction h1');
-    hide('#introduction p');
     hide('#introduction ul li');
     hide('#works ul li');
     d.run();
@@ -248,7 +247,6 @@ g.go = (attachStyle) => {
   direct.addStep((cb) => {
     const delay = 4.8;
     const name = $('#introduction h1');
-    const message = $('#introduction p');
     const socials = $('#introduction ul li', true);
     const works = $('#works ul li', true);
 
@@ -261,10 +259,9 @@ g.go = (attachStyle) => {
 
     const d = new g.Display(cb);
     d.animate(name, `1.5s ease-out ${delay}s`, up);
-    d.animate(message, `1.5s ease-out ${delay + .5}s`, up);
-    const timeSocials = (i) => `1.2s ease-out ${delay + 1.6 + i * .1}s`;
+    const timeSocials = (i) => `1.2s ease-out ${delay + 1.1 + i * .1}s`;
     socials.forEach((el, i) => d.animate(el, timeSocials(i), down));
-    const timeWorks = (i) => `1.2s ease-out ${delay + 2.4 + i * .1}s`;
+    const timeWorks = (i) => `1.2s ease-out ${delay + 1.9 + i * .1}s`;
     works.forEach((el, i) => d.animate(el, timeWorks(i), show));
     d.run();
   });
