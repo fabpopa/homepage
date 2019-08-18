@@ -35,53 +35,59 @@ body {
   align-items: center;
   align-content: center;
   font: 400 24px/100% Lato;
-  color: #222;
+  letter-spacing: 0.1px;
 }
 
-#introduction {
+.introduction {
   padding: 10vh 0 0;
   width: 720px;
   text-align: center;
 }
 
-#introduction h1 {
-  font: 600 28px/100% Lato;
+.introduction h1 {
+  font: 600 30px/100% Lato;
+  letter-spacing: 0.2px;
 }
 
-#introduction #cells {
+.introduction .statement {
+  margin-top: 33px;
+  font: 300 24px/100% Lato;
+}
+
+.introduction #cells {
   position: relative;
   margin-top: 22px;
   height: 160px;
   border-radius: 4px;
 }
 
-#introduction ul {
+.introduction ul {
   margin-top: 38px;
-  font: 400 19px/100% Lato;
+  font: 400 20px/100% Lato;
   list-style-type: none;
 }
 
-#introduction li {
+.introduction li {
   display: inline-block;
   padding: 0 8px;
 }
 
-#introduction li a {
+.introduction li a {
   text-decoration: none;
   color: #33d;
   transition: color .1s;
   outline: none;
 }
 
-#introduction li a:visited {
+.introduction li a:visited {
   color: #33d;
 }
 
-#introduction li a:hover {
+.introduction li a:hover {
   color: #000;
 }
 
-#introduction li a:active {
+.introduction li a:active {
   color: #000;
 }
 
@@ -185,7 +191,7 @@ body {
 }
 
 @media screen and (max-width: 850px) {
-  #introduction {
+  .introduction {
     width: 100vw;
   }
 
@@ -211,21 +217,21 @@ body {
 }
 
 @media screen and (max-width: 570px) {
-  #introduction h1 {
+  .introduction h1 {
     font: 600 18px/100% Lato;
   }
 
-  #introduction #cells {
+  .introduction #cells {
     margin-top: 8px;
     height: 144px;
   }
 
-  #introduction ul {
+  .introduction ul {
     margin-top: 16px;
     font: 400 15px/100% Lato;
   }
 
-  #introduction li {
+  .introduction li {
     padding: 0 6px;
   }
 
