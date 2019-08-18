@@ -1,55 +1,45 @@
 <!doctype html>
 <title>Fabian Popa</title>
 <meta charset="utf-8">
-<meta name="description" content="Technology, biology, and other things.">
+<meta name="description" content="Engineering, biology, design.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script>
-  // JS available, hide page elements before DOM to control the reveal
+  // JS available.
   var g = {};
-  g.hideAll = document.createElement('style');
-  g.hideAll.innerHTML = 'body > * { display: none; }';
-  document.head.appendChild(g.hideAll);
+
+  // Hide elements before DOM to control the reveal.
+  g.hideAllStyle = document.createElement('style');
+  g.hideAllStyle.innerHTML = 'body > * { display: none; }';
+  document.head.appendChild(g.hideAllStyle);
 </script>
 
-<style id="loadingstyle">
-  #loading {
-    display: block;
-    position: absolute;
-    top: 30%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin: 0 auto;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: #F27474;
-    opacity: 0;
-    animation: 1.8s ease-in-out pulse;
-  }
+<link href="style.css" rel="stylesheet">
 
-  @keyframes pulse { 0% { opacity: 0 } 50% { opacity: 1 } 100% { opacity: 0 } }
-</style>
-
-<div id="introduction">
+<div class="introduction">
   <h1>Fabian Popa</h1>
+  <p class="statement">Engineering, biology, design.</p>
   <ul>
     <li><a href="https://github.com/fabpopa">GitHub</a></li>
     <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
   </ul>
 </div>
 
-<div id="nofeatures">
-  <p>There is more to this website, but it will not display well in your
-  current browser.</p>
-  <p><a href="http://whatbrowser.org">Please update to a newer browser</a></p>
-  <p>Thank you for stopping by ☺</p>
-</div>
-
 <script>
+  // Start up. Only ES5 features.
   (function() {
-    // ES5 startup
-    var js = function() {
+    var removeFallbacks = function() {
+      var el = document.querySelector('.statement');
+      el.parentNode.removeChild(el);
+    };
+
+    var start = function() {
+      var el = document.createElement('script');
+      el.src = 'script.js';
+      document.head.appendChild(el);
+    };
+
+    var checkFeaturesAndStart = function() {
       var featuresOk = (function() {
         try {
           new Function('(a = 0) => a');
@@ -62,62 +52,17 @@
         } catch (e) { return false; }
       })();
 
-      var start = function() {
-        // features available, remove nofeatures message
-        document.body.removeChild(document.querySelector('#nofeatures'));
+      if (false) {
+        removeFallbacks();
+        start();
+        return;
+      }
 
-        // global object to control loading animation
-        g.loading = (function() {
-          var done, ldr;
-          ldr = document.createElement('div');
-          ldr.id = 'loading';
-
-          var cleanup = function() {
-            [g.hideAll, ldr, document.querySelector('#loadingstyle')]
-            .forEach(el => {
-              if (document.head.contains(el)) document.head.removeChild(el);
-              if (document.body.contains(el)) document.body.removeChild(el);
-            });
-            if (done) done();
-          };
-
-          // stops and restarts animation and tries to clean up at end of cycle
-          ldr.addEventListener('animationend', function() {
-            if (done) cleanup(); // stop animation at end of cycle if done set
-            ldr.style.animation = 'none'; // restart animation
-            window.setTimeout(function() { ldr.style.animation = ''; });
-          });
-
-          return {
-            show: function() {
-              if (!document.body.contains(ldr)) document.body.appendChild(ldr);
-            },
-            hide: function(cb) {
-              if (typeof cb != 'function') cb = function() {};
-              if (document.body.contains(ldr)) { done = cb; return; }
-              cleanup();
-              cb();
-            }
-          };
-        })();
-
-        // only display loading animation if scripting takes noticeable time
-        g.raceLoad = window.setTimeout(g.loading.show, 500);
-
-        // show the fallback if still loading after long amount of time
-        window.setTimeout(g.loading.hide, 10000);
-
-        // start scripting
-        var el = document.createElement('script');
-        el.src = 'script.js';
-        document.head.appendChild(el);
-      };
-
-      if (featuresOk) { start(); return; }
-      document.head.removeChild(g.hideAll);
+      // Some JS features missing, reveal elements.
+      document.head.removeChild(g.hideAllStyle);
     };
 
-    // wait for DOM
-    window.addEventListener('load', js, { once: true });
+    // Wait for DOM.
+    window.addEventListener('load', checkFeaturesAndStart, { once: true });
   })();
 </script>
