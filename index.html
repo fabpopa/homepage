@@ -1,7 +1,7 @@
 <!doctype html>
 <title>Fabian Popa</title>
 <meta charset="utf-8">
-<meta name="description" content="Engineering, biology, design.">
+<meta name="description" content="Do good.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script>
@@ -14,16 +14,118 @@
   document.head.appendChild(g.hideAllStyle);
 </script>
 
-<link href="style.css" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+  }
 
-<div class="introduction">
-  <h1>Fabian Popa</h1>
-  <p class="statement">Engineering, biology, design.</p>
+  :root {
+    --ffam: system-ui, sans-serif;
+    height: 100%;
+  }
+
+  body {
+    display: flex;
+    min-height: 100%;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    font: 400 16px/100% var(--ffam);
+  }
+
+  .introduction {
+    text-align: center;
+  }
+
+  .introduction h1 {
+    font: 600 36px/100% var(--ffam);
+  }
+
+  .introduction ul {
+    margin-top: 16px;
+    text-align: center;
+    list-style: none;
+    font: 400 20px/100% var(--ffam);
+    cursor: default;
+  }
+
+  .introduction li {
+    display: inline;
+    margin: 0 3px;
+    padding: 0 2px;
+  }
+
+  .introduction li a {
+    font-weight: 500;
+    text-decoration: none;
+    color: #33d;
+    transition: color .1s;
+    outline: none;
+  }
+
+  .introduction li a:visited { color: #33d; }
+  .introduction li a:hover { color: #000; }
+  .introduction li a:active { color: #000; }
+
+  .work {
+    margin: 26px auto 0;
+    width: 70%;
+  }
+
+  .work ul {
+    list-style: none;
+    text-align: center;
+    cursor: default;
+  }
+
+  .work li {
+    margin-top: 14px;
+    display: inline-block;
+  }
+
+  .work a {
+    display: inline-block;
+    margin: 0 2px;
+    padding: 2px 4px;
+    font: 500 22px/100% var(--ffam);
+    text-decoration: none;
+    text-align: center;
+    color: #202020;
+    outline: none;
+    opacity: 1;
+  }
+
+  .work a span {
+    margin-left: 6px;
+    font-weight: 400;
+    color: #d0d0d0;
+  }
+
+  .work a:hover, .work a:active { opacity: 0.75; }
+
+  .statement {
+    margin-top: 40px;
+    font: 400 18px/100% var(--ffam);
+  }
+</style>
+
+<section class="introduction">
+  <h1>Freeman Dyson</h1>
   <ul>
     <li><a href="https://github.com/fabpopa">GitHub</a></li>
     <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
   </ul>
-</div>
+</section>
+
+<section class="work">
+  <ul>
+    <li><a href="works/rhcpdontforgetme.mp3" title="Red Hot Chili Peppers — Don't Forget Me" data-id="rhcpdontforgetme" data-description="Acoustic draft transcription from Live at Slane Castle">Don't Forget Me<span>Song Draft</span></a></li>
+  </ul>
+</section>
+
+<p class="statement">Do good.</p>
 
 <script>
   // Start up. Only ES5 features.
@@ -34,9 +136,9 @@
     };
 
     var start = function() {
-      var el = document.createElement('script');
-      el.src = 'script.js';
-      document.head.appendChild(el);
+      // var el = document.createElement('script');
+      // el.src = 'script.js';
+      // document.head.appendChild(el);
     };
 
     var checkFeaturesAndStart = function() {
