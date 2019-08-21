@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script>
-  // JS available.
-  var g = {};
+  // JS available, bootstrap using ES5.
+  var app = {};
 
   // Hide elements before DOM to control the reveal.
-  g.hideAllStyle = document.createElement('style');
-  g.hideAllStyle.innerHTML = 'body > * { display: none; }';
-  document.head.appendChild(g.hideAllStyle);
+  app.hideAllStyle = document.createElement('style');
+  app.hideAllStyle.innerHTML = 'body > * { display: none; }';
+  document.head.appendChild(app.hideAllStyle);
 </script>
 
 <style>
@@ -33,17 +33,14 @@
     align-items: center;
     align-content: center;
     font: 400 16px/100% var(--ffam);
-  }
-
-  .introduction {
     text-align: center;
   }
 
-  .introduction h1 {
+  h1 {
     font: 600 36px/100% var(--ffam);
   }
 
-  .introduction ul {
+  .socials {
     margin-top: 16px;
     text-align: center;
     list-style: none;
@@ -51,13 +48,13 @@
     cursor: default;
   }
 
-  .introduction li {
+  .socials li {
     display: inline;
     margin: 0 3px;
     padding: 0 2px;
   }
 
-  .introduction li a {
+  .socials li a {
     font-weight: 500;
     text-decoration: none;
     color: #33d;
@@ -65,9 +62,7 @@
     outline: none;
   }
 
-  .introduction li a:visited { color: #33d; }
-  .introduction li a:hover { color: #000; }
-  .introduction li a:active { color: #000; }
+  .socials li a:hover, .socials li a:active { opacity: 0.75; }
 
   .work {
     margin: 26px auto 0;
@@ -94,13 +89,12 @@
     text-align: center;
     color: #202020;
     outline: none;
-    opacity: 1;
   }
 
   .work a span {
     margin-left: 6px;
     font-weight: 400;
-    color: #d0d0d0;
+    color: #c8c8c8;
   }
 
   .work a:hover, .work a:active { opacity: 0.75; }
@@ -111,60 +105,48 @@
   }
 </style>
 
-<section class="introduction">
-  <h1>Freeman Dyson</h1>
-  <ul>
-    <li><a href="https://github.com/fabpopa">GitHub</a></li>
-    <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
-  </ul>
-</section>
+<h1>Freeman Dyson</h1>
 
-<section class="work">
-  <ul>
-    <li><a href="work/rhcpdontforgetme.mp3" title="Red Hot Chili Peppers — Don't Forget Me" data-id="rhcpdontforgetme" data-description="Acoustic draft transcription from Live at Slane Castle">Don't Forget Me<span>Song Draft</span></a></li>
-  </ul>
-</section>
+<div title="Stylized red blood cell animation" data-is="cells"></div>
+
+<ul class="socials">
+  <li><a href="https://github.com/fabpopa">GitHub</a></li>
+  <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+</ul>
+
+<ul class="work">
+  <li><a href="work/rhcpdontforgetme.mp3" title="Red Hot Chili Peppers — Don't Forget Me" component="song" route="rhcpdontforgetme" description="Acoustic draft transcription from Live at Slane Castle">Don't Forget Me<span>Song Draft</span></a></li>
+</ul>
 
 <p class="statement">Do good.</p>
 
 <script>
-  // Start up. Only ES5 features.
-  (function() {
-    var removeFallbacks = function() {
-      var el = document.querySelector('.statement');
-      el.parentNode.removeChild(el);
-    };
+  app.start = function() {
+    var el = document.createElement('script');
+    el.src = 'script.js';
+    document.head.appendChild(el);
+  };
 
-    var start = function() {
-      // var el = document.createElement('script');
-      // el.src = 'script.js';
-      // document.head.appendChild(el);
-    };
+  app.checkFeaturesAndStart = function() {
+    var featuresOk = (function() {
+      try {
+        new Function('(a = 0) => a');
+        return !!document.querySelectorAll &&
+          !!window.requestAnimationFrame &&
+          !!window.performance.now &&
+          (new XMLHttpRequest()).onload !== undefined &&
+          document.body.style.flexBasis !== undefined &&
+          !!MutationObserver;
+      } catch (e) { return false; }
+    })();
 
-    var checkFeaturesAndStart = function() {
-      var featuresOk = (function() {
-        try {
-          new Function('(a = 0) => a');
-          return !!document.querySelectorAll &&
-            !!window.requestAnimationFrame &&
-            !!window.performance.now &&
-            (new XMLHttpRequest()).onload !== undefined &&
-            document.body.style.flexBasis !== undefined &&
-            !!MutationObserver;
-        } catch (e) { return false; }
-      })();
+    if (featuresOk) return app.start();
 
-      if (false) {
-        removeFallbacks();
-        start();
-        return;
-      }
+    // Won't start JS, reveal elements.
+    document.head.removeChild(app.hideAllStyle);
+    delete app.hideAllStyle;
+  };
 
-      // Won't start JS, reveal elements.
-      document.head.removeChild(g.hideAllStyle);
-    };
-
-    // Wait for DOM.
-    window.addEventListener('load', checkFeaturesAndStart, { once: true });
-  })();
+  // Wait for document.
+  window.addEventListener('load', app.checkFeaturesAndStart, { once: true });
 </script>
