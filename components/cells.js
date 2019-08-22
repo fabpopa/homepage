@@ -1,7 +1,4 @@
-g = g || {};
-
-// red blood cell animation component
-g.Cells = function() {
+const Cells = function(parent) {
   const opt = {
     sizeMin: .24,   // multiple of height
     sizeMax: .34,   // multiple of height
@@ -30,19 +27,33 @@ g.Cells = function() {
   const pow = (x, y) => Math.pow(x, y);
   const PI = Math.PI;
 
-  // HTMLElement to return
+  // main element
   const el = document.createElement('div');
-  el.setAttribute('component', 'cells');
   el.style['width'] = '100%';
   el.style['height'] = '100%';
 
   // component state
-  let width, height, style, cells;
+  let width, height, style, parentStyle, cells;
+
+  const initParentStyle = () => {
+    const css = `
+      [component="cells"] {
+        width: 720px;
+        height: 160px;
+        margin-top: 10px;
+        padding-bottom: 16px;
+      }
+    `;
+
+    parentStyle = document.createElement('style');
+    parentStyle.innerHTML = css;
+    document.head.appendChild(parentStyle);
+  };
 
   const initStyle = () => {
-    const c = '[component=cells]';
+    const c = '[component=cells] > div';
     const css = `
-      ${c} { position: relative; width: 100%; height: 100%; overflow: hidden; }
+      ${c} { position: relative; overflow: hidden; }
       ${c}.paused *, ${c} .paused * { animation-play-state: paused !important; }
       ${c} .cell.paused { opacity: 0; }
       ${c} .cell { position: absolute; width: 4em; height: 4em;
@@ -294,6 +305,7 @@ g.Cells = function() {
 
   el.cleanup = () => {
     el.pause();
+    if (document.head.contains(parentStyle)) document.head.removeChild(parentStyle);
     if (document.head.contains(style)) document.head.removeChild(style);
     document.removeEventListener('visibilitychange', v);
   };
@@ -316,7 +328,9 @@ g.Cells = function() {
     window.requestAnimationFrame(checkParent);
   };
 
-  checkParent();
-  el.component = this; // reference instance to avoid garbage collection
-  return el;
+  initParentStyle();
+  parent.appendChild(el);
+  window.requestAnimationFrame(checkParent);
 };
+
+app.components.add('cells', Cells);
