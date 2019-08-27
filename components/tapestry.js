@@ -6,8 +6,8 @@ const min = (...n) => Math.min(...n);
 const max = (...n) => Math.max(...n);
 const rnd = () => Math.random();
 
-const symbolsByHref = {
-  'sera.bio': `
+const symbols = [{
+  href: 'sera.bio',
   svg: `<svg viewBox="0 0 220 390" width="70%">
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
       <g transform="translate(-120.000000, -21.000000)" stroke="red" stroke-width="24">
@@ -27,7 +27,6 @@ const css = `
     display: flex;
     align-items: center;
     justify-content: center;
-    /*background: #bbb;*/
   }
   [component="tapestry"] .point .symbol {
     opacity: 0.001; /* Quirk: Make layer in Chrome. */
@@ -53,28 +52,18 @@ class Tapestry {
     style.innerHTML = css;
     document.head.appendChild(style);
 
-    this._width = max(this._root.clientWidth, window.innerWidth || 0);
-    this._height = max(this._root.clientHeight, window.innerHeight || 0);
+    let debounceTid;
+    window.addEventListener('resize', () => {
+      if (this._els) {
+        this._els.forEach(el => this._canvas.removeChild(el));
+        this._els = null;
+      }
 
-    const oss = this._getOccupiedSpaces();
-    const unoccupied = p => this._pointOutsideOccupiedSpaces(p, oss);
-    const points = this._makeRayPattern().filter(unoccupied);
-    this._els = points.map(p => this._makePointElement(p));
-    this._els.forEach(el => this._canvas.appendChild(el));
+      if (debounceTid) window.clearTimeout(debounceTid);
+      debounceTid = window.setTimeout(() => this._initialize(), 400);
+    });
 
-    // Space apart transition delay.
-    const firstRing = this._els[0].point.i;
-    window.setTimeout(() => {
-      this._els.forEach(el => {
-        this._animateSymbolOpacity(el, 'sera.bio', 1, (el.point.i - firstRing) * .02);
-      });
-    }, 500);
-
-    window.setTimeout(() => {
-      this._els.forEach(el => {
-        this._animateSymbolOpacity(el, 'sera.bio', 0, .2 + (el.point.i - firstRing) * .02);
-      });
-    }, 550);
+    this._initialize();
   }
 
   // Returns object { left, right, top, bottom }.
@@ -225,6 +214,36 @@ class Tapestry {
       symbol.style.opacity = (symbol.href === href) ? opacity : null;
     }), delay * 1000);
   }
+
+  _initialize() {
+    this._width = max(this._root.clientWidth, window.innerWidth || 0);
+    this._height = max(this._root.clientHeight, window.innerHeight || 0);
+    const oss = this._getOccupiedSpaces();
+    const unoccupied = p => this._pointOutsideOccupiedSpaces(p, oss);
+    const points = this._makeRayPattern().filter(unoccupied);
+    this._els = points.map(p => this._makePointElement(p));
+    this._els.forEach(el => this._canvas.appendChild(el));
+
+    // Space apart transition delay.
+    const firstRing = this._els[0].point.i;
+    window.setTimeout(() => {
+      this._els.forEach(el => {
+        this._animateSymbolOpacity(el, 'sera.bio', .002); // Quirk: Create layers in Chrome.
+      });
+    }, 0);
+
+    window.setTimeout(() => {
+      this._els.forEach(el => {
+        this._animateSymbolOpacity(el, 'sera.bio', 1, (el.point.i - firstRing) * .02);
+      });
+    }, 500);
+
+    // window.setTimeout(() => {
+    //   this._els.forEach(el => {
+    //     this._animateSymbolOpacity(el, 'sera.bio', 0, .2 + (el.point.i - firstRing) * .02);
+    //   });
+    // }, 550);
+  }
 }
 
 app.components.add('tapestry', Tapestry);
@@ -232,25 +251,3 @@ document.body.insertAdjacentHTML(
   'beforeend',
   '<div component="tapestry"></div>'
 );
-
-
-
-
-
-
-// const makeDebounce = (cb, timeout) => {
-//   let tid;
-//   return () => {
-//     if (tid) window.clearTimeout(tid);
-//     tid = window.setTimeout(() => cb(), timeout);
-//   };
-// };
-//
-// const debouncedRun = makeDebounce(run, 400);
-// window.addEventListener('resize', () => {
-//   debouncedRun();
-//   if (!canvas) return;
-//   document.body.removeChild(canvas);
-//   canvas = undefined;
-// });
-// run();
