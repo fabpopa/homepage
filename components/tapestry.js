@@ -4,6 +4,7 @@ const sqrt = x => Math.sqrt(x);
 const pow = (x, p) => Math.pow(x, 2);
 const min = (...n) => Math.min(...n);
 const max = (...n) => Math.max(...n);
+const rnd = () => Math.random();
 
 const symbolsByHref = {
   'sera.bio': `
@@ -20,8 +21,8 @@ const symbolsByHref = {
 class Tapestry {
   constructor(el) {
     this._size = 16; // Point size.
-    this._pad = 16; // Padding around points.
-    this._ospad = 40; // Padding around occupied space.
+    this._pad = 14; // Padding around points.
+    this._ospad = 20; // Padding around occupied space.
     this._root = document.documentElement;
     this._width = null;
     this._height = null;
@@ -30,16 +31,20 @@ class Tapestry {
 
     this._width = max(this._root.clientWidth, window.innerWidth || 0);
     this._height = max(this._root.clientHeight, window.innerHeight || 0);
-    const os = this._getOccupiedSpace();
-    const ost = os.top - this._ospad / 2;
-    const osl = os.left - this._ospad / 2;
-    const osw = os.right - os.left + this._ospad;
-    const osh = os.bottom - os.top + this._ospad;
-    const oschw = osw / 2; // Occupied space centered half width.
-    const oschh = osh / 2; // Occupied space centered half height.
-    const oscwl = oschw + this._size / 2 + this._pad; // OS width limit.
-    const oschl = oschh + this._size / 2 + this._pad; // OS height limit.
-    const unoccupied = p => abs(p.x) >= oscwl || abs(p.y) >= oschl;
+
+    // const os = this._getOccupiedSpace();
+    // const ost = os.top - this._ospad / 2;
+    // const osl = os.left - this._ospad / 2;
+    // const osh = os.bottom - os.top + this._ospad;
+    // const osw = os.right - os.left + this._ospad;
+    // const oschw = osw / 2; // Occupied space centered half width.
+    // const oschh = osh / 2; // Occupied space centered half height.
+    // const oscwl = oschw + this._size / 2 + this._pad; // OS width limit.
+    // const oschl = oschh + this._size / 2 + this._pad; // OS height limit.
+    // const unoccupied = p => abs(p.x) >= oscwl || abs(p.y) >= oschl;
+
+    const oss = this._getOccupiedSpaces();
+    const unoccupied = p => this._pointOutsideOccupiedSpaces(p, oss);
     const points = this._makeRayPattern().filter(unoccupied);
     this._els = points.map(p => this._makeElement(p));
     this._canvas.style.cssText = `
@@ -63,6 +68,40 @@ class Tapestry {
       bottom = bottom ? max(bottom, r.bottom) : r.bottom;
     });
     return { left, right, top, bottom };
+  }
+
+  // Returns array of objects { left, right, top, bottom }.
+  _getOccupiedSpaces() {
+    const getRect = el => el.getBoundingClientRect();
+    const topLevel = Array.from(document.body.children).map(getRect);
+    const sized = topLevel.filter(r => r.left && r.top && r.width && r.height);
+    const rs = sized.map(r => ({
+      left: r.left, right: r.right, top: r.top, bottom: r.bottom
+    }));
+    const fillers = [];
+    rs.forEach((r, i) => {
+      if (!i) return;
+      fillers.push({
+        left: (r.left + rs[i-1].left) / 2,
+        right: (r.right + rs[i-1].right) / 2,
+        top: rs[i-1].bottom,
+        bottom: r.top,
+      });
+    });
+    return rs.concat(fillers);
+  }
+
+  // Returns boolean.
+  _pointOutsideOccupiedSpaces(p, oss) {
+    const x = p.x + this._width / 2;
+    const y = p.y + this._height / 2;
+    const limLeft = x + this._size / 2 + this._pad + this._ospad;
+    const limRight = x - this._size / 2 - this._pad - this._ospad;
+    const limTop = y + this._size / 2 + this._pad + this._ospad;
+    const limBottom = y - this._size / 2 - this._pad - this._ospad;
+    const outsideX = (p, os) => limLeft <= os.left || limRight >= os.right;
+    const outsideY = (p, os) => limTop <= os.top || limBottom >= os.bottom;
+    return oss.every(os => outsideX(p, os) || outsideY(p, os));
   }
 
   // Params width, height, square size, padding between. Centered at { 0, 0 }.
@@ -99,7 +138,7 @@ class Tapestry {
     // Fill square space.
     let i = 0;
     let points = [{ x: 0, y: 0, i }];
-    const stepSpace = max(w, h) / 2 + 2 * (size + pad); // Run over, will be trimmed.
+    const stepSpace = (w + h) / 2; // Run over, will be cropped.
     const steps = floor(stepSpace / (size + pad));
     let lpr = pr(0); // Last pad radius.
     for (let j = 1; j <= steps; j++) {
@@ -114,8 +153,8 @@ class Tapestry {
     }
 
     // Crop points to fit bounds.
-    const lW = w / 2 - pad - halfSize;
-    const lH = h / 2 - pad - halfSize;
+    const lW = w / 2 - halfSize;
+    const lH = h / 2 - halfSize;
     const inside = p => p.x >= -lW && p.x <= lW && p.y >= -lH && p.y <= lH;
     points = points.filter(inside);
 
@@ -132,9 +171,11 @@ class Tapestry {
       left: ${point.x + this._width / 2 - this._size / 2}px;
       width: ${this._size}px;
       height: ${this._size}px;
-      background-color: #eee;
+      background: #aaa;
       border-radius: 50%;
+      // opacity: ${.2};
     `;
+    // el.innerHTML = symbolsByHref['sera.bio'];
     el.point = point;
     el.isAnimating = false;
     return el;
@@ -142,7 +183,10 @@ class Tapestry {
 }
 
 app.components.add('tapestry', Tapestry);
-document.body.insertAdjacentHTML('beforeend', '<div component="tapestry"></div>');
+document.body.insertAdjacentHTML(
+  'beforeend',
+  '<div component="tapestry"></div>'
+);
 
 
 
@@ -155,39 +199,6 @@ document.body.insertAdjacentHTML('beforeend', '<div component="tapestry"></div>'
 //     if (tid) window.clearTimeout(tid);
 //     tid = window.setTimeout(() => cb(), timeout);
 //   };
-// };
-//
-// const root = document.documentElement;
-// const size = 16, pad = 16, ospad = 40; // Options.
-// let width, height, canvas, els;
-//
-// const init = () => {
-//   width = max(root.clientWidth, window.innerWidth || 0);
-//   height = max(root.clientHeight, window.innerHeight || 0);
-//   const os = getOccupiedSpace();
-//   const ost = os.top - ospad / 2;
-//   const osl = os.left - ospad / 2;
-//   const osw = os.right - os.left + ospad;
-//   const osh = os.bottom - os.top + ospad;
-//   const oschw = osw / 2; // Occupied space centered half width.
-//   const oschh = osh / 2; // Occupied space centered half height.
-//   const oscwl = oschw + size / 2 + pad; // Occupied space centered width limit.
-//   const oschl = oschh + size / 2 + pad; // Occupied space centered height limit.
-//   const unoccupied = p => abs(p.x) >= oscwl || abs(p.y) >= oschl;
-//   const points = makeRayPattern(width, height, size, pad).filter(unoccupied);
-//   els = points.map(p => makeElement(p, width, height, size));
-//   canvas = document.createElement('div');
-//   canvas.style.cssText = `
-//     position: absolute; top: 0; left: 0;
-//     width: 100%; height: 100%; z-index: -1;
-//   `;
-//   els.forEach(el => canvas.appendChild(el));
-//   document.body.insertAdjacentElement('beforeend', canvas);
-// };
-//
-// const run = () => {
-//   init();
-//
 // };
 //
 // const debouncedRun = makeDebounce(run, 400);
