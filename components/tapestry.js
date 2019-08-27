@@ -8,15 +8,15 @@ const rnd = () => Math.random();
 
 const symbolsByHref = {
   'sera.bio': `
-  <svg viewBox="0 0 220 390">
+  svg: `<svg viewBox="0 0 220 390" width="70%">
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-      <g transform="translate(-120.000000, -21.000000)" stroke="#000000" stroke-width="24">
+      <g transform="translate(-120.000000, -21.000000)" stroke="red" stroke-width="24">
         <path d="M229.831461,42.6997687 C227.608873,46.1404387 225.272621,49.8111596 222.840306,53.6947551 C210.124079,73.9983305 197.405539,95.8996571 185.546798,118.549852 C170.870613,146.581366 158.569193,173.774199 149.424249,199.321513 C138.079071,231.015403 132,259.08369 132,282.398876 C132,325.751473 145.751267,356.691823 169.48237,376.750256 C187.526579,392.001909 210.915956,400 229.831461,400 C248.746966,400 272.136342,392.001909 290.180551,376.750256 C313.911655,356.691823 327.662921,325.751473 327.662921,282.398876 C327.662921,259.08369 321.58385,231.015403 310.238672,199.321513 C301.093729,173.774199 288.792309,146.581366 274.116123,118.549852 C262.257382,95.8996571 249.538842,73.9983305 236.822615,53.6947551 C234.390301,49.8111596 232.054049,46.1404387 229.831461,42.6997687 Z" />
       </g>
     </g>
   </svg>
   `
-};
+}];
 
 const css = `
   [component="tapestry"] {
@@ -24,13 +24,17 @@ const css = `
   }
   [component="tapestry"] .point {
     position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /*background: #bbb;*/
+  }
+  [component="tapestry"] .point .symbol {
     opacity: 0.001; /* Quirk: Make layer in Chrome. */
-    background: #333;
-    border-radius: 50%;
-    transition-property: opacity, translate;
-    transition-duration: 0.8s;
-    transition-timing-function: cubic-bezier(0, 0, 0.25, 1);
-    will-change: opacity, translate;
+    transition-property: opacity;
+    transition-duration: 0.7s;
+    transition-timing-function: ease-out;
+    will-change: opacity;
   }
 `;
 
@@ -45,39 +49,36 @@ class Tapestry {
     this._canvas = el;
     this._els = null;
 
+    const style = document.createElement('style');
+    style.innerHTML = css;
+    document.head.appendChild(style);
+
     this._width = max(this._root.clientWidth, window.innerWidth || 0);
     this._height = max(this._root.clientHeight, window.innerHeight || 0);
 
     const oss = this._getOccupiedSpaces();
     const unoccupied = p => this._pointOutsideOccupiedSpaces(p, oss);
     const points = this._makeRayPattern().filter(unoccupied);
-    this._els = points.map(p => this._makeElement(p));
+    this._els = points.map(p => this._makePointElement(p));
     this._els.forEach(el => this._canvas.appendChild(el));
-
-    const style = document.createElement('style');
-    style.innerHTML = css;
-    document.head.appendChild(style);
 
     // Space apart transition delay.
     const firstRing = this._els[0].point.i;
-    // const lastRing = this._els[this._els.length - 1].point.i;
-    // const ringCount = lastRing - firstRing + 1;
-    // const totalDelay =
     window.setTimeout(() => {
       this._els.forEach(el => {
-        this._animateElement(el, { opacity: 1 }, (el.point.i - firstRing) * .1);
+        this._animateSymbolOpacity(el, 'sera.bio', 1, (el.point.i - firstRing) * .02);
       });
-    }, 50);
+    }, 500);
 
     window.setTimeout(() => {
       this._els.forEach(el => {
-        this._animateElement(el, { opacity: 0 }, 1 + (el.point.i - firstRing) * .1);
+        this._animateSymbolOpacity(el, 'sera.bio', 0, .2 + (el.point.i - firstRing) * .02);
       });
-    }, 100);
+    }, 550);
   }
 
   // Returns object { left, right, top, bottom }.
-  _getOccupiedSpace() {
+  _getOccupiedSpaceTotal() {
     const getRect = el => el.getBoundingClientRect();
     const topLevelRects = Array.from(document.body.children).map(getRect);
     let left, right, top, bottom;
@@ -175,8 +176,8 @@ class Tapestry {
     }
 
     // Crop points to fit bounds.
-    const lW = w / 2 - halfSize;
-    const lH = h / 2 - halfSize;
+    const lW = w / 2 - halfSize - 4; // A few pixels short of hitting side.
+    const lH = h / 2 - halfSize - 4;
     const inside = p => p.x >= -lW && p.x <= lW && p.y >= -lH && p.y <= lH;
     points = points.filter(inside);
 
@@ -185,7 +186,7 @@ class Tapestry {
 
   // Params centered point { x, y, i }, canvas width and height, element size.
   // Returns positioned element with coordinates translated to top-left.
-  _makeElement(point) {
+  _makePointElement(point) {
     const el = document.createElement('div');
     el.className = 'point';
     el.style.cssText = `
@@ -194,21 +195,35 @@ class Tapestry {
       width: ${this._size}px;
       height: ${this._size}px;
     `;
-    // el.innerHTML = symbolsByHref['sera.bio'];
     el.point = point;
     el.nextTid = null;
+    el.symbols = [];
+    symbols.forEach(symbol => {
+      const sel = document.createElement('div');
+      sel.className = 'symbol';
+      sel.innerHTML = symbol.svg;
+      sel.href = symbol.href;
+      el.symbols.push(sel);
+      el.appendChild(sel);
+    });
     return el;
   }
 
-  // Params element, object { opacity, transform }, delay in seconds.
-  _animateElement(el, { opacity, transform }, delay) {
+  // Params element, transform CSS string, delay in seconds.
+  _animatePointTransform(el, transform, delay) {
+    if (el.nextTid) window.clearTimeout(nextTid);
+    if (delay === undefined) delay = 0;
+    window.setTimeout(() => el.style.transform = transform, delay * 1000);
+  }
+
+  // Params element, symbol href, opacity, delay in seconds.
+  _animateSymbolOpacity(el, href, opacity, delay) {
     if (el.nextTid) window.clearTimeout(nextTid);
     if (opacity === 0) opacity = 0.001; // Quirk: Make layer in Chrome.
     if (delay === undefined) delay = 0;
-    window.setTimeout(() => {
-      if (opacity !== undefined) el.style.opacity = opacity;
-      if (transform) el.style.transform = transform;
-    }, delay * 1000);
+    window.setTimeout(() => el.symbols.forEach(symbol => {
+      symbol.style.opacity = (symbol.href === href) ? opacity : null;
+    }), delay * 1000);
   }
 }
 
