@@ -18,11 +18,27 @@ const symbolsByHref = {
   `
 };
 
+const css = `
+  [component="tapestry"] {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+  }
+  [component="tapestry"] .point {
+    position: absolute;
+    opacity: 0.001; /* Quirk: Make layer in Chrome. */
+    background: #333;
+    border-radius: 50%;
+    transition-property: opacity, translate;
+    transition-duration: 0.8s;
+    transition-timing-function: cubic-bezier(0, 0, 0.25, 1);
+    will-change: opacity, translate;
+  }
+`;
+
 class Tapestry {
   constructor(el) {
     this._size = 16; // Point size.
     this._pad = 14; // Padding around points.
-    this._ospad = 20; // Padding around occupied space.
+    this._ospad = 56; // Padding around occupied space.
     this._root = document.documentElement;
     this._width = null;
     this._height = null;
@@ -32,27 +48,32 @@ class Tapestry {
     this._width = max(this._root.clientWidth, window.innerWidth || 0);
     this._height = max(this._root.clientHeight, window.innerHeight || 0);
 
-    // const os = this._getOccupiedSpace();
-    // const ost = os.top - this._ospad / 2;
-    // const osl = os.left - this._ospad / 2;
-    // const osh = os.bottom - os.top + this._ospad;
-    // const osw = os.right - os.left + this._ospad;
-    // const oschw = osw / 2; // Occupied space centered half width.
-    // const oschh = osh / 2; // Occupied space centered half height.
-    // const oscwl = oschw + this._size / 2 + this._pad; // OS width limit.
-    // const oschl = oschh + this._size / 2 + this._pad; // OS height limit.
-    // const unoccupied = p => abs(p.x) >= oscwl || abs(p.y) >= oschl;
-
     const oss = this._getOccupiedSpaces();
     const unoccupied = p => this._pointOutsideOccupiedSpaces(p, oss);
     const points = this._makeRayPattern().filter(unoccupied);
     this._els = points.map(p => this._makeElement(p));
-    this._canvas.style.cssText = `
-      position: absolute; top: 0; left: 0;
-      width: 100%; height: 100%; z-index: -1;
-    `;
-
     this._els.forEach(el => this._canvas.appendChild(el));
+
+    const style = document.createElement('style');
+    style.innerHTML = css;
+    document.head.appendChild(style);
+
+    // Space apart transition delay.
+    const firstRing = this._els[0].point.i;
+    // const lastRing = this._els[this._els.length - 1].point.i;
+    // const ringCount = lastRing - firstRing + 1;
+    // const totalDelay =
+    window.setTimeout(() => {
+      this._els.forEach(el => {
+        this._animateElement(el, { opacity: 1 }, (el.point.i - firstRing) * .1);
+      });
+    }, 50);
+
+    window.setTimeout(() => {
+      this._els.forEach(el => {
+        this._animateElement(el, { opacity: 0 }, 1 + (el.point.i - firstRing) * .1);
+      });
+    }, 100);
   }
 
   // Returns object { left, right, top, bottom }.
@@ -91,6 +112,7 @@ class Tapestry {
     return rs.concat(fillers);
   }
 
+  // Params point { x, y }, occupied spaces array { left, right, top, bottom }.
   // Returns boolean.
   _pointOutsideOccupiedSpaces(p, oss) {
     const x = p.x + this._width / 2;
@@ -165,20 +187,28 @@ class Tapestry {
   // Returns positioned element with coordinates translated to top-left.
   _makeElement(point) {
     const el = document.createElement('div');
+    el.className = 'point';
     el.style.cssText = `
-      position: absolute;
       top: ${point.y + this._height / 2 - this._size / 2}px;
       left: ${point.x + this._width / 2 - this._size / 2}px;
       width: ${this._size}px;
       height: ${this._size}px;
-      background: #aaa;
-      border-radius: 50%;
-      // opacity: ${.2};
     `;
     // el.innerHTML = symbolsByHref['sera.bio'];
     el.point = point;
-    el.isAnimating = false;
+    el.nextTid = null;
     return el;
+  }
+
+  // Params element, object { opacity, transform }, delay in seconds.
+  _animateElement(el, { opacity, transform }, delay) {
+    if (el.nextTid) window.clearTimeout(nextTid);
+    if (opacity === 0) opacity = 0.001; // Quirk: Make layer in Chrome.
+    if (delay === undefined) delay = 0;
+    window.setTimeout(() => {
+      if (opacity !== undefined) el.style.opacity = opacity;
+      if (transform) el.style.transform = transform;
+    }, delay * 1000);
   }
 }
 
