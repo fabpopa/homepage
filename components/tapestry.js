@@ -32,8 +32,8 @@ const css = `
   [component="tapestry"] .point .symbol {
     opacity: 0.001; /* Quirk: Not quite 0 to keep layer primed for animation. */
     transition-property: opacity;
-    transition-duration: 0.7s;
-    transition-timing-function: ease-out;
+    transition-duration: 2s;
+    transition-timing-function: ease-in-out;
     will-change: opacity;
   }
 `;
@@ -48,6 +48,7 @@ class Tapestry {
     this._height = null;
     this._canvas = el;
     this._els = null;
+    this._standbyIid = null; // Interval id if standby animation is running.
 
     const style = document.createElement('style');
     style.innerHTML = css;
@@ -254,7 +255,7 @@ class Tapestry {
     if (opacity === 0) opacity = 0.001; // Quirk: Prime layer for animation.
     if (delay === undefined) delay = 0;
     window.setTimeout(() => el.symbols.forEach(symbol => {
-      symbol.style.opacity = (symbol.href === href) ? opacity : null;
+      symbol.style.opacity = (symbol.href === href) ? opacity : 0.001;
     }), delay * 1000);
   }
 
@@ -271,6 +272,19 @@ class Tapestry {
   }
 
   _animateStandby() {
+    const href = () => symbols[floor(rnd() * symbols.length)].href; // Generic.
+    const opacity = () => rnd() * 0.7;
+    this._els.forEach(el => this._animateSymbolOpacity(el, href(), opacity()));
+  }
+
+  _startStandbyAnimation() {
+    if (this._standbyIid) return;
+    this._standbyIid = window.setInterval(() => this._animateStandby(), 4000);
+  }
+
+  _stopStandbyAnimation() {
+    if (this._standbyIid) window.clearInterval(this._standbyIid);
+    this._standbyIid = null;
   }
 
   _initialize() {
@@ -286,7 +300,8 @@ class Tapestry {
     points = points.filter(knockout);
     this._els = points.map(p => this._makePointElement(p));
     this._els.forEach(el => this._canvas.appendChild(el));
-    this._animateBurst();
+    this._animateBurst({ delay: 0.5 });
+    this._startStandbyAnimation();
   }
 }
 
