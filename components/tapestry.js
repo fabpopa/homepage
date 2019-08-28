@@ -252,6 +252,30 @@ class Tapestry {
     return el;
   }
 
+  _attachLinkListeners() {
+    const hrefs = symbols.map(s => s.href);
+    const qs = hrefs.map(s => `[href*="${s}"]`).join('');
+    const els = Array.from(document.querySelectorAll(qs));
+    const findHref = href => hrefs.find(h => href.includes(h));
+    let debounceTid;
+    const debounce = cb => () => {
+      if (debounceTid) window.clearTimeout(debounceTid);
+      debounceTid = window.setTimeout(() => cb(), 400);
+    };
+    const over = el => {
+      this._stopStandbyAnimation();
+      this._animateBurst({ href: findHref(el.href) });
+    };
+    const out = () => {
+      this._animateBurst();
+      this._startStandbyAnimation();
+    };
+    els.forEach(el => {
+      el.addEventListener('mouseover', debounce(() => over(el)));
+      el.addEventListener('mouseout', debounce(() => out()));
+    });
+  }
+
   // Params element, transform CSS string, delay in seconds.
   _animatePointTransform(el, transform, delay) {
     if (el.nextTid) window.clearTimeout(nextTid);
@@ -310,6 +334,7 @@ class Tapestry {
     points = points.filter(knockout);
     this._els = points.map(p => this._makePointElement(p));
     this._els.forEach(el => this._canvas.appendChild(el));
+    this._attachLinkListeners();
     this._animateBurst({ delay: 0.5 });
     this._startStandbyAnimation();
   }
