@@ -30,7 +30,7 @@ const css = `
     justify-content: center;
   }
   [component="tapestry"] .point .symbol {
-    opacity: 0.001; /* Quirk: Make layer in Chrome. */
+    opacity: 0.001; /* Quirk: Not quite 0 to keep layer primed for animation. */
     transition-property: opacity;
     transition-duration: 0.7s;
     transition-timing-function: ease-out;
@@ -251,7 +251,7 @@ class Tapestry {
   // Params element, symbol href, opacity, delay in seconds.
   _animateSymbolOpacity(el, href, opacity, delay) {
     if (el.nextTid) window.clearTimeout(nextTid);
-    if (opacity === 0) opacity = 0.001; // Quirk: Make layer in Chrome.
+    if (opacity === 0) opacity = 0.001; // Quirk: Prime layer for animation.
     if (delay === undefined) delay = 0;
     window.setTimeout(() => el.symbols.forEach(symbol => {
       symbol.style.opacity = (symbol.href === href) ? opacity : null;
@@ -269,23 +269,6 @@ class Tapestry {
 
     // Space apart transition delay.
     const firstRing = this._els[0].point.i;
-    window.setTimeout(() => {
-      this._els.forEach(el => {
-        this._animateSymbolOpacity(el, 'sera.bio', .002); // Quirk: Create layers in Chrome.
-      });
-    }, 0);
-
-    window.setTimeout(() => {
-      this._els.forEach(el => {
-        this._animateSymbolOpacity(el, 'sera.bio', 1, (el.point.i - firstRing) * .02);
-      });
-    }, 500);
-
-    window.setTimeout(() => {
-      this._els.forEach(el => {
-        this._animateSymbolOpacity(el, 'sera.bio', 0, .2 + (el.point.i - firstRing) * .02);
-      });
-    }, 550);
   }
 }
 
