@@ -1,5 +1,6 @@
 const abs = x => Math.abs(x);
 const floor = x => Math.floor(x);
+const ceil = x => Math.ceil(x);
 const sqrt = x => Math.sqrt(x);
 const pow = (x, p) => Math.pow(x, 2);
 const min = (...n) => Math.min(...n);
@@ -41,7 +42,7 @@ class Tapestry {
   constructor(el) {
     this._size = 16; // Point size.
     this._pad = 14; // Padding around points.
-    this._ospad = 56; // Padding around occupied space.
+    this._ospad = 30; // Padding around occupied space.
     this._root = document.documentElement;
     this._width = null;
     this._height = null;
@@ -69,9 +70,10 @@ class Tapestry {
   // Returns object { left, right, top, bottom }.
   _getOccupiedSpaceTotal() {
     const getRect = el => el.getBoundingClientRect();
-    const topLevelRects = Array.from(document.body.children).map(getRect);
+    const topLevel = Array.from(document.body.children).map(getRect);
+    const sized = topLevel.filter(r => r.left && r.top && r.width && r.height);
     let left, right, top, bottom;
-    topLevelRects.forEach(r => {
+    sized.forEach(r => {
       if (!r.left && !r.right && !r.top && !r.bottom) return;
       left = left ? min(left, r.left) : r.left;
       right = right ? max(right, r.right) : r.right;
@@ -147,7 +149,7 @@ class Tapestry {
       return [p, ...inter(p1, p), ...inter(p, p2)];
     };
 
-    // Fill square space.
+    // Fill space.
     let i = 0;
     let points = [{ x: 0, y: 0, i }];
     const stepSpace = (w + h) / 2; // Run over, will be cropped.
@@ -167,6 +169,47 @@ class Tapestry {
     // Crop points to fit bounds.
     const lW = w / 2 - halfSize - 4; // A few pixels short of hitting side.
     const lH = h / 2 - halfSize - 4;
+    const inside = p => p.x >= -lW && p.x <= lW && p.y >= -lH && p.y <= lH;
+    points = points.filter(inside);
+
+    return points;
+  }
+
+  // Params width, height, square size, padding between. Centered at { 0, 0 }.
+  // Returns array of objects { x, y, i } to fill the space, i = ring index.
+  _makeSquarePattern() {
+    const w = this._width;
+    const h = this._height;
+    const size = this._size;
+    const pad = this._pad;
+    const full = size + pad;
+    const diag = sqrt(2 * pow(full, 2));
+    const halfSize = size / 2;
+    const halfPad = pad / 2;
+    const halfFull = full / 2;
+
+    // Opposite coordinates in all quadrants.
+    const four = ({ x, y, i }) => [
+      { x: x, y: y, i }, { x: -x || 0, y: -y || 0, i }, // Avoid -0.
+      { x: -y || 0, y: x, i }, { x: y, y: -x || 0, i }
+    ];
+
+    // Fill space.
+    let points = [];
+    const halfSquareSpaceDiag = sqrt(2 * pow(max(w, h), 2)) / 2;
+    const stepSpace = ceil(halfSquareSpaceDiag / diag);
+    for (let i = 0; i < stepSpace; i++) {
+      const x = halfFull + i * full;
+      points.push(...four({ x, y: x, i }));
+      for (let j = x - full; j > 0; j -= full) {
+        points.push(...four({ x, y: j, i }));
+        points.push(...four({ x: j, y: x, i }));
+      }
+    }
+
+    // Crop points to fit bounds.
+    const lW = w / 2 - halfSize - halfPad; // A few pixels short of hitting side.
+    const lH = h / 2 - halfSize - halfPad;
     const inside = p => p.x >= -lW && p.x <= lW && p.y >= -lH && p.y <= lH;
     points = points.filter(inside);
 
@@ -238,11 +281,11 @@ class Tapestry {
       });
     }, 500);
 
-    // window.setTimeout(() => {
-    //   this._els.forEach(el => {
-    //     this._animateSymbolOpacity(el, 'sera.bio', 0, .2 + (el.point.i - firstRing) * .02);
-    //   });
-    // }, 550);
+    window.setTimeout(() => {
+      this._els.forEach(el => {
+        this._animateSymbolOpacity(el, 'sera.bio', 0, .2 + (el.point.i - firstRing) * .02);
+      });
+    }, 550);
   }
 }
 
