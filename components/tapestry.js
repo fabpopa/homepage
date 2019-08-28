@@ -263,8 +263,12 @@ class Tapestry {
     this._height = max(this._root.clientHeight, window.innerHeight || 0);
     const oss = this._getOccupiedSpaces();
     const unoccupied = p => this._pointOutsideOccupiedSpaces(p, oss);
-    const knockout = () => rnd() < 0.6;
-    const points = this._makeRayPattern().filter(unoccupied).filter(knockout);
+    let points = this._makeRayPattern().filter(unoccupied);
+    const firstRing = points[0].i;
+    const lastRing = points[points.length - 1].i;
+    const ringCount = lastRing - firstRing + 1;
+    const knockout = p => rnd() < 0.3 + (p.i - firstRing + 1) / ringCount * 0.7;
+    points = points.filter(knockout);
     this._els = points.map(p => this._makePointElement(p));
     this._els.forEach(el => this._canvas.appendChild(el));
   }
