@@ -258,6 +258,21 @@ class Tapestry {
     }), delay * 1000);
   }
 
+  // Params symbol href, delay in seconds.
+  _animateBurst({ href, delay } = {}) {
+    if (!href) href = symbols[floor(rnd() * symbols.length)].href; // Generic.
+    if (delay === undefined) delay = 0;
+    const firstRing = this._els[0].point.i;
+    const ring = el => el.point.i - firstRing;
+    const opacity = () => rnd() * 0.7;
+    window.setTimeout(() => this._els.forEach(el => this._animateSymbolOpacity(
+      el, href, opacity(), ring(el) * 0.02
+    )), delay * 1000);
+  }
+
+  _animateStandby() {
+  }
+
   _initialize() {
     this._width = max(this._root.clientWidth, window.innerWidth || 0);
     this._height = max(this._root.clientHeight, window.innerHeight || 0);
@@ -271,6 +286,7 @@ class Tapestry {
     points = points.filter(knockout);
     this._els = points.map(p => this._makePointElement(p));
     this._els.forEach(el => this._canvas.appendChild(el));
+    this._animateBurst();
   }
 }
 
