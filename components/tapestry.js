@@ -54,6 +54,7 @@ class Tapestry {
     style.innerHTML = css;
     document.head.appendChild(style);
 
+    // Reinitialize on window resize.
     let debounceTid;
     window.addEventListener('resize', () => {
       if (this._els) {
@@ -63,6 +64,15 @@ class Tapestry {
 
       if (debounceTid) window.clearTimeout(debounceTid);
       debounceTid = window.setTimeout(() => this._initialize(), 400);
+    });
+
+    // Stop work when window is not visible.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this._stopStandbyAnimation();
+      } else {
+        this._startStandbyAnimation();
+      }
     });
 
     this._initialize();
