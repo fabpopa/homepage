@@ -1,123 +1,135 @@
 <!doctype html>
 <title>Fabian Popa</title>
 <meta charset="utf-8">
-<meta name="description" content="Technology, biology, and other things.">
+<meta name="description" content="Do good.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<script>
-  // JS available, hide page elements before DOM to control the reveal
-  var g = {};
-  g.hideAll = document.createElement('style');
-  g.hideAll.innerHTML = 'body > * { display: none; }';
-  document.head.appendChild(g.hideAll);
-</script>
-
-<style id="loadingstyle">
-  #loading {
-    display: block;
-    position: absolute;
-    top: 30%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin: 0 auto;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: #F27474;
-    opacity: 0;
-    animation: 1.8s ease-in-out pulse;
+<style>
+  * {
+    margin: 0;
+    padding: 0;
   }
 
-  @keyframes pulse { 0% { opacity: 0 } 50% { opacity: 1 } 100% { opacity: 0 } }
+  :root {
+    --ffam: system-ui, sans-serif;
+    height: 100%;
+  }
+
+  body {
+    display: flex;
+    min-height: 100%;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    font: 400 16px/100% var(--ffam);
+    text-align: center;
+  }
+
+  h1 {
+    font: 600 36px/100% var(--ffam);
+  }
+
+  .socials {
+    margin-top: 18px;
+    text-align: center;
+    list-style: none;
+    font: 400 20px/100% var(--ffam);
+    cursor: default;
+  }
+
+  .socials li {
+    display: inline;
+    margin: 0 2px;
+    padding: 0 2px;
+  }
+
+  .socials li a {
+    font-weight: 500;
+    text-decoration: none;
+    color: #33d;
+    transition: color .1s;
+    outline: none;
+  }
+
+  .socials li a:hover, .socials li a:active { opacity: 0.75; }
+
+  .work {
+    display: inline;
+    margin: 38px auto 0;
+    border-radius: 2px;
+    list-style: none;
+    text-align: center;
+    cursor: default;
+  }
+
+  .work li {
+    margin: 8px 0 0;
+  }
+
+  .work a {
+    display: inline-block;
+    padding: 6px 8px;
+    font: 400 24px/100% var(--ffam);
+    text-decoration: none;
+    color: #202020;
+    outline: none;
+  }
+
+  .work a .kind {
+    margin-left: 7px;
+    font-weight: 300;
+    color: #d0d0d0;
+  }
+
+  .work a:hover, .work a:active { opacity: 0.75; }
+
+  .statement {
+    margin-top: 48px;
+    font: 400 18px/100% var(--ffam);
+  }
 </style>
 
-<div id="introduction">
-  <h1>Fabian Popa</h1>
-  <ul>
-    <li><a href="https://github.com/fabpopa">GitHub</a></li>
-    <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
-  </ul>
-</div>
+<h1>Freeman Dyson</h1>
 
-<div id="nofeatures">
-  <p>There is more to this website, but it will not display well in your
-  current browser.</p>
-  <p><a href="http://whatbrowser.org">Please update to a newer browser</a></p>
-  <p>Thank you for stopping by ☺</p>
-</div>
+<ul class="socials">
+  <li><a href="https://github.com/fabpopa">GitHub</a></li>
+  <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+</ul>
+
+<ul class="work">
+  <li><a href="work/rhcpdontforgetme.mp3" title="Red Hot Chili Peppers — Don't Forget Me" component="song" route="rhcpdontforgetme" description="Acoustic draft transcription from Live at Slane Castle">Don't Forget Me<span class="kind">Song Draft</span></a></li>
+</ul>
+
+<p class="statement">Do good.</p>
 
 <script>
-  (function() {
-    // ES5 startup
-    var js = function() {
-      var featuresOk = (function() {
-        try {
-          new Function('(a = 0) => a');
-          return !!document.querySelectorAll &&
-            !!window.requestAnimationFrame &&
-            !!window.performance.now &&
-            (new XMLHttpRequest()).onload !== undefined &&
-            document.body.style.flexBasis !== undefined &&
-            !!MutationObserver;
-        } catch (e) { return false; }
-      })();
+  // JS available, bootstrap using ES5.
+  var app = {};
 
-      var start = function() {
-        // features available, remove nofeatures message
-        document.body.removeChild(document.querySelector('#nofeatures'));
+  app.start = function() {
+    var el = document.createElement('script');
+    el.src = 'script.js';
+    document.head.appendChild(el);
+  };
 
-        // global object to control loading animation
-        g.loading = (function() {
-          var done, ldr;
-          ldr = document.createElement('div');
-          ldr.id = 'loading';
+  app.checkFeaturesAndStart = function() {
+    var featuresOk = (function() {
+      try {
+        new Function('(a = 0) => a');
+        return !!document.querySelectorAll &&
+          !!window.requestAnimationFrame &&
+          !!window.performance.now &&
+          (new XMLHttpRequest()).onload !== undefined &&
+          document.body.style.flexBasis !== undefined &&
+          !!MutationObserver.prototype.observe &&
+          !!Element.prototype.getBoundingClientRect;
+      } catch (e) { return false; }
+    })();
 
-          var cleanup = function() {
-            [g.hideAll, ldr, document.querySelector('#loadingstyle')]
-            .forEach(el => {
-              if (document.head.contains(el)) document.head.removeChild(el);
-              if (document.body.contains(el)) document.body.removeChild(el);
-            });
-            if (done) done();
-          };
+    if (featuresOk) app.start();
+  };
 
-          // stops and restarts animation and tries to clean up at end of cycle
-          ldr.addEventListener('animationend', function() {
-            if (done) cleanup(); // stop animation at end of cycle if done set
-            ldr.style.animation = 'none'; // restart animation
-            window.setTimeout(function() { ldr.style.animation = ''; });
-          });
-
-          return {
-            show: function() {
-              if (!document.body.contains(ldr)) document.body.appendChild(ldr);
-            },
-            hide: function(cb) {
-              if (typeof cb != 'function') cb = function() {};
-              if (document.body.contains(ldr)) { done = cb; return; }
-              cleanup();
-              cb();
-            }
-          };
-        })();
-
-        // only display loading animation if scripting takes noticeable time
-        g.raceLoad = window.setTimeout(g.loading.show, 500);
-
-        // show the fallback if still loading after long amount of time
-        window.setTimeout(g.loading.hide, 10000);
-
-        // start scripting
-        var el = document.createElement('script');
-        el.src = 'script.js';
-        document.head.appendChild(el);
-      };
-
-      if (featuresOk) { start(); return; }
-      document.head.removeChild(g.hideAll);
-    };
-
-    // wait for DOM
-    window.addEventListener('load', js, { once: true });
-  })();
+  // Wait for document.
+  window.addEventListener('load', app.checkFeaturesAndStart, { once: true });
 </script>
