@@ -25,12 +25,16 @@ const css = `
   }
   [component="tapestry"] .point {
     position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
   [component="tapestry"] .point .symbol {
     opacity: 0.001; /* Quirk: Not quite 0 to keep layer primed for animation. */
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition-property: opacity;
     transition-duration: 2s;
     transition-timing-function: ease-in-out;
@@ -40,7 +44,7 @@ const css = `
 
 class Tapestry {
   constructor(el) {
-    this._size = 16; // Point size.
+    this._size = 24; // Point size.
     this._pad = 14; // Padding around points.
     this._ospad = 30; // Padding around occupied space.
     this._root = document.documentElement;
@@ -58,6 +62,7 @@ class Tapestry {
     let debounceTid;
     window.addEventListener('resize', () => {
       if (this._els) {
+        this._stopStandbyAnimation();
         this._els.forEach(el => this._canvas.removeChild(el));
         this._els = null;
       }
@@ -254,9 +259,9 @@ class Tapestry {
 
   _attachLinkListeners() {
     const hrefs = symbols.map(s => s.href);
-    const qs = hrefs.map(s => `[href*="${s}"]`).join('');
+    const qs = hrefs.map(s => `[href*="${s}"]`).join(',');
     const els = Array.from(document.querySelectorAll(qs));
-    const findHref = href => hrefs.find(h => href.includes(h));
+    const findHref = elHref => hrefs.find(h => elHref.includes(h));
     let debounceTid;
     const debounce = cb => () => {
       if (debounceTid) window.clearTimeout(debounceTid);
@@ -295,13 +300,13 @@ class Tapestry {
 
   // Params symbol href, delay in seconds.
   _animateBurst({ href, delay } = {}) {
-    if (!href) href = symbols[floor(rnd() * symbols.length)].href; // Generic.
+    const hrefOrGen = () => href || symbols[floor(rnd() * symbols.length)].href;
     if (delay === undefined) delay = 0;
     const firstRing = this._els[0].point.i;
     const ring = el => el.point.i - firstRing;
     const opacity = () => rnd() * 0.7;
     window.setTimeout(() => this._els.forEach(el => this._animateSymbolOpacity(
-      el, href, opacity(), ring(el) * 0.02
+      el, hrefOrGen(), opacity(), ring(el) * 0.02
     )), delay * 1000);
   }
 
