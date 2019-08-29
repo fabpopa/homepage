@@ -8,25 +8,32 @@ const max = (...n) => Math.max(...n);
 const rnd = () => Math.random();
 
 const symbols = [{
-  href: 'rhcp',
+  href: 'work/rhcp',
   svg: `
-<svg width="24px" height="24px" viewBox="0 0 24 24">
-  <g fill="none" fill-rule="evenodd">
-    <g stroke="#BD0808" stroke-width="1">
-      <path d="M21.6174876,18.6458224 L17.0728911,14.1012259 L23.5,14.1012259 L23.5,9.89872198 L17.0728911,9.89872198 L21.6174876,5.35412546 L18.645812,2.38244982 L14.1012155,6.92704633 L14.1012155,0.5 L9.8986073,0.5 L9.8986073,6.92706833 L5.35411048,2.38245438 L2.38243939,5.35412546 L6.92703591,9.89872198 L0.5,9.89872198 L0.5,14.1012259 L6.92703591,14.1012259 L2.38243939,18.6458224 L5.35411504,21.6174981 L9.8986073,17.0730058 L9.8986073,23.4999062 L14.1012155,23.4999062 L14.1012155,17.0730278 L18.6458074,21.6175026 L21.6174876,18.6458224 Z"></path>
+  <svg width="20" height="20" viewBox="0 0 20 20">
+    <g fill="none" fill-rule="evenodd">
+      <rect width="20" height="20" fill="#FFF"/>
+      <path stroke="#E64646" d="M12.45 15.917V18.9a.6.6 0 0 1-.6.6h-3.7a.6.6 0 0 1-.6-.6v-2.983l-2.11 2.11a.6.6 0 0 1-.848 0l-2.617-2.618a.6.6 0 0 1 0-.849l2.109-2.109H1.1a.6.6 0 0 1-.6-.6V8.149a.6.6 0 0 1 .6-.6h2.983l-2.11-2.11a.6.6 0 0 1 0-.848l2.618-2.617a.6.6 0 0 1 .849 0l2.109 2.109V1.1a.6.6 0 0 1 .6-.6h3.702a.6.6 0 0 1 .6.6v2.983l2.11-2.11a.6.6 0 0 1 .848 0l2.617 2.618a.6.6 0 0 1 0 .849l-2.109 2.11H18.9a.6.6 0 0 1 .6.6v3.701a.6.6 0 0 1-.6.6h-2.983l2.11 2.11a.6.6 0 0 1 0 .848l-2.618 2.617a.6.6 0 0 1-.849 0l-2.11-2.109z"/>
     </g>
-  </g>
-</svg>
-  `}, {
+  </svg>
+`}, {
   href: 'generic-slash',
   svg: `
-<svg width="16px" height="12px" viewBox="0 0 16 12">
-  <g stroke="none" fill="none" fill-rule="evenodd">
-    <g transform="translate(-4.000000, -6.000000)" stroke="#E7E402" stroke-width="1">
-      <path d="M4.5,11.8675955 L4.5,16.8199045 L19.5,12.1324045 L19.5,7.18009546 L4.5,11.8675955 Z"></path>
+  <svg width="20" height="20" viewBox="0 0 20 20">
+    <g fill="none" fill-rule="evenodd">
+      <rect width="20" height="20" fill="#FFF"/>
+      <path stroke="#E7E100" d="M2.5 9.216v5.318l15-3.75V5.466l-15 3.75z"/>
     </g>
-  </g>
-</svg>
+  </svg>
+`}, {
+  href: 'generic-triangle',
+  svg: `
+  <svg width="20" height="20" viewBox="0 0 20 20">
+    <g fill="none" fill-rule="evenodd">
+      <rect width="20" height="20" fill="#FFF"/>
+      <path stroke="#7ABCF5" d="M4.797 14.5h10.406L10 3.748 4.797 14.5z"/>
+    </g>
+  </svg>
 `}];
 
 const css = `
@@ -40,11 +47,6 @@ const css = `
     opacity: 0.001; /* Quirk: Not quite 0 to keep layer primed for animation. */
     position: absolute;
     top: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition-property: opacity;
     transition-duration: 2s;
     transition-timing-function: ease-in-out;
@@ -54,7 +56,7 @@ const css = `
 
 class Tapestry {
   constructor(el) {
-    this._size = 24; // Point size.
+    this._size = 20; // Point size.
     this._pad = 14; // Padding around points.
     this._ospad = 30; // Padding around occupied space.
     this._root = document.documentElement;
