@@ -4,16 +4,6 @@
 <meta name="description" content="Do good.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<script>
-  // JS available, bootstrap using ES5.
-  var app = {};
-
-  // Hide elements before DOM to control the reveal.
-  app.hideAllStyle = document.createElement('style');
-  app.hideAllStyle.innerHTML = 'body > * { display: none; }';
-  document.head.appendChild(app.hideAllStyle);
-</script>
-
 <style>
   * {
     margin: 0;
@@ -41,7 +31,7 @@
   }
 
   .socials {
-    margin-top: 16px;
+    margin-top: 18px;
     text-align: center;
     list-style: none;
     font: 400 20px/100% var(--ffam);
@@ -50,7 +40,7 @@
 
   .socials li {
     display: inline;
-    margin: 0 3px;
+    margin: 0 2px;
     padding: 0 2px;
   }
 
@@ -65,49 +55,42 @@
   .socials li a:hover, .socials li a:active { opacity: 0.75; }
 
   .work {
-    margin: 26px auto 0;
-    width: 70%;
-  }
-
-  .work ul {
+    display: inline;
+    margin: 38px auto 0;
+    border-radius: 2px;
     list-style: none;
     text-align: center;
     cursor: default;
   }
 
   .work li {
-    margin-top: 14px;
-    display: inline-block;
+    margin: 8px 0 0;
   }
 
   .work a {
     display: inline-block;
-    margin: 0 2px;
-    padding: 2px 4px;
-    font: 500 22px/100% var(--ffam);
+    padding: 6px 8px;
+    font: 400 24px/100% var(--ffam);
     text-decoration: none;
-    text-align: center;
     color: #202020;
     outline: none;
   }
 
-  .work a span {
-    margin-left: 6px;
-    font-weight: 400;
-    color: #c8c8c8;
+  .work a .kind {
+    margin-left: 7px;
+    font-weight: 300;
+    color: #d0d0d0;
   }
 
   .work a:hover, .work a:active { opacity: 0.75; }
 
   .statement {
-    margin-top: 40px;
+    margin-top: 48px;
     font: 400 18px/100% var(--ffam);
   }
 </style>
 
 <h1>Freeman Dyson</h1>
-
-<div title="Red blood cells" component="cells"></div>
 
 <ul class="socials">
   <li><a href="https://github.com/fabpopa">GitHub</a></li>
@@ -115,12 +98,15 @@
 </ul>
 
 <ul class="work">
-  <li><a href="work/rhcpdontforgetme.mp3" title="Red Hot Chili Peppers — Don't Forget Me" component="song" route="rhcpdontforgetme" description="Acoustic draft transcription from Live at Slane Castle">Don't Forget Me<span>Song Draft</span></a></li>
+  <li><a href="work/rhcpdontforgetme.mp3" title="Red Hot Chili Peppers — Don't Forget Me" component="song" route="rhcpdontforgetme" description="Acoustic draft transcription from Live at Slane Castle">Don't Forget Me<span class="kind">Song Draft</span></a></li>
 </ul>
 
 <p class="statement">Do good.</p>
 
 <script>
+  // JS available, bootstrap using ES5.
+  var app = {};
+
   app.start = function() {
     var el = document.createElement('script');
     el.src = 'script.js';
@@ -136,15 +122,12 @@
           !!window.performance.now &&
           (new XMLHttpRequest()).onload !== undefined &&
           document.body.style.flexBasis !== undefined &&
-          !!MutationObserver;
+          !!MutationObserver.prototype.observe &&
+          !!Element.prototype.getBoundingClientRect;
       } catch (e) { return false; }
     })();
 
-    if (featuresOk) return app.start();
-
-    // Won't start JS, reveal elements.
-    document.head.removeChild(app.hideAllStyle);
-    delete app.hideAllStyle;
+    if (featuresOk) app.start();
   };
 
   // Wait for document.

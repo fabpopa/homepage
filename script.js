@@ -1,6 +1,7 @@
 // Load script files and evaluate in order.
 const files = [
-  ...['director', 'tapestry'].map(f => `lib/${f}.js`)
+  ...['components'].map(f => `lib/${f}.js`),
+  ...['tapestry'].map(c => `components/${c}.js`)
 ];
 files.forEach(file => {
   const el = document.createElement('script');
