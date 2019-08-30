@@ -1,136 +1,143 @@
 <!doctype html>
-<title>Fabian Popa</title>
-<meta charset="utf-8">
-<meta name="description" content="Do good.">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en-US">
+  <title>Fabian Popa</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Do good.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-  }
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
 
-  :root {
-    --ffam: system-ui, sans-serif;
-    height: 100%;
-  }
+    :root {
+      --ffam: system-ui, sans-serif;
+      height: 100%;
+    }
 
-  body {
-    display: flex;
-    min-height: 100%;
-    flex-flow: column nowrap;
-    justify-content: center;
-    align-items: center;
-    align-content: center;
-    font: 400 16px/100% var(--ffam);
-    text-align: center;
-  }
+    body {
+      display: flex;
+      min-height: 100%;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      align-content: center;
+      font: 400 16px/100% var(--ffam);
+      text-align: center;
+    }
 
-  h1 {
-    font: 600 36px/100% var(--ffam);
-  }
+    h1 {
+      font: 600 36px/100% var(--ffam);
+    }
 
-  .socials {
-    margin-top: 18px;
-    text-align: center;
-    list-style: none;
-    font: 400 20px/100% var(--ffam);
-    cursor: default;
-  }
+    .socials {
+      margin-top: 18px;
+      text-align: center;
+      list-style: none;
+      font: 400 20px/100% var(--ffam);
+      cursor: default;
+    }
 
-  .socials li {
-    display: inline;
-    margin: 0 2px;
-    padding: 0 2px;
-  }
+    .socials li {
+      display: inline;
+      margin: 0 2px;
+      padding: 0 2px;
+    }
 
-  .socials li a {
-    font-weight: 500;
-    text-decoration: none;
-    color: #3333dd;
-    transition: color .1s;
-    outline: none;
-  }
+    .socials li a {
+      font-weight: 500;
+      text-decoration: none;
+      color: #3333dd;
+      transition: color .1s;
+      outline: none;
+    }
 
-  .socials li a:hover, .socials li a:active { color: #6a6adf; }
+    .socials li a:hover, .socials li a:active { color: #6a6adf; }
 
-  .work {
-    display: inline;
-    margin: 38px auto 0;
-    border-radius: 2px;
-    list-style: none;
-    text-align: center;
-    cursor: default;
-  }
+    .work {
+      display: inline;
+      margin: 38px auto 0;
+      border-radius: 2px;
+      list-style: none;
+      text-align: center;
+      cursor: default;
+    }
 
-  .work li {
-    margin: 8px 0 0;
-  }
+    .work li {
+      margin: 8px 0 0;
+    }
 
-  .work a {
-    display: inline-block;
-    padding: 6px 8px;
-    font: 400 20px/100% var(--ffam);
-    text-decoration: none;
-    color: #202020;
-    outline: none;
-  }
+    .work a {
+      display: inline-block;
+      padding: 6px 8px;
+      font: 400 20px/100% var(--ffam);
+      text-decoration: none;
+      color: #202020;
+      outline: none;
+    }
 
-  .work a .kind {
-    margin-left: 7px;
-    font-weight: 300;
-    color: #d0d0d0;
-  }
+    .work a .kind {
+      margin-left: 4px;
+      font-weight: 300;
+      color: #d0d0d0;
+    }
 
-  .work a:hover, .work a:active { color: #555555; }
-  .work a:hover .kind, .work a:active .kind { color: #d9d9d9; }
+    .work a:hover, .work a:active { color: #555555; }
+    .work a:hover .kind, .work a:active .kind { color: #d9d9d9; }
 
-  .statement {
-    margin-top: 48px;
-    font: 400 18px/100% var(--ffam);
-  }
-</style>
+    .statement {
+      margin-top: 48px;
+      font: 400 18px/100% var(--ffam);
+    }
+  </style>
 
-<h1>Fabian Popa</h1>
+  <h1>Fabian Popa</h1>
 
-<ul class="socials">
-  <li><a href="https://github.com/fabpopa">GitHub</a></li>
-  <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
-</ul>
+  <ul class="socials">
+    <li><a href="https://github.com/fabpopa">GitHub</a></li>
+    <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+  </ul>
 
-<ul class="work">
-  <li><a href="work/rhcpdontforgetme.mp3" title="Red Hot Chili Peppers — Don't Forget Me" component="song" route="rhcpdontforgetme" description="Acoustic draft transcription from Live at Slane Castle">Don't Forget Me<span class="kind">Song Draft</span></a></li>
-</ul>
+  <ul class="work">
+    <li>
+      <a href="work/rhcpdontforgetme.mp3" title="Red Hot Chili Peppers — Don't Forget Me" component="song" route="rhcpdontforgetme" description="Acoustic draft transcription from Live at Slane Castle">
+        Don't Forget Me
+        <span class="kind">Song Draft</span>
+      </a>
+    </li>
+  </ul>
 
-<p class="statement">Do good.</p>
+  <p class="statement">Do good.</p>
 
-<script>
-  // JS available, bootstrap using ES5.
-  var app = {};
+  <script>
+    // JS available, bootstrap using ES5.
+    var app = {};
 
-  app.start = function() {
-    var el = document.createElement('script');
-    el.src = 'script.js';
-    document.head.appendChild(el);
-  };
+    app.start = function() {
+      var el = document.createElement('script');
+      el.src = 'script.js';
+      document.head.appendChild(el);
+    };
 
-  app.checkFeaturesAndStart = function() {
-    var featuresOk = (function() {
-      try {
-        new Function('(a = 0) => a');
-        return !!document.querySelectorAll &&
-          !!window.requestAnimationFrame &&
-          !!window.performance.now &&
-          (new XMLHttpRequest()).onload !== undefined &&
-          document.body.style.flexBasis !== undefined &&
-          !!MutationObserver.prototype.observe &&
-          !!Element.prototype.getBoundingClientRect;
-      } catch (e) { return false; }
-    })();
+    app.checkFeaturesAndStart = function() {
+      var featuresOk = (function() {
+        try {
+          new Function('(a = 0) => a');
+          return !!document.querySelectorAll &&
+            !!window.requestAnimationFrame &&
+            !!window.performance.now &&
+            (new XMLHttpRequest()).onload !== undefined &&
+            document.body.style.flexBasis !== undefined &&
+            !!MutationObserver.prototype.observe &&
+            !!Element.prototype.getBoundingClientRect;
+        } catch (e) { return false; }
+      })();
 
-    if (featuresOk) app.start();
-  };
+      if (featuresOk) app.start();
+    };
 
-  // Wait for document.
-  window.addEventListener('load', app.checkFeaturesAndStart, { once: true });
-</script>
+    // Wait for document.
+    window.addEventListener('load', app.checkFeaturesAndStart, { once: true });
+  </script>
+</html>
