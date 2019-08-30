@@ -312,6 +312,7 @@ class Tapestry {
 
   // Params symbol href, delay in seconds.
   _animateBurst({ href, delay } = {}) {
+    if (!this._els) return;
     const hrefOrGen = () => href || symbols[floor(rnd() * symbols.length)].href;
     if (delay === undefined) delay = 0;
     const firstRing = this._els[0].point.i;
@@ -323,6 +324,7 @@ class Tapestry {
   }
 
   _animateStandby() {
+    if (!this._els) return;
     const href = () => symbols[floor(rnd() * symbols.length)].href; // Generic.
     const opacity = () => rnd() * 0.7;
     this._els.forEach(el => this._animateSymbolOpacity(el, href(), opacity()));
