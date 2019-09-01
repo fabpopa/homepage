@@ -31,7 +31,7 @@ const symbols = [{
   <svg width="20" height="20" viewBox="0 0 20 20">
     <g fill="none" fill-rule="evenodd">
       <rect width="20" height="20" fill="#FFF"/>
-      <path stroke="#7ABCF5" d="M4.797 14.5h10.406L10 3.748 4.797 14.5z"/>
+      <path stroke="#7ABCF5" d="M5.214 12.767a.5.5 0 0 0 .442.733h8.688a.5.5 0 0 0 .442-.733l-4.344-8.253a.5.5 0 0 0-.884 0l-4.344 8.253z"/>
     </g>
   </svg>
 `}];
