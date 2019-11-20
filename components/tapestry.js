@@ -59,11 +59,11 @@ class Tapestry {
     this._size = 20; // Point size.
     this._pad = 14; // Padding around points.
     this._ospad = 30; // Padding around occupied space.
-    this._root = document.documentElement;
-    this._width = null;
-    this._height = null;
-    this._canvas = el;
-    this._els = null;
+    this._root = document.documentElement; // Global page root element.
+    this._width = null; // Global page width.
+    this._height = null; // Global page height.
+    this._canvas = el; // Use the component root as a canvas to paint on.
+    this._els = null; // Elements on canvas.
     this._standbyIid = null; // Interval id if standby animation is running.
 
     const style = document.createElement('style');
