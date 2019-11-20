@@ -1,8 +1,12 @@
-// Load script files and evaluate in order.
+const libs = ['components'];
+const components = ['tapestry'];
+
 const files = [
-  ...['components'].map(f => `lib/${f}.js`),
-  ...['tapestry'].map(c => `components/${c}.js`)
+  ...libs.map(f => `lib/${f}.js`),
+  ...components.map(c => `components/${c}.js`)
 ];
+
+// Load script files in parallel and evaluate in order.
 files.forEach(file => {
   const el = document.createElement('script');
   el.src = file;
