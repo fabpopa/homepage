@@ -113,13 +113,13 @@
   <div component="tapestry"></div>
 
   <script>
-    // JS available, bootstrap using ES5.
+    // JS available. Bootstrap with ES5.
     var app = {};
 
     app.start = function() {
       var el = document.createElement('script');
       el.src = 'script.js';
-      document.head.appendChild(el);
+      document.body.appendChild(el);
     };
 
     app.checkFeaturesAndStart = function() {
