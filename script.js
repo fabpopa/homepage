@@ -1,4 +1,4 @@
-const libs = ['components'];
+const libs = ['registry'];
 const components = ['tapestry'];
 
 const files = [

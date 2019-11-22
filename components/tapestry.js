@@ -359,8 +359,4 @@ class Tapestry {
   }
 }
 
-app.components.add('tapestry', Tapestry);
-document.body.insertAdjacentHTML(
-  'beforeend',
-  '<div component="tapestry"></div>'
-);
+app.registry.add('tapestry', Tapestry);
