@@ -32,17 +32,17 @@
     }
 
     p {
-      margin-top: 36px;
+      margin-top: 32px;
       text-align: center;
       font: 400 22px / 100% var(--ffam);
     }
 
-    p + p {
-      margin-top: 16px;
+    .location {
+      font-size: 20px;
     }
 
     .socials {
-      margin-top: 36px;
+      margin-top: 32px;
       text-align: center;
       list-style: none;
       font: 400 20px/100% var(--ffam);
@@ -105,7 +105,8 @@
   <h1>Fabian Popa</h1>
 
   <p>Nutritional product development and consulting</p>
-  <p>Munich, Germany</p>
+
+  <p class="location">Munich, Germany</p>
   
   <script type="module">
     const deobfuscateEmail = (obId, obTxt, opt = { changeLabel: false }) => {
