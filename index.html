@@ -94,9 +94,19 @@
 
   <h1>Fabian Popa</h1>
 
+  <script type="module">
+    const deobfuscateEmail = (obId, obTxt, opt = { changeLabel: false }) => {
+      const email = obTxt.split("@").reverse().join("").replace("^", "@");
+      const el = document.querySelector(`[data-obfuscation-id="${obId}"]`);
+      el.href = `mailto:${email}`;
+      if (opt.changeLabel) el.innerText = email;
+      delete el.dataset.obfuscationId;
+    };
+    deobfuscateEmail("cd072364dce1305a", "m@o@c@.@a@p@o@p@n@a@i@b@a@f@^@o@l@l@e@h@.@O@R@-@o@r@ @:@g@n@i@s@s@i@m@ @n@o@i@t@a@l@s@n@a@r@T");
+  </script>
+
   <ul class="socials">
-    <li><a href="https://github.com/fabpopa">GitHub</a></li>
-    <li><a href="https://twitter.com/fabpopa">Twitter</a></li>
+    <li><a href="#" data-obfuscation-id="cd072364dce1305a">Contact</a></li>
   </ul>
 
   <p class="statement">Do good.</p>
