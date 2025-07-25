@@ -31,6 +31,16 @@
       font: 600 36px/100% var(--ffam);
     }
 
+    p {
+      margin-top: 24px;
+      text-align: center;
+      font: 400 20px / 100% var(--ffam);
+    }
+
+    p + p {
+      margin-top: 16px;
+    }
+
     .socials {
       margin-top: 18px;
       text-align: center;
@@ -94,6 +104,9 @@
 
   <h1>Fabian Popa</h1>
 
+  <p>Nutritional product development and consulting</p>
+  <p>Munich, Germany</p>
+  
   <script type="module">
     const deobfuscateEmail = (obId, obTxt, opt = { changeLabel: false }) => {
       const email = obTxt.split("@").reverse().join("").replace("^", "@");
@@ -108,8 +121,6 @@
   <ul class="socials">
     <li><a href="#" data-obfuscation-id="cd072364dce1305a">Contact</a></li>
   </ul>
-
-  <p class="statement">Do good.</p>
 
   <div component="tapestry"></div>
 
